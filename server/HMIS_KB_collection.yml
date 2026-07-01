@@ -1,11 +1,11 @@
 openapi: 3.0.3
 info:
   title: HMIS Knowledge Base API
-  description: Production-ready API contract for the KB platform and Chatbot widget.
+  description: Complete production-ready API contract for the KB platform and Chatbot widget.
   version: V1
 servers:
   - url: http://localhost:8000/api/v1
-    description: Production Server
+    description: Development Server
 
 components:
   securitySchemes:
@@ -13,18 +13,20 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: Enter your JWT token. Required for all routes except Login.
+      description: Enter your JWT token. Required for all routes except Login/Register.
 
 security:
   - BearerAuth: []
 
 paths:
-  # --- AUTHENTICATION ---
+  
+  # authentication 
+  
   /auth/login:
     post:
       summary: Login and receive JWT token
       description: Public endpoint to authenticate users and fetch their RBAC roles.
-      security: [] # Overrides global security to make this endpoint public
+      security: []
       requestBody:
         required: true
         content:
@@ -38,7 +40,7 @@ paths:
                 email:
                   type: string
                   format: email
-                  example: user@hms.com
+                  example: user@hmis.com
                 password:
                   type: string
                   format: password
@@ -60,12 +62,558 @@ paths:
                       id:
                         type: integer
                         example: 1
+                      username:
+                        type: string
+                        example: "jdoe"
                       role:
                         type: string
                         enum: [viewer, editor, admin]
                         example: admin
 
-  # --- CHATBOT WIDGET ---
+  #register
+
+  /auth/register:
+    post:
+      summary: Create a new user account
+      description: Admin-only endpoint to register new users.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - email
+                - password
+                - role
+              properties:
+                username:
+                  type: string
+                  example: "jdoe"
+                email:
+                  type: string
+                  format: email
+                  example: "jdoe@hmis.com"
+                password:
+                  type: string
+                  format: password
+                  example: "********"
+                role:
+                  type: string
+                  enum: [viewer, editor, admin]
+                  example: "viewer"
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User created successfully"
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 2
+                      username:
+                        type: string
+                      email:
+                        type: string
+                      role:
+                        type: string
+
+  #profile
+
+  /auth/profile:
+    get:
+      summary: Fetch the currently authenticated user
+      description: Returns the profile of the logged-in user.
+      responses:
+        '200':
+          description: User profile retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  username:
+                    type: string
+                  email:
+                    type: string
+                  role:
+                    type: string
+                  department:
+                    type: string
+
+  /admin/users:
+    get:
+      summary: List all registered users
+      description: Admin panel view to manage all users.
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        username:
+                          type: string
+                        email:
+                          type: string
+                        role:
+                          type: string
+
+  
+
+  /admin/users/{id}/role:
+    put:
+      summary: Update a user's role
+      description: Change the role of a specific user.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: The user ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - role
+              properties:
+                role:
+                  type: string
+                  enum: [viewer, editor, admin]
+                  example: "editor"
+      responses:
+        '200':
+          description: Role updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User role updated successfully"
+
+  
+  # articles
+  
+  /articles:
+    get:
+      summary: List all published articles
+      description: Viewer+ access to paginated articles with filters.
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Filter by category ID
+        - name: tag
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by tag name
+      responses:
+        '200':
+          description: A list of articles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  articles:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        title:
+                          type: string
+                        slug:
+                          type: string
+                        category:
+                          type: object
+                        views:
+                          type: integer
+                  total:
+                    type: integer
+                    example: 50
+                  page:
+                    type: integer
+                    example: 1
+
+    post:
+      summary: Create a new draft article
+      description: Editor+ access to create a draft.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - content
+                - category_id
+              properties:
+                title:
+                  type: string
+                  example: "How to Reset Password"
+                content:
+                  type: string
+                  example: "Step-by-step guide..."
+                category_id:
+                  type: integer
+                  example: 2
+                tag_ids:
+                  type: array
+                  items:
+                    type: integer
+                  example: [1, 3]
+      responses:
+        '201':
+          description: Draft saved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Draft saved successfully"
+                  article:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      status:
+                        type: string
+                        example: "draft"
+
+  /articles/{slug}:
+    get:
+      summary: Fetch a single article by its SEO slug
+      description: Viewer+ access to read a full article.
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The SEO-friendly URL slug (e.g., "how-to-reset-password")
+      responses:
+        '200':
+          description: Article retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  article:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      title:
+                        type: string
+                      content:
+                        type: string
+                      views:
+                        type: integer
+                      category_id:
+                        type: integer
+                      created_at:
+                        type: string
+                        format: date-time
+                      updated_at:
+                        type: string
+                        format: date-time
+
+  /articles/{id}:
+    put:
+      summary: Update an existing article
+      description: Editor+ (only their own drafts) or Admin (all articles).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                content:
+                  type: string
+                category_id:
+                  type: integer
+      responses:
+        '200':
+          description: Article updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Article updated"
+                  article:
+                    type: object
+
+  /articles/{id}/publish:
+    patch:
+      summary: Submit for review or publish immediately
+      description: Admin-only endpoint to publish articles.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum: [pending_review, published, archived]
+                  example: "published"
+      responses:
+        '200':
+          description: Article published
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Article published"
+                  published_at:
+                    type: string
+                    format: date-time
+
+    delete:
+      summary: Soft-delete (archive) an article
+      description: Admin-only endpoint to archive articles.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Article archived
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Article archived successfully"
+
+  
+  #search
+  
+  /search:
+    get:
+      summary: Full-text search across titles, content, and tags
+      description: Viewer+ access to ranked search results.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: The search query (e.g., "patient registration")
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Filter by category ID
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [relevance, date, views]
+            default: relevance
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        title:
+                          type: string
+                        snippet:
+                          type: string
+                        category:
+                          type: string
+                        slug:
+                          type: string
+                  total:
+                    type: integer
+                    example: 12
+                  query:
+                    type: string
+                    example: "patient registration"
+
+  
+  #categories
+  
+  /categories:
+    get:
+      summary: List all categories with nested structure
+      description: Viewer+ access to the category taxonomy.
+      responses:
+        '200':
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  categories:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                        slug:
+                          type: string
+                        children:
+                          type: array
+                          items:
+                            type: object
+    post:
+      summary: Create a new category
+      description: Admin-only endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  example: "Radiology"
+                parent_id:
+                  type: integer
+                  nullable: true
+                  example: null
+                icon:
+                  type: string
+                description:
+                  type: string
+      responses:
+        '201':
+          description: Category created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Category created"
+                  category:
+                    type: object
+
+  #tags
+
+  /tags:
+    get:
+      summary: Fetch all available tags
+      description: Viewer+ access to the tag list.
+      responses:
+        '200':
+          description: List of tags
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tags:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                        slug:
+                          type: string
+
+  
+  # chatbot
+  
   /chat:
     post:
       summary: Send a natural language question to the bot
@@ -114,36 +662,185 @@ paths:
                     type: boolean
                     example: true
 
-  # --- ARTICLES ---
-  /articles:
-    get:
-      summary: List all published articles
-      description: Viewer+ access to paginated articles.
-      parameters:
-        - name: page
-          in: query
-          required: false
-          schema:
-            type: integer
-            default: 1
-        - name: limit
-          in: query
-          required: false
-          schema:
-            type: integer
-            default: 20
+  
+  #feedback
+  
+  /feedback:
+    post:
+      summary: Submit a rating or comment on an article
+      description: Viewer+ access to provide feedback.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - article_id
+                - rating
+              properties:
+                article_id:
+                  type: integer
+                  example: 5
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                  example: 4
+                comment:
+                  type: string
+                  example: "Very clear guide."
       responses:
-        '200':
-          description: A list of articles
+        '201':
+          description: Feedback submitted
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  articles:
+                  message:
+                    type: string
+                    example: "Thank you for your feedback!"
+
+  /chat/{log_id}/feedback:
+    post:
+      summary: Mark chatbot answer as helpful or unhelpful
+      description: Viewer+ access to provide feedback on chat responses.
+      parameters:
+        - name: log_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: The chat log ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - was_helpful
+              properties:
+                was_helpful:
+                  type: boolean
+                  example: true
+      responses:
+        '200':
+          description: Feedback recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Feedback recorded"
+
+  
+  # admin dashboard
+  
+  /admin/dashboard/stats:
+    get:
+      summary: Retrieve system KPIs for Admin dashboard
+      description: Admin-only access to system metrics.
+      responses:
+        '200':
+          description: System statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_articles:
+                    type: integer
+                    example: 50
+                  avg_rating:
+                    type: number
+                    format: float
+                    example: 4.2
+                  top_searches:
+                    type: array
+                    items:
+                      type: string
+                    example: ["password reset", "billing"]
+                  total_users:
+                    type: integer
+                    example: 15
+                  total_views:
+                    type: integer
+                    example: 1250
+
+  /admin/chat-logs:
+    get:
+      summary: Fetch unanswered questions to identify content gaps
+      description: Admin-only access to review low-confidence/unanswered queries (FR-5.9).
+      responses:
+        '200':
+          description: List of unanswered queries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  unanswered_queries:
                     type: array
                     items:
                       type: object
+                      properties:
+                        id:
+                          type: integer
+                        question:
+                          type: string
+                          example: "How to fix lab error 404?"
+                        asked_by:
+                          type: string
+                        created_at:
+                          type: string
+                          format: date-time
                   total:
                     type: integer
-                    example: 50
+                    example: 3
+
+  
+  # media
+  
+  /media/upload:
+    post:
+      summary: Upload an image/PDF for an article
+      description: Editor+ access to upload media files.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+                - article_id
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: The file to upload (image, PDF, etc.)
+                article_id:
+                  type: integer
+                  example: 5
+                  description: The article this media belongs to
+      responses:
+        '200':
+          description: File uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    example: "https://cdn.kb.com/media/screenshot.png"
+                  filename:
+                    type: string
+                    example: "screenshot.png"
+                  message:
+                    type: string
+                    example: "File uploaded successfully"

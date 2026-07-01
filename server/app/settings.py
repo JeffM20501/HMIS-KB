@@ -46,7 +46,7 @@ REST_FRAMEWORK={
     #     "rest_framework.permissons.DjangoModelPernissionsOrAnonReadOnly"
     # ],
     "DEFAULT_PAGINATION_CLASS":"rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE":50,
+    "PAGE_SIZE":20,
 }
 
 # Application definition
