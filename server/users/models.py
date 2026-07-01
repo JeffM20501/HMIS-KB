@@ -9,6 +9,7 @@ class User(AbstractUser):
         ('viewer','Viewer',),
         ('editor','Editor',)
     ]
+    department=models.CharField(default="staff")
     role=models.CharField(max_length=20,choices=ROLES, default="viewer")
     updated_at=models.DateTimeField(auto_now=True)
     
