@@ -1,0 +1,149 @@
+openapi: 3.0.3
+info:
+  title: HMIS Knowledge Base API
+  description: Production-ready API contract for the KB platform and Chatbot widget.
+  version: V1
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Production Server
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Enter your JWT token. Required for all routes except Login.
+
+security:
+  - BearerAuth: []
+
+paths:
+  # --- AUTHENTICATION ---
+  /auth/login:
+    post:
+      summary: Login and receive JWT token
+      description: Public endpoint to authenticate users and fetch their RBAC roles.
+      security: [] # Overrides global security to make this endpoint public
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@hms.com
+                password:
+                  type: string
+                  format: password
+                  example: "********"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: "jwt.payload.signature"
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      role:
+                        type: string
+                        enum: [viewer, editor, admin]
+                        example: admin
+
+  # --- CHATBOT WIDGET ---
+  /chat:
+    post:
+      summary: Send a natural language question to the bot
+      description: Accessible cross-origin (CORS) from the HMIS mockup widget.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - question
+                - conversation_id
+              properties:
+                question:
+                  type: string
+                  example: "How do I reverse a discharge?"
+                conversation_id:
+                  type: string
+                  format: uuid
+                  example: "uuid-123-456"
+      responses:
+        '200':
+          description: Successful bot response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  answer:
+                    type: string
+                    example: "To reverse a discharge, go to the patient dashboard..."
+                  article_ref:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 45
+                      title:
+                        type: string
+                        example: "Discharge Reversal SOP"
+                      slug:
+                        type: string
+                        example: "discharge-reversal-sop"
+                  was_grounded:
+                    type: boolean
+                    example: true
+
+  # --- ARTICLES ---
+  /articles:
+    get:
+      summary: List all published articles
+      description: Viewer+ access to paginated articles.
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: A list of articles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  articles:
+                    type: array
+                    items:
+                      type: object
+                  total:
+                    type: integer
+                    example: 50

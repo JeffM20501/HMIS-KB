@@ -21,5 +21,6 @@ urlpatterns = [
     path('u/', include("users.urls")),
     path('articles/', include("articles.urls")),
     path('analytics/', include("analytics.urls")),
+    path('rest/', include('rest_framework.urls')),
     path('admin/', admin.site.urls), 
 ]
