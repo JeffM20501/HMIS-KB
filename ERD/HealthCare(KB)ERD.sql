@@ -5,7 +5,7 @@ CREATE TABLE "user" (
   "password_hash" text NOT NULL,
   "role" text NOT NULL,
   "department" text,
-  "created_at" timestamp DEFAULT (now()),
+  "date_joined" timestamp DEFAULT (now()),
   "updated_at" timestamp DEFAULT (now())
 );
 
@@ -13,8 +13,10 @@ CREATE TABLE "categories" (
   "id" integer PRIMARY KEY,
   "name" text UNIQUE NOT NULL,
   "icon" text,
+  "slug" text,
   "description" text,
-  "parent_id" integer
+  "parent_id" integer,
+  "sort_order" integer DEFAULT 0
 );
 
 CREATE TABLE "articles" (
@@ -44,6 +46,7 @@ CREATE TABLE "media" (
 
 CREATE TABLE "tags" (
   "id" integer PRIMARY KEY,
+  "slug" text,
   "name" text UNIQUE NOT NULL
 );
 
