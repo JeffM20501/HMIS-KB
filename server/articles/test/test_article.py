@@ -1,4 +1,4 @@
-from helper import *
+from articles.test.helper import *
 from django.utils import timezone
 from django.urls import reverse
 from django.test import TestCase
