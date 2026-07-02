@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   db:
@@ -6,29 +5,24 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=hmis_kb
+      - POSTGRES_DB=hmis_kb_db
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5434:5434"
 
   web:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@localhost:5432/hmis_kb_db
-      - PYTHONDONTWRITEBYTECODE=1
-      - PYTHONUNBUFFERED=1
     ports:
-      - "8000:8000"
+      - "8080:8080"
     env_file:
       - .env
     depends_on:
       - db
     volumes:
       - .:/app
-      - .app/.venv #prevernt overwrite of .venv
     
 
 volumes:

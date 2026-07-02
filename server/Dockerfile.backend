@@ -1,7 +1,13 @@
 # python runtime image
 FROM python:3.14-slim AS builder
 
-#create the app dir
+# Install PostgreSQL development libraries (required for psycopg compilation)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq-dev \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create the app directory
 RUN mkdir /app
 
 # set working dir
@@ -14,15 +20,21 @@ ENV PYTHONUNBUFFERED=1
 # upgrade pip
 RUN pip install --upgrade pip
 
-#copy requirements file for better caching
+# copy requirements file for better caching
 COPY requirements.txt /app/
 
-#install dependencies
+# install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-#prod stage
+# prod stage
 FROM python:3.14-slim
 
+# Install PostgreSQL runtime libraries (smaller than dev libraries)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user and app directory
 RUN useradd -m -r appuser && \
     mkdir /app && \
     chown -R appuser /app
@@ -34,18 +46,18 @@ COPY --from=builder /usr/local/bin/ /usr/local/bin/
 # set working dir
 WORKDIR /app
 
-#copy app code
+# copy app code
 COPY --chown=appuser:appuser . .
 
-#set env variables to optimize python
+# set env variables to optimize python
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 # use non root user
 USER appuser
 
-#expose app port
-EXPOSE 8000
+# expose app port
+EXPOSE 8080
 
-##Start app using gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "app.wsgi:application"]
+# Start app using gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "3", "app.wsgi:application"]
