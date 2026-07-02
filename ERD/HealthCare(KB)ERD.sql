@@ -1,11 +1,10 @@
 CREATE TABLE "user" (
   "id" integer PRIMARY KEY,
-  "slug" text,
   "username" text UNIQUE NOT NULL,
   "email" text UNIQUE NOT NULL,
   "password_hash" text NOT NULL,
   "role" text NOT NULL,
-  "department" text,
+  "department" text DEFAULT 'staff',
   "date_joined" timestamp DEFAULT (now()),
   "updated_at" timestamp DEFAULT (now())
 );
@@ -38,9 +37,9 @@ CREATE TABLE "articles" (
 CREATE TABLE "media" (
   "id" integer PRIMARY KEY,
   "article_id" integer NOT NULL,
-  "filename" text,
-  "url" text,
-  "type" enum,
+  "filename" text NOT NULL,
+  "url" text NOT NULL,
+  "type" enum NOT NULL,
   "uploaded_by" integer NOT NULL,
   "created_at" timestamp
 );
