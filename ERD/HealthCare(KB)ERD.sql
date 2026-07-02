@@ -1,5 +1,6 @@
 CREATE TABLE "user" (
   "id" integer PRIMARY KEY,
+  "slug" text,
   "username" text UNIQUE NOT NULL,
   "email" text UNIQUE NOT NULL,
   "password_hash" text NOT NULL,
