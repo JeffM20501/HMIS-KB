@@ -10,7 +10,7 @@
 |----------------|-------------------------------------|
 | Language       | Python 3.14.6                          |
 | Framework      | Django                           |
-| Database       | PostgreSQL (production), SQLite (test) |
+| Database       | PostgreSQL (production) |
 | Authentication | JWT                         |
 | Password Hashing| Django's PBKDF2 algorithm with a SHA-256 hash                       |
 | Email Service  | Brevo (Sendinblue)                  |
@@ -33,7 +33,6 @@
 
 - Create a `.env` file inthe project root with the follwing variables
 
-
 | Variable                    | Description                                   | Example                                                    |
 |-----------------------------|-----------------------------------------------|------------------------------------------------------------|
 | `SECRET_KEY`                | Flask secret key (used for JWT)              | `your-very-long-secret-key-32chars+`                       |
@@ -43,7 +42,6 @@
 | `CLOUDINARY_CLOUD_NAME`     | Cloudinary cloud name                        | `your_cloud_name`                                          |
 | `CLOUDINARY_API_KEY`        | Cloudinary API key                           | `123456789`                                                |
 | `CLOUDINARY_API_SECRET`     | Cloudinary API secret                        | `abcdefg`                                                  |
-
 
 ## API Contracts (RESTful Endpoints)
 
@@ -67,6 +65,13 @@ All endpoints (except `/auth/login` and `/auth/register`) require a Bearer Token
 ---
 
 ### 1. Authentication & User Management
+
+#### Standard Headers
+
+| Header | Value | Required For |
+| :--- | :--- | :--- |
+| `Content-Type` | `application/json` | All requests with a body |
+| `Authorization` | `Bearer <your_jwt_token>` | All authenticated routes (except `/auth/login`) |
 
 *Handles Login, Registration, and Role-Based Access Control (RBAC).*
 
@@ -95,7 +100,7 @@ All endpoints (except `/auth/login` and `/auth/register`) require a Bearer Token
 
 ---
 
-### 3. 🔍 Search Engine (P0 Feature)
+### 3. Search Engine (P0 Feature)
 
 *Optimized, ranked full-text search for healthcare workers.*
 
@@ -175,40 +180,8 @@ To allow the chatbot widget to function inside the external HMIS mockup, the bac
 
 ---
 
-**Postman Collection:**  
-A complete Postman collection for these endpoints is available in the `/postman` directory of this repository. Import it to test the API locally.
+**Swagger Collection:**  
+A complete Postman collection for these endpoints is available in the `HMIS_KB_collection.yml` directory of this repository. Import it to test the API locally.
 
 ---
-
-# API Contracts - Healthcare Knowledge Base System
-
-**Version:** v1  
-**Local** --> ***Base URL*** `http:..localhost:5020/api/v1`
-**Production** --> ***Base URL*** `https://your-backend.onrender.com/api/v1`
-**Content-Type:** `application/json` (unless specified otherwise)
-
----
-
-## Standard Headers
-
-| Header | Value | Required For |
-| :--- | :--- | :--- |
-| `Content-Type` | `application/json` | All requests with a body |
-| `Authorization` | `Bearer <your_jwt_token>` | All authenticated routes (except `/auth/login`) |
-
----
-
-## 1. Authentication & User Management
-
-### `POST /auth/login`
-
-Login and receive a JWT access token.
-
-**Request Body:**
-
-```json
-{
-  "email": "nurse@hospital.com",
-  "password": "securepassword123"
-}
-
+>For any issues, please open an issue on GitHub 

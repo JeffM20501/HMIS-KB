@@ -45,7 +45,6 @@ class TestCaseUser(TestCase):
         res_get=self.client.get(url)
         self.assertEqual(res_get.status_code,200)
         
-        pass
     
     def test_viewer_permissions(self):
         viewer=create_user(role='viewer')
