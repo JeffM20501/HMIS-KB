@@ -1,7 +1,7 @@
 from django.shortcuts import render
 
 # Create your views here.
-from django.http import HttpResponse
+from django.http import JsonResponse
 
 from django.contrib.auth.models import Group
 from django.contrib.auth import get_user_model
@@ -26,5 +26,15 @@ class GroupViewSet(viewsets.ModelViewSet):
     serializer_class=GroupSerializer
     permission_classes=[permissions.IsAuthenticated]
 
-def index(response):
-    return HttpResponse('Users Views')
+def index(request):
+    return JsonResponse({'message':'index'})
+
+def dashboard(request):
+    return JsonResponse({'message':'user dasboard'})
+
+def admin_dashboard(request):
+    return JsonResponse({'message':'admin dasboard'})
+
+def change_user_role(request,user_id):
+    return JsonResponse({'message':f'change role for user {user_id}'})
+
