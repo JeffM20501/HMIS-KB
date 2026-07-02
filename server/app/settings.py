@@ -28,10 +28,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG","True")=="True"
+DEBUG = bool(os.environ.get("DEBUG", default=0))
 
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS","127.0.0.1").split(",")
 
 
 #users
@@ -46,7 +46,7 @@ REST_FRAMEWORK={
     #     "rest_framework.permissons.DjangoModelPernissionsOrAnonReadOnly"
     # ],
     "DEFAULT_PAGINATION_CLASS":"rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE":50,
+    "PAGE_SIZE":20,
 }
 
 # Application definition

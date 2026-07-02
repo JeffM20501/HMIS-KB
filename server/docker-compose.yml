@@ -1,0 +1,29 @@
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=hmis_kb_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5434:5434"
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    depends_on:
+      - db
+    volumes:
+      - .:/app
+    
+
+volumes:
+  postgres_data:

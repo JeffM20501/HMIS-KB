@@ -25,10 +25,12 @@ router.register(r"users", views.UserViewSet)
 router.register(r"groups", views.GroupViewSet)
 
 urlpatterns = [
-    path("",include(router.urls)),
-    path('u/', include("users.urls")),
-    path('articles/', include("articles.urls")),
-    path('analytics/', include("analytics.urls")),
-    path('rest-api-auth/', include('rest_framework.urls', namespace="rest_framework")),
     path('admin/', admin.site.urls), 
+    path('api/v1/', include([
+        path("",include(router.urls)),
+        path('u/',include('users.urls')),
+        path('articles/', include("articles.urls")),
+        path('analytics/', include("analytics.urls")),
+        path('rest-api-auth/', include('rest_framework.urls', namespace="rest_framework")),
+    ])),
 ]

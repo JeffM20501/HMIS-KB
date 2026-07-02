@@ -10,7 +10,7 @@
 - Node.js, React, and npm
 - PostgresSQL 
 - Docker
-- Cloud Providers (Render,Vercel,AWS)
+- Cloud Providers (Render,AWS, DigitalOcean)
 
 #### 1. Clone Repository
 
