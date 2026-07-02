@@ -305,23 +305,7 @@ logs/
 
 .idea/
 .vscode/
-# Docker-specific files
-Dockerfile.*
-docker-compose.override.yml
 
-.docker/
-docker-compose.override.yaml
-docker-compose.*.yml
-docker-compose.*.yaml
-*.env.docker
-
+.env.docker
 docker-volumes/
-.docker-sync/
-docker/data/
-docker/logs/
-docker-compose.prod.yml
 
-docker-compose.dev.yml
-docker-compose.local.yml
-# CI/CD-related files
-.dockerignore
