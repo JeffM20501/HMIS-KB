@@ -3,12 +3,8 @@ name: Backend CI/CD Pipeline
 on:
   push:
     branches: [ main ]
-    paths:
-      - 'server/**'
   pull_request:
     branches: [ main ]
-    paths:
-      - 'server/**'
 
 env:
   PYTHON_VERSION: '3.12'
