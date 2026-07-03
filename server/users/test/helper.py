@@ -21,5 +21,5 @@ def create_admin():
         email='admin@gmail.com',
         password='12345',
         role='admin',
-        department='admin'
+        department='Management'
     )
