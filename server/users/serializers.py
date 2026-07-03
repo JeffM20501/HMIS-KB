@@ -7,7 +7,7 @@ from rest_framework import serializers
 class UserSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = get_user_model()
-        fields = ["url", "username", "email","role","department" ,"groups"]
+        fields = ["url", "username", "email","role","department"]
         read_only_fields=['updated_at']
 
 
