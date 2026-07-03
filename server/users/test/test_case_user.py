@@ -7,7 +7,7 @@ class TestCaseUser(TestCase):
     
     # model creation& retrive
     def test_user_creation(self):
-        u = create_user()
+        u = create_regular_user()
 
         self.assertEqual(u.username, 'usertest')
         self.assertTrue(u.check_password('12345'))
@@ -22,7 +22,7 @@ class TestCaseUser(TestCase):
         self.assertIsNone(u_non_exist)
 
     def test_user_auth(self):
-        u = create_user()
+        u = create_regular_user()
         self.client.force_login(u)
         
         url = reverse('user-list')
@@ -33,7 +33,7 @@ class TestCaseUser(TestCase):
     # permissions test
     
     def test_viewer_permissions(self):
-        viewer = create_user(role='viewer')
+        viewer = create_regular_user(role='viewer')
         self.client.force_login(viewer)
 
         # Viewer CAN view user list
@@ -47,7 +47,7 @@ class TestCaseUser(TestCase):
         self.assertEqual(res.status_code, 403)
 
     def test_editor_permissions(self):
-        e = create_user(role='editor')
+        e = create_regular_user(role='editor')
         self.client.force_login(e)
 
         # Editor CAN create a draft
@@ -80,7 +80,7 @@ class TestCaseUser(TestCase):
 
     def test_admin_manage_users(self):
         a = create_admin()
-        v = create_user(role='viewer')
+        v = create_regular_user(role='viewer')
         self.client.force_login(a)
 
         url = reverse('user-detail', kwargs={'pk': v.id})
@@ -95,10 +95,10 @@ class TestCaseUser(TestCase):
 
     def test_email_unique(self):
         """Test that two users cannot have the same email."""
-        create_user(email='unique@gmail.com')
+        create_regular_user(email='unique@gmail.com')
 
         with self.assertRaises(Exception):
-            create_user(
+            create_regular_user(
                 email='unique@gmail.com',
                 username='another',
                 password='12345'
@@ -106,10 +106,10 @@ class TestCaseUser(TestCase):
 
     def test_username_unique(self):
         """Test that two users cannot have the same username."""
-        create_user(username='unique')
+        create_regular_user(username='unique')
 
         with self.assertRaises(Exception):
-            create_user(
+            create_regular_user(
                 username='unique',
                 email='another@gmail.com',
                 password='12345'
@@ -120,32 +120,32 @@ class TestCaseUser(TestCase):
         valid_roles = ['viewer', 'admin', 'editor']
 
         for role in valid_roles:
-            u = create_user(role=role)
+            u = create_regular_user(role=role)
             self.assertEqual(u.role, role)
             u.delete()
 
     def test_invalid_role_raises_error(self):
         """Test that assigning an invalid role raises an error."""
         with self.assertRaises(Exception):
-            create_user(role='invalid')
+            create_regular_user(role='invalid')
 
     def test_password_hashing(self):
         """Test that passwords are properly hashed."""
-        u = create_user(password='12345')
+        u = create_regular_user(password='12345')
 
         self.assertNotEqual(u.password, '12345')
         self.assertTrue(u.check_password('12345'))
         self.assertFalse(u.check_password('wrong'))
 
-    def test_create_user_without_email(self):
+    def test_create_regular_user_without_email(self):
         """Test that creating a user without email raises an error."""
         with self.assertRaises(Exception):
-            create_user(email=None, username='noemail')
+            create_regular_user(email=None, username='noemail')
 
-    def test_create_user_without_username(self):
+    def test_create_regular_user_without_username(self):
         """Test that creating a user without username raises an error."""
         with self.assertRaises(Exception):
-            create_user(username=None, email='nouser@test.com')
+            create_regular_user(username=None, email='nouser@test.com')
 
     
     # auth test
@@ -158,7 +158,7 @@ class TestCaseUser(TestCase):
 
     def test_user_update_own_profile(self):
         """Test that a user can update their own profile."""
-        u = create_user()
+        u = create_regular_user()
         self.client.force_login(u)
 
         url = reverse('user-detail', kwargs={'pk': u.id})
@@ -175,8 +175,8 @@ class TestCaseUser(TestCase):
 
     def test_user_cannot_update_other_profiles(self):
         """Test that a user cannot update another user's profile."""
-        u1 = create_user(username='u1', email='u1@gmail.com')
-        u2 = create_user(username='u2', email='u2@gmail.com')
+        u1 = create_regular_user(username='u1', email='u1@gmail.com')
+        u2 = create_regular_user(username='u2', email='u2@gmail.com')
 
         self.client.force_login(u1)
 
@@ -186,7 +186,7 @@ class TestCaseUser(TestCase):
 
     def test_user_cannot_change_own_role(self):
         """Test that a user cannot change their own role."""
-        viewer = create_user(role='viewer')
+        viewer = create_regular_user(role='viewer')
         self.client.force_login(viewer)
 
         url = reverse('user-detail', kwargs={'pk': viewer.id})
@@ -199,7 +199,7 @@ class TestCaseUser(TestCase):
     def test_admin_can_change_any_user_role(self):
         """Test that an admin can change any user's role."""
         admin = create_admin()
-        viewer = create_user(role='viewer')
+        viewer = create_regular_user(role='viewer')
         self.client.force_login(admin)
 
         url = reverse('user-detail', kwargs={'pk': viewer.id})
@@ -216,8 +216,8 @@ class TestCaseUser(TestCase):
     def test_admin_can_list_all_users(self):
         """Test that an admin can see all users."""
         admin = create_admin()
-        create_user(username='user1', email='user1@gmail.com')
-        create_user(username='user2', email='user2@gmail.com')
+        create_regular_user(username='user1', email='user1@gmail.com')
+        create_regular_user(username='user2', email='user2@gmail.com')
         self.client.force_login(admin)
 
         url = reverse('user-list')
@@ -227,7 +227,7 @@ class TestCaseUser(TestCase):
 
     def test_viewer_cannot_list_all_users(self):
         """Test that a viewer cannot see the full user list."""
-        viewer = create_user(role='viewer')
+        viewer = create_regular_user(role='viewer')
         self.client.force_login(viewer)
 
         url = reverse('user-list')
@@ -239,7 +239,7 @@ class TestCaseUser(TestCase):
     
     def test_session_expires_after_inactivity(self):
         """Test that session expires after 8 hours of inactivity (FR-3.5)."""
-        user = create_user()
+        user = create_regular_user()
         self.client.force_login(user)
 
         # Simulate session expiry
@@ -255,7 +255,7 @@ class TestCaseUser(TestCase):
         """Test FR-3.6 """
         # This test assumes you have an AuditLog model
         admin = create_admin()
-        viewer = create_user(role='viewer')
+        viewer = create_regular_user(role='viewer')
         self.client.force_login(admin)
 
         # Change user role
@@ -270,7 +270,7 @@ class TestCaseUser(TestCase):
 
     def test_soft_delete_user(self):
         """Test that users can be soft-deleted without losing data."""
-        user = create_user()
+        user = create_regular_user()
         user.is_active = False
         user.save()
 
@@ -283,7 +283,7 @@ class TestCaseUser(TestCase):
 
     def test_user_detail_returns_correct_fields(self):
         """Test that the user detail endpoint returns the expected fields."""
-        user = create_user()
+        user = create_regular_user()
         self.client.force_login(user)
 
         url = reverse('user-detail', kwargs={'pk': user.id})
@@ -298,7 +298,7 @@ class TestCaseUser(TestCase):
         """Test that the user list is paginated."""
         admin = create_admin()
         for i in range(15):
-            create_user(
+            create_regular_user(
                 username=f'user{i}',
                 email=f'user{i}@test.com'
             )

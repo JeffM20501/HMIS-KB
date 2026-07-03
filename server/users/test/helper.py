@@ -1,8 +1,8 @@
 from django.contrib.auth import get_user_model
-
+from django.core.exceptions import ValidationError
 User = get_user_model()
 
-def create_user(**kwargs):
+def create_regular_user(**kwargs):
     """Create a user with default values that can be overridden."""
     user_obj = {
         'username': 'usertest',
@@ -12,14 +12,29 @@ def create_user(**kwargs):
         'department': 'IT'
     }
     user_obj.update(kwargs)
-    return User.objects.create_user(**user_obj)
+    try:
+        user= User(**user_obj)
+        user.set_password('12345')
+        user.full_clean()
+        user.save()
+        return user
+    except ValidationError:
+        raise
+    
 
 def create_admin():
     """Create an admin user."""
-    return User.objects.create_user(
+    admin = User(
         username='admin',
         email='admin@gmail.com',
         password='12345',
         role='admin',
-        department='admin'
+        department='Management'
     )
+    try:
+        admin.set_password('12345')
+        admin.full_clean()
+        admin.save()
+        return admin
+    except ValidationError:
+        raise

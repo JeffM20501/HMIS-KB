@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
-from users.validators.validators import *
+from users.validators import *
 # Create your models here.
 ROLES=[
         ('admin','Admin',),
@@ -11,8 +11,8 @@ ROLES=[
 
 
 class User(AbstractUser):
-    department=models.CharField(default="staff")
-    role=models.CharField(max_length=20,choices=ROLES, default="viewer")
+    department=models.CharField(default="staff", validators=[validate_department])
+    role=models.CharField(max_length=20,choices=ROLES, default="viewer", validators=[validate_role])
     updated_at=models.DateTimeField(auto_now=True)    
     
     def clean(self):
@@ -24,10 +24,6 @@ class User(AbstractUser):
         
         if role and department:
             validate_admin_department(role,department)
-        
-    def save(self,*args,**kwargs):
-        self.full_clean()
-        super().save(*args,**kwargs)
         
     
     def __str__(self):
