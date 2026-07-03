@@ -1,5 +1,5 @@
 from django.test import TestCase
-from helper import create_tag,create_user,create_category,create_article
+from articles.test.helper import create_tag,create_user,create_category,create_article
 
 class TagTest(TestCase):
     """Test the Tag model."""

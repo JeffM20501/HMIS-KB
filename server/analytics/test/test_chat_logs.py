@@ -1,6 +1,6 @@
 from django.urls import reverse
 from django.test import TestCase
-from helper import create_user,create_article
+from analytics.test.helper import create_user,create_article
 from analytics.models import ChatLog
 
 class ChatLogModelTest(TestCase):

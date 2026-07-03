@@ -1,6 +1,6 @@
 from django.test import TestCase
 from analytics.models import SearchLog
-from helper import create_user, create_article
+from analytics.test.helper import create_user, create_article
 from django.urls import reverse
 
 class SearchLogModelTest(TestCase):

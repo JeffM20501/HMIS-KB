@@ -1,5 +1,5 @@
 from django.test import TestCase
-from helper import create_article,create_category,create_user
+from articles.test.helper import create_article,create_category,create_user
 
 class CategoryTest(TestCase):
     """Test the Category model."""

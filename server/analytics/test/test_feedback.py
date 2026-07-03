@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
 from analytics.models import Feedback
-from helper import create_user,create_article
+from analytics.test.helper import create_user,create_article
 
 
 class FeedbackModelTest(TestCase):
