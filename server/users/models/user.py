@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
-from users.validators import *
+from users.validators import validate_admin_department,validate_department,validate_role
 # Create your models here.
 ROLES=[
         ('admin','Admin',),

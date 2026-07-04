@@ -10,10 +10,10 @@ from users.validators import (
 class UserSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = get_user_model()
-        fields = ["url", "username", "email", "role", "department", "date_joined", "updated_at"]
+        fields = ["url", "password","username", "email", "role", "department", "date_joined", "updated_at"]
         read_only_fields = ['updated_at', 'date_joined', 'url']
         extra_kwargs = {
-            'password': {'write_only': True}
+            'password': {'write_only': True, 'required':True}
         }
 
     def validate_username(self, value):
@@ -60,6 +60,25 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
     def validate_department(self, value):
         """Validate department is provided."""
         return validate_department(value)
+    
+    def validate_password(self,value):
+        """Validate password"""
+        if not value:
+            raise serializers.ValidationError('Password required')
+        
+        if len(value)<8:
+            raise serializers.ValidationError('Password needs to be at least 8 characters long')
+        
+        if not any(char.isdigit() for char in value):
+            raise serializers.ValidationError('Password} must contain at least one digit')
+        
+        if not any(char.isupper() for char in value):
+            raise serializers.ValidationError('Password must contain at least 1 uppercase letter')
+        
+        if not any(char.islower() for char in value):
+            raise serializers.ValidationError('Password must contain at least 1 lowercase letter')
+        
+        return value
 
     def validate(self, data):
         """
@@ -95,6 +114,20 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
 
         instance.save()
         return instance
+    
+    def create(self, validated_data):
+        """
+        Create user hashed password
+        """
+        
+        password=validated_data.pop('password',None)
+        user=super().create(validated_data)
+        
+        if password:
+            user.set_password(password)
+            user.save()
+        
+        return user
 
 
 # class GroupSerializer(serializers.HyperlinkedModelSerializer):

@@ -29,7 +29,7 @@ class UserViewSet(viewsets.ModelViewSet):
         elif self.action in ['retrieve']:
             permission_classes=[permissions.IsAuthenticated]        
         elif self.action =='create' :
-            permission_classes=[IsAdmin]
+            permission_classes=[permissions.AllowAny]
         elif self.action in ['update','partial_update']:
             permission_classes=[IsOwnerOrReadOnly|IsAdmin]
         elif self.action=='destroy':
@@ -100,6 +100,3 @@ class Dashboard(APIView):
     def get(self,request,format=None):
         serializer=UserSerializer(request.user)
         return Response(serializer.data)
-    
-    
-
