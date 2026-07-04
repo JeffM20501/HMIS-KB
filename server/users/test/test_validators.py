@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 from users.validators import *
-from users.test.helper import create_user
+from users.test.helper import create_regular_user
 
 
 class ValidatorTest(TestCase):
@@ -19,7 +19,7 @@ class ValidatorTest(TestCase):
         self.assertIn('required', str(context.exception))
     
     def test_validate_username_duplicate(self):
-        create_user(username='existing')
+        create_regular_user(username='existing')
         with self.assertRaises(ValidationError) as context:
             validate_username('existing')
         self.assertIn('already taken', str(context.exception))
@@ -35,7 +35,7 @@ class ValidatorTest(TestCase):
             validate_email('')
     
     def test_validate_email_duplicate(self):
-        create_user(email='existing@test.com')
+        create_regular_user(email='existing@test.com')
         with self.assertRaises(ValidationError):
             validate_email('existing@test.com')
     

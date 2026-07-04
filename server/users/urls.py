@@ -1,12 +1,13 @@
 from django.urls import path
 
-from . import views
+from users.views import *
+
 
 app_name='users'
 
 urlpatterns = [
-    path('',views.index,name='index'), 
-    path('dashboard/',views.dashboard,name='dashboard'),
-    path('admin/dashboard/',views.admin_dashboard,name='admin_dashboard'),
-    path('admin/users/<int:user_id>/role/',views.change_user_role,name='change_user_role'),
+    path('dashboard/',Dashboard.as_view(),name='dashboard'),
+    path('admin/dashboard/',AdminDashboard.as_view(),name='admin_dashboard'),
+    path('admin/users/<int:user_id>/role/',ChangeUserRole.as_view(),name='change_user_role'),
+    path('admin/users',ListUsers.as_view(),name='list_users')
 ]
