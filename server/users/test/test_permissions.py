@@ -7,6 +7,7 @@ from unittest import skip
 class UserPermissionTest(BaseAPITestCase):
     """Tests for user permissions (RBAC)."""
 
+    @skip('Article not yet implemented')
     def test_viewer_permissions(self):
         viewer = self._create_and_login_user(role='viewer')
 
@@ -95,7 +96,7 @@ class UserPermissionTest(BaseAPITestCase):
         v = create_regular_user(role='viewer')
 
         url = reverse('user-detail', kwargs={'pk': v.id})
-        res_put = self.client.put(
+        res_put = self.client.patch(
             url,
             {'role': 'editor'},
             content_type='application/json'

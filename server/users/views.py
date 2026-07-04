@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 from users.permissions import *
 from rest_framework.response import Response
 from rest_framework import status,serializers
+from rest_framework.exceptions import PermissionDenied
 
 from .serializers import UserSerializer
 
@@ -38,13 +39,13 @@ class UserViewSet(viewsets.ModelViewSet):
         
         return [permission() for permission in permission_classes]
     
-    def perform_update(self, serializer):
-        instance=self.get_object()
-        new_role=self.request.data.get('role')
-        
-        if new_role and new_role!=instance.role:
-            if self.request.user.role!='admin':
-                raise serializers.ValidationError({'role':'Only admin can change user roles'})
+    def perform_update(self, serializer): 
+        if 'password' in  self.request.data:
+            instance=self.get_object()
+            instance.set_password(self.request.data.get('password'))
+            self.request.data._mutable=True
+            del self.request.data['password']
+            self.request.data._mutable=False
         serializer.save()
 
 class ListUsers(APIView):

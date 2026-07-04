@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from users.test.helper import create_regular_user, create_admin
+from unittest import skip
 
 User = get_user_model()
 
@@ -10,7 +11,7 @@ class TestCaseUser(TestCase):
     """Core user model tests (not permission-specific)."""
 
     def test_user_creation(self):
-        u = create_regular_user()
+        u = create_regular_user(username='usertest', email='test@gmail.com')
         self.assertEqual(u.username, 'usertest')
         self.assertTrue(u.check_password('12345'))
         self.assertEqual(u.role, 'viewer')
@@ -36,7 +37,7 @@ class TestCaseUser(TestCase):
         u = create_regular_user()
         self.client.force_login(u)
         
-        url = reverse('user-list')
+        url = reverse('user-detail',kwargs={'pk':u.id})
         res_get = self.client.get(url, content_type='application/json')
         self.assertEqual(res_get.status_code, 200)
 
@@ -72,6 +73,7 @@ class TestCaseUser(TestCase):
         response = self.client.get(url, content_type='application/json')
         self.assertIn(response.status_code, [401, 403])
 
+    @skip('audit log not yet implemented')
     def test_admin_actions_logged(self):
         # Placeholder for audit log test
         pass

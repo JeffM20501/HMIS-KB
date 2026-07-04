@@ -32,7 +32,13 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
         
-        return obj==request.user
+        if obj==request.user:
+            if 'role' in request.data and request.user.role!='admin':
+                return False
+            return True
+        return False
+        
+        # return obj==request.user
 
 class CanListUsers(permissions.BasePermission):
     def has_permission(self, request, view):
