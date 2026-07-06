@@ -1,6 +1,6 @@
 from django.urls import reverse
 from users.test.helper import create_regular_user, create_admin
-from users.test.base_helper_auth import BaseAPITestCase
+from utils.base_helper_auth import BaseAPITestCase
 from unittest import skip
 
 

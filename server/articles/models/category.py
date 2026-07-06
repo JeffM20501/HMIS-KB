@@ -41,7 +41,7 @@ class Category(models.Model):
         max_length=50,
         blank=True,
         validators=[validate_icon],
-        help_text="Icon name or emoji (e.g., '🏥', 'fa-user')"
+        help_text="Icon name or emoji, 'fa-user')"
     )
     sort_order = models.PositiveIntegerField(
         default=0,
