@@ -63,6 +63,7 @@ SIMPLE_JWT={
 
 INSTALLED_APPS = [
     'users.apps.UsersConfig',
+    'articles.apps.ArticlesConfig',
     'rest_framework', #djangorestframework
     'rest_framework_simplejwt',
     'django.contrib.admin',
