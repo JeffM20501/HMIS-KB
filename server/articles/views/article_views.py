@@ -11,6 +11,7 @@ from articles.permissions.article_permissions import (
     CanCreateArticle, CanEditArticle, CanPublishArticle, CanListArticles
 )
 
+from utils.audit_log_helper import log_audit_action
 
 class ArticleViewSet(viewsets.ModelViewSet):
     
@@ -116,6 +117,13 @@ class ArticleViewSet(viewsets.ModelViewSet):
         
         article.publish(request.user)
         
+        log_audit_action(
+            user=request.user,
+            action='publish',
+            obj=article,
+            request=request
+        )
+        
         return Response(
             {'message': 'Article published successfully.'},
             status=status.HTTP_200_OK
@@ -141,6 +149,14 @@ class ArticleViewSet(viewsets.ModelViewSet):
         
         article.status = 'draft'
         article.save()
+        
+        log_audit_action(
+            user=request.user,
+            action='reject',
+            obj=article,
+            request=request,
+            reason=reason
+        )
         
         return Response(
             {'message': f'Article rejected. Reason: {reason}'},
