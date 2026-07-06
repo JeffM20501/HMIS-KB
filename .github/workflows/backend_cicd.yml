@@ -61,6 +61,8 @@ jobs:
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/github_actions
           SECRET_KEY: ${{ secrets.SECRET_KEY}}
+          DEBUG: ${{secrets.DEBUG}}
+          DJANGO_SETTINGS_MODULE: app.settings
         run: |
           cd server
           pytest -v --tb=short --cov=. --cov-report=term --cov-report=xml
