@@ -20,7 +20,7 @@ class CategoryAPITest(TestCase):
     
     def test_viewer_can_view_categories(self):
         """PRD: Anyone can view categories."""
-        url = reverse('category-list')
+        url = reverse('articles:category-list')
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertGreaterEqual(len(response.data['results']), 1)
@@ -28,7 +28,7 @@ class CategoryAPITest(TestCase):
     def test_viewer_cannot_create_category(self):
         """PRD: Only admins can create categories."""
         self.client.force_login(self.viewer)
-        url = reverse('category-list')
+        url = reverse('articles:category-list')
         response = self.client.post(url, {
             'name': 'New Category',
             'slug': 'new-category'
@@ -39,7 +39,7 @@ class CategoryAPITest(TestCase):
         """PRD: Admins can create categories."""
         token = self._get_token(self.admin)
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
-        url = reverse('category-list')
+        url = reverse('articles:category-list')
         response = self.client.post(url, {
             'name': 'New Category',
             'slug': 'new-category'

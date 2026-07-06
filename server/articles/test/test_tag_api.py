@@ -29,14 +29,14 @@ class TagAPITest(TestCase):
     
     def test_viewer_can_view_tags(self):
         """PRD: Anyone can view tags."""
-        url = reverse('tag-list')
+        url = reverse('articles:tag-list')
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertGreaterEqual(len(response.data['results']), 1)
     
     def test_viewer_can_view_tag_detail(self):
         """PRD: Anyone can view a single tag."""
-        url = reverse('tag-detail', kwargs={'pk': self.tag.id})
+        url = reverse('articles:tag-detail', kwargs={'pk': self.tag.id})
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['name'], 'Emergency')
@@ -44,7 +44,7 @@ class TagAPITest(TestCase):
     def test_viewer_cannot_create_tag(self):
         """PRD: Only admins can create tags."""
         self.client.force_login(self.viewer)
-        url = reverse('tag-list')
+        url = reverse('articles:tag-list')
         response = self.client.post(url, {
             'name': 'New Tag',
             'slug': 'new-tag'
@@ -55,7 +55,7 @@ class TagAPITest(TestCase):
         """PRD: Admins can create tags."""
         token = self._get_token(self.admin)
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
-        url = reverse('tag-list')
+        url = reverse('articles:tag-list')
         response = self.client.post(url, {
             'name': 'New Tag',
             'slug': 'new-tag'
@@ -68,7 +68,7 @@ class TagAPITest(TestCase):
         """PRD: Admins can update tags."""
         token = self._get_token(self.admin)
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
-        url = reverse('tag-detail', kwargs={'pk': self.tag.id})
+        url = reverse('articles:tag-detail', kwargs={'pk': self.tag.id})
         response = self.client.patch(url, {
             'name': 'Updated Tag'
         }, content_type='application/json')
@@ -80,20 +80,20 @@ class TagAPITest(TestCase):
         """PRD: Admins can delete tags."""
         token = self._get_token(self.admin)
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
-        url = reverse('tag-detail', kwargs={'pk': self.tag.id})
+        url = reverse('articles:tag-detail', kwargs={'pk': self.tag.id})
         response = self.client.delete(url)
         self.assertEqual(response.status_code, 204)
         self.assertEqual(Tag.objects.count(), 0)
     
     def test_popular_tags_endpoint(self):
         """Test popular tags endpoint."""
-        url = reverse('tag-popular')
+        url = reverse('articles:tag-popular')
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
     
     def test_search_tags_endpoint(self):
         """Test search tags endpoint."""
-        url = reverse('tag-search')
+        url = reverse('articles:tag-search')
         response = self.client.get(url, {'q': 'emerg'})
         self.assertEqual(response.status_code, 200)
         self.assertGreaterEqual(len(response.data), 1)
