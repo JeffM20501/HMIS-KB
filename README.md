@@ -8,24 +8,25 @@
 
 - Python 3.14.6
 - Node.js, React, and npm
-- PostgresSQL 
+- PostgresSQL
 - Docker
 - Cloud Providers (Render,AWS, DigitalOcean)
 
 #### 1. Clone Repository
 
-- There are 2 ways to clone the repo, you can use `CLI` command or a gui like `GitHub Desktop`
+- There are 2 ways to clone the repo, you can use `CLI` command or a GUI like `GitHub Desktop`
 - Recommend using `GitHub Desktop`
+- **Use the link below for the tutorial on how to clone the repo:**:[Link](https://www.youtube.com/watch?v=PoZNIbs_wx8)
 
 ```bash
 git clone https://github.com/your-org/HMIS_KB.git; cd HMIS_KB #make sure you go to the location you clone the repo in
 ```
+
 ---
 
 ## File Structure
 
 ```bash
-.
 ├── client
 │   ├── eslint.config.js
 │   ├── index.html
@@ -41,18 +42,23 @@ git clone https://github.com/your-org/HMIS_KB.git; cd HMIS_KB #make sure you go 
 │   ├── HealthCare(KB)ERD.png
 │   └── HealthCare(KB)ERD.sql
 ├── README.md
-├── requirements.txt
 ├── server
 │   ├── analytics
 │   ├── app
 │   ├── articles
+│   ├── docker-compose.yml
+│   ├── Dockerfile.backend
 │   ├── HMIS_KB_collection.yml
 │   ├── manage.py
+│   ├── pytest.ini
 │   ├── README.md
-│   └── users
+│   ├── requirements.txt
+│   ├── users
+│   └── utils
 └── System Design
 ├── HMIS_KB_system desgin.drawio.pdf
 └── HMIS_KB_system desgin.drawio.png
+
 ```
 
 ---
@@ -92,23 +98,14 @@ sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'postgres';"
 ```env
 SECRET_KEY=your-secret
 DEBUG=True # dev prod change to false when setting up render instance
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'hmis_kb_db',
-        'USER':'postgres',
-        'PASSWORD':'postgres',
-        'HOST':'127.0.0.1',
-        'PORT':5432,
-    }
-}
+DATABASE_URL = postgresql://postgres:postgres@localhost:5432/hmis_kb_db  
 ```
 
 **5. Run migrations**
 
 - Check quality of migration before migrating run this:
 
-```bash 
+```bash
 python manage.py check
 ```
 
@@ -140,7 +137,6 @@ VITE_API=http://localhost:5000/api/v1
 | `VITE_API` | Base URL for the Django API | `http://localhost:8000/api/v1` |
 
 ---
-
 
 ## ERD Diagrams
 
