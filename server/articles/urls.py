@@ -1,10 +1,12 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from articles.views import ArticleViewSet, CategoryViewSet
+from . import views
 
 router = DefaultRouter()
-router.register(r'categories', CategoryViewSet, basename='category')
-router.register(r'articles', ArticleViewSet, basename='article')
+router.register(r'categories', views.CategoryViewSet, basename='category')
+router.register(r'tags', views.TagViewSet, basename='tag')
+router.register(r'articles', views.ArticleViewSet, basename='article')
+router.register(r'article-tags', views.ArticleTagViewSet, basename='article-tag')
 
 app_name = 'articles'
 
