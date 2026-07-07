@@ -11,6 +11,7 @@
 - PostgresSQL
 - Docker
 - Cloud Providers (Render,AWS, DigitalOcean)
+- A Cloudinary account or any other media management platform
 
 #### 1. Clone Repository
 
@@ -99,6 +100,9 @@ sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'postgres';"
 SECRET_KEY=your-secret
 DEBUG=True # dev prod change to false when setting up render instance
 DATABASE_URL = postgresql://postgres:postgres@localhost:5432/hmis_kb_db  
+CLOUDINARY_CLOUD_NAME=<your-cloud-name>
+CLOUDINARY_API_KEY=<your-api-key>
+CLOUDINARY_API_SECRET=<your-api-secret>
 ```
 
 **5. Run migrations**
