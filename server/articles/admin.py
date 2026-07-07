@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 from .models import Category
 from django.utils.html import format_html
-from .models import Tag,ArticleTag
+from .models import Tag,ArticleTag,Media
 
 
 @admin.register(Category)
@@ -74,3 +74,29 @@ class ArticleTagAdmin(admin.ModelAdmin):
     list_filter = ['added_at', 'tag']
     search_fields = ['article__title', 'tag__name']
     readonly_fields = ['added_at']
+
+@admin.register(Media)
+class MediaAdmin(admin.ModelAdmin):
+    list_display = ['id', 'filename', 'article', 'type', 'uploaded_by', 'preview', 'created_at']
+    list_filter = ['type', 'created_at', 'uploaded_by']
+    search_fields = ['filename', 'article__title']
+    readonly_fields = ['created_at', 'updated_at']
+    
+    def preview(self, obj):
+        if obj.type == 'image':
+            return format_html(f'<img src="{obj.url}" width="50" height="50" style="object-fit:cover;"/>')
+        return format_html(f'<a href="{obj.url}" target="_blank">🔗 View</a>')
+    preview.short_description = 'Preview'
+    
+    fieldsets = (
+        ('File Information', {
+            'fields': ('article', 'filename', 'url', 'type', 'public_id')
+        }),
+        ('Uploader', {
+            'fields': ('uploaded_by',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
