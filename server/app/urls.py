@@ -28,7 +28,7 @@ urlpatterns = [
     path('admin/', admin.site.urls), 
     path('api/v1/', include([
         path('u/',include('users.urls')),
-        path('articles/', include("articles.urls")),
+        path('', include("articles.urls")),
         path('analytics/', include("analytics.urls")),
         path('rest-api-auth/', include('rest_framework.urls', namespace="rest_framework")),
         path('auth',include([

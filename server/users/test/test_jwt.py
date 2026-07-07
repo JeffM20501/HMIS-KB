@@ -67,7 +67,7 @@ class AuthTest(BaseAPITestCase):
 
         # Use token to access protected endpoint
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
-        url = setup_url('user-list')
+        url = setup_url('users:user-list')
         response = self.client.get(url, content_type='application/json')
         # The token is valid, but authorization may fail (403)
         # We just want to ensure it's not 401
@@ -75,7 +75,7 @@ class AuthTest(BaseAPITestCase):
 
     def test_unauthenticated_request_blocked(self):
         """Test that requests without token are blocked."""
-        url = setup_url('user-list')
+        url = setup_url('users:user-list')
         response = self.client.get(url, content_type='application/json')
         self.assertEqual(response.status_code, 401)
 
@@ -107,7 +107,7 @@ class AuthTest(BaseAPITestCase):
 
         # Make authenticated request
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
-        url = reverse('user-detail', kwargs={'pk': user.id})
+        url = reverse('users:user-detail', kwargs={'pk': user.id})
         response = self.client.get(url, content_type='application/json')
 
         # The response should contain the user data (200 OK)
