@@ -2,15 +2,15 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from users.test.helper import create_regular_user, create_admin
-from unittest import skip
+from unittest.mock import patch
 
 User = get_user_model()
-
 
 class TestCaseUser(TestCase):
     """Core user model tests (not permission-specific)."""
 
-    def test_user_creation(self):
+    @patch('users.signals.send_welcome_email')
+    def test_user_creation(self,mock_send):
         u = create_regular_user(username='usertest', email='test@gmail.com')
         self.assertEqual(u.username, 'usertest')
         self.assertTrue(u.check_password('12345'))
@@ -37,12 +37,12 @@ class TestCaseUser(TestCase):
         u = create_regular_user()
         self.client.force_login(u)
         
-        url = reverse('user-detail',kwargs={'pk':u.id})
+        url = reverse('users:user-detail',kwargs={'pk':u.id})
         res_get = self.client.get(url, content_type='application/json')
         self.assertEqual(res_get.status_code, 200)
 
     def test_unauthenticated_access_denied(self):
-        url = reverse('user-list')
+        url = reverse('users:user-list')
         res = self.client.get(url, content_type='application/json')
         self.assertIn(res.status_code, [401, 403])
 
@@ -50,7 +50,7 @@ class TestCaseUser(TestCase):
         u = create_regular_user()
         self.client.force_login(u)
 
-        url = reverse('user-detail', kwargs={'pk': u.id})
+        url = reverse('users:user-detail', kwargs={'pk': u.id})
         res = self.client.patch(
             url,
             {'department': 'HR', 'email': 'new@gmail.com'},
@@ -69,24 +69,19 @@ class TestCaseUser(TestCase):
         session.set_expiry(0)
         session.save()
 
-        url = reverse('user-list')
+        url = reverse('users:user-list')
         response = self.client.get(url, content_type='application/json')
         self.assertIn(response.status_code, [401, 403])
-
-    @skip('audit log not yet implemented')
-    def test_admin_actions_logged(self):
-        # Placeholder for audit log test
-        pass
 
     def test_user_detail_returns_correct_fields(self):
         user = create_regular_user()
         self.client.force_login(user)
 
-        url = reverse('user-detail', kwargs={'pk': user.id})
+        url = reverse('users:user-detail', kwargs={'pk': user.id})
         response = self.client.get(url, content_type='application/json')
         self.assertEqual(response.status_code, 200)
 
-        expected_fields = ['url', 'username', 'email', 'role', 'department', 'date_joined']
+        expected_fields = ['username', 'email', 'role', 'department', 'date_joined']
         for field in expected_fields:
             self.assertIn(field, response.data)
 
@@ -99,7 +94,7 @@ class TestCaseUser(TestCase):
             )
 
         self.client.force_login(admin)
-        url = reverse('user-list')
+        url = reverse('users:user-list')
         response = self.client.get(
             url,
             {'page': 1, 'limit': 10},

@@ -24,15 +24,9 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView
 )
 
-from users import views
-
-router = routers.DefaultRouter()
-router.register(r"users", views.UserViewSet)
-
 urlpatterns = [
     path('admin/', admin.site.urls), 
     path('api/v1/', include([
-        path("",include(router.urls)),
         path('u/',include('users.urls')),
         path('articles/', include("articles.urls")),
         path('analytics/', include("analytics.urls")),
