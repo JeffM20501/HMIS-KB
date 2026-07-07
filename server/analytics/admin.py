@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Feedback,ChatLog
+from .models import Feedback,ChatLog,SearchLog
 
 
 @admin.register(Feedback)
@@ -36,3 +36,14 @@ class ChatLogAdmin(admin.ModelAdmin):
         ('Metadata', {'fields': ('response_time', 'confidence_score')}),
         ('Timestamps', {'fields': ('created_at',)}),
     )
+
+@admin.register(SearchLog)
+class SearchLogAdmin(admin.ModelAdmin):
+    list_display = ['id', 'user', 'query_preview', 'result_count', 'created_at']
+    list_filter = ['created_at', 'user']
+    search_fields = ['user__username', 'query']
+    readonly_fields = ['created_at']
+    
+    def query_preview(self, obj):
+        return obj.query[:30] + '...' if len(obj.query) > 30 else obj.query
+    query_preview.short_description = 'Query'
