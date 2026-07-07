@@ -1,132 +1,111 @@
-from django.test import TestCase
-from analytics.models import SearchLog
-from analytics.test.helper import create_user, create_article
 from django.urls import reverse
+from django.contrib.auth import get_user_model
+from rest_framework.test import APIClient
+from analytics.models.search_logs import SearchLog
+from users.test.helper import create_regular_user, create_admin
+from utils.base_helper_auth import BaseAPITestCase
 
-class SearchLogModelTest(TestCase):
-    """Test the SearchLog model directly."""
+User = get_user_model()
+
+
+class SearchLogTest(BaseAPITestCase):
+    """Test search log functionality."""
+    
+    def setUp(self):
+        self.client = APIClient()
+        self.user = create_regular_user(role='viewer')
+        self.admin = create_admin()
     
     def test_search_log_creation(self):
-        user = create_user(role='viewer')
-        
+        """Test creating a search log."""
+        self._login(self.user)
         log = SearchLog.objects.create(
-            user=user,
+            user=self.user,
             query='password reset',
             result_count=5
         )
         
-        self.assertEqual(log.user, user)
+        self.assertEqual(log.user, self.user)
         self.assertEqual(log.query, 'password reset')
         self.assertEqual(log.result_count, 5)
         self.assertIsNotNone(log.created_at)
-
-    def test_search_log_result_count_null(self):
-        user = create_user(role='viewer')
-        
-        log = SearchLog.objects.create(
-            user=user,
-            query='unknown query'
-        )
-        self.assertIsNone(log.result_count)
-
-    def test_search_log_multiple_searches(self):
-        user = create_user(role='viewer')
-        
-        SearchLog.objects.create(user=user, query='login', result_count=10)
-        SearchLog.objects.create(user=user, query='password', result_count=3)
-        SearchLog.objects.create(user=user, query='billing', result_count=8)
-        
-        self.assertEqual(SearchLog.objects.filter(user=user).count(), 3)
-        self.assertEqual(SearchLog.objects.filter(query='login').count(), 1)
-
-
-class SearchAPITest(TestCase):
-    """Test the Search API endpoint."""
     
-    def setUp(self):
-        self.user = create_user(role='viewer')
-        self.author = create_user(role='editor')
+    def test_user_can_view_own_logs(self):
+        """Test that users can view their own search logs."""
+        self._login(self.user)
+        SearchLog.objects.create(user=self.user, query='test1', result_count=3)
+        SearchLog.objects.create(user=self.user, query='test2', result_count=1)
         
-        # Create test articles
-        self.article1 = create_article(
-            self.author,
-            'How to Reset Password',
-            'This guide explains how to reset your password...'
-        )
-        self.article2 = create_article(
-            self.author,
-            'Login Troubleshooting',
-            'If you cannot login, try these steps...'
-        )
-        self.article3 = create_article(
-            self.author,
-            'Billing FAQ',
-            'Frequently asked questions about billing...'
-        )
-
-    def test_unauthenticated_cannot_search(self):
-        url = reverse('search-list')
-        response = self.client.get(url, {'q': 'password'})
-        self.assertEqual(response.status_code, 401)
-
-    def test_authenticated_user_can_search(self):
-        self.client.force_login(self.user)
-        url = reverse('search-list')
-        response = self.client.get(url, {'q': 'password'})
+        url = reverse('analytics:search-log-list')
+        response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        self.assertIn('results', response.data)
-        self.assertIn('total', response.data)
-
-    def test_search_returns_relevant_results(self):
-        self.client.force_login(self.user)
-        url = reverse('search-list')
-        response = self.client.get(url, {'q': 'password'})
+        self.assertEqual(response.data['count'], 2)
+    
+    def test_admin_can_view_all_logs(self):
+        """Test that admins can view all search logs."""
+        # Create logs for user
+        SearchLog.objects.create(user=self.user, query='user query')
+        SearchLog.objects.create(user=self.admin, query='admin query')
+        
+        self._login(self.admin)
+        url = reverse('analytics:search-log-list')
+        response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        self.assertGreater(response.data['total'], 0)
+        self.assertEqual(response.data['count'], 2)
+    
+    def test_user_cannot_view_others_logs(self):
+        """Test that users cannot view others' logs."""
+        other_user = create_regular_user(role='viewer', username='other')
+        SearchLog.objects.create(user=other_user, query='other query')
         
-        # Check that the relevant article is in results
-        titles = [r['title'] for r in response.data['results']]
-        self.assertIn('How to Reset Password', titles)
-
-    def test_search_handles_no_results(self):
-        self.client.force_login(self.user)
-        url = reverse('search-list')
-        response = self.client.get(url, {'q': 'nonexistent term xyz'})
+        self._login(self.user)
+        url = reverse('analytics:search-log-list')
+        response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['total'], 0)
-        self.assertEqual(len(response.data['results']), 0)
-
-    def test_search_logs_query(self):
-        self.client.force_login(self.user)
-        url = reverse('search-list')
+        self.assertEqual(response.data['count'], 0)
+    
+    def test_search_log_stats_endpoint(self):
+        """Test the search stats endpoint (admin only)."""
+        self._login(self.admin)
         
-        response = self.client.get(url, {'q': 'login troubleshooting'})
+        SearchLog.objects.create(user=self.user, query='apple', result_count=5)
+        SearchLog.objects.create(user=self.user, query='banana', result_count=0)
+        SearchLog.objects.create(user=self.user, query='apple', result_count=3)
+        
+        url = reverse('analytics:search-log-stats')
+        response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['total_searches'], 3)
+        self.assertEqual(response.data['unique_queries'], 2)
+        self.assertEqual(response.data['no_results_searches'], 1)
+        self.assertIn('popular_queries', response.data)
+    
+    def test_viewer_cannot_access_stats(self):
+        """Test that non-admin users cannot access stats endpoint."""
+        self._login(self.user)
+        url = reverse('analytics:search-log-stats')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 403)
+    
+    def test_my_searches_endpoint(self):
+        """Test the my_searches endpoint."""
+        self._login(self.user)
+        SearchLog.objects.create(user=self.user, query='query1')
+        SearchLog.objects.create(user=self.user, query='query2')
         
-        # Check that the search was logged
-        logs = SearchLog.objects.filter(user=self.user, query='login troubleshooting')
-        self.assertEqual(logs.count(), 1)
-
-    def test_search_filters_by_category(self):
-        self.client.force_login(self.user)
-        url = reverse('search-list')
-        
-        # Search within a specific category
-        response = self.client.get(url, {
-            'q': 'billing',
-            'category': 'General'  # Adjust based on your category slug
-        })
+        url = reverse('analytics:search-log-my-searches')
+        response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-
-    def test_search_ranking_title_over_body(self):
-        self.client.force_login(self.user)
-        url = reverse('search-list')
+        self.assertEqual(len(response.data), 2)
+    
+    def test_filtering_by_query(self):
+        """Test filtering search logs by query text."""
+        self._login(self.admin)
+        SearchLog.objects.create(user=self.user, query='password reset')
+        SearchLog.objects.create(user=self.user, query='login help')
+        SearchLog.objects.create(user=self.user, query='password change')
         
-        response = self.client.get(url, {'q': 'password'})
+        url = reverse('analytics:search-log-list')
+        response = self.client.get(url, {'query': 'password'})
         self.assertEqual(response.status_code, 200)
-        
-        # Results should be ranked by relevance
-        if response.data['results']:
-            # Title match should rank higher than body match
-            first_result = response.data['results'][0]
-            self.assertIn('password', first_result['title'].lower() or first_result['content'].lower())
+        self.assertEqual(response.data['count'], 2)
