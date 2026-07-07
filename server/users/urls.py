@@ -1,13 +1,15 @@
 from django.urls import path
+from rest_framework.routers import DefaultRouter
+from django.urls import include
 
-from users.views import *
+from users.views import UserViewSet
 
+router=DefaultRouter()
+
+router.register(r'users', UserViewSet, basename='user')
 
 app_name='users'
 
 urlpatterns = [
-    path('dashboard/',Dashboard.as_view(),name='dashboard'),
-    path('admin/dashboard/',AdminDashboard.as_view(),name='admin_dashboard'),
-    path('admin/users/<int:user_id>/role/',ChangeUserRole.as_view(),name='change_user_role'),
-    path('admin/users',ListUsers.as_view(),name='list_users')
+    path('', include(router.urls))
 ]

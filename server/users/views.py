@@ -9,8 +9,11 @@ from users.permissions import *
 from rest_framework.response import Response
 from rest_framework import status,serializers
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.decorators import action
 
-from .serializers import UserSerializer
+from .serializers.user_serializers import UserSerializer
+from .serializers.password_reset_serializer import PasswordResetConfirmSerializer,PasswordResetRequestSerializer
+
 
 
 User=get_user_model()
@@ -47,6 +50,32 @@ class UserViewSet(viewsets.ModelViewSet):
             del self.request.data['password']
             self.request.data._mutable=False
         serializer.save()
+    
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def dashboard(self, request):
+        """GET /api/v1/users/dashboard/ → Current user's profile"""
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAdmin])
+    def admin_dashboard(self, request):
+        """GET /api/v1/users/admin_dashboard/ → Admin stats"""
+        # ... admin dashboard logic ...
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAdmin])
+    def admin_users(self, request):
+        """GET /api/v1/users/admin_users/ → List all users (admin only)"""
+        users = get_user_model().objects.all()
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['patch'], permission_classes=[IsAdmin])
+    def change_role(self, request, pk=None):
+        """PATCH /api/v1/users/{id}/change_role/ → Change user role"""
+        user = self.get_object()
+        new_role = request.data.get('role')
+        # ... validation and update ...
+        return Response({'message': f'Role updated to {new_role}'})
 
 class ListUsers(APIView):
     
@@ -100,3 +129,34 @@ class Dashboard(APIView):
     def get(self,request,format=None):
         serializer=UserSerializer(request.user)
         return Response(serializer.data)
+    
+
+class RequestPasswordResetView(APIView):
+    permission_classes = []  # Allow anyone
+
+    def post(self, request):
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {"message": "If an account with that email exists, an OTP has been sent."},
+                status=status.HTTP_200_OK
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ResetPasswordView(APIView):
+    """
+    POST /api/v1/auth/reset-password/
+    """
+    permission_classes = []
+
+    def post(self, request):
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {"message": "Password reset successful."},
+                status=status.HTTP_200_OK
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

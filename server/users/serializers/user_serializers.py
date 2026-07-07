@@ -7,10 +7,10 @@ from users.validators import (
 )
 
 
-class UserSerializer(serializers.HyperlinkedModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = get_user_model()
-        fields = ["url", "password","username", "email", "role", "department", "date_joined", "updated_at"]
+        fields = [ "password","username", "email", "role", "department", "date_joined", "updated_at"]
         read_only_fields = ['updated_at', 'date_joined', 'url']
         extra_kwargs = {
             'password': {'write_only': True, 'required':True}
@@ -133,4 +133,4 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
 # class GroupSerializer(serializers.HyperlinkedModelSerializer):
 #     class Meta:
 #         model = Group
-#         fields = ["url", "name"]
+#         fields = [ "name"]
