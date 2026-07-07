@@ -4,17 +4,15 @@ from rest_framework.response import Response
 from articles.models.article_tag import ArticleTag
 from articles.models.article import Article
 from articles.models.tag import Tag
-from articles.serializers.article_tag_serializer import ArticleTagSerializer, BulkArticleTagSerializer
+from articles.serializers.article_tag_serializer import (
+    ArticleTagSerializer,
+    BulkAddTagSerializer,
+    BulkRemoveTagSerializer
+)
 from articles.permissions.article_tag_permissions import CanManageArticleTags
 
 
 class ArticleTagViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint for managing Article-Tag relationships.
-    
-    PRD FR-1.5: Articles can be tagged
-    """
-    
     queryset = ArticleTag.objects.all().order_by('-added_at')
     serializer_class = ArticleTagSerializer
     
@@ -28,93 +26,62 @@ class ArticleTagViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(added_by=self.request.user)
     
-    @action(detail=False, methods=['post'], url_path='bulk-add')  # ✅ url_path must match reverse
+    @action(detail=False, methods=['post'], url_path='bulk-add', url_name='bulk-add')
     def bulk_add_tags(self, request):
         """
         Bulk add tags to an article.
-        URL: POST /api/v1/articles/article-tags/bulk-add/
+        Expects: {'article_id': 1, 'tag_ids': [1, 2, 3]}
         """
-        article_id = request.data.get('article_id')
-        tag_ids = request.data.get('tag_ids', [])
+        # Validate input
+        serializer = BulkAddTagSerializer(
+            data=request.data,
+            context={'request': request}
+        )
         
-        if not article_id:
-            return Response(
-                {"error": "article_id is required."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
-        try:
-            article = Article.objects.get(pk=article_id)
-        except Article.DoesNotExist:
-            return Response(
-                {"error": "Article not found."},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        
-        # Check permission - user must be author or admin
+        # Check permission
+        article = Article.objects.get(pk=request.data['article_id'])
         if request.user.role != 'admin' and request.user != article.author:
             return Response(
                 {"error": "You can only add tags to your own articles."},
                 status=status.HTTP_403_FORBIDDEN
             )
         
-        added_tags = []
-        errors = []
-        
-        for tag_id in tag_ids:
-            try:
-                tag = Tag.objects.get(pk=tag_id)
-                article_tag, created = ArticleTag.objects.get_or_create(
-                    article=article,
-                    tag=tag,
-                    defaults={'added_by': request.user}
-                )
-                if created:
-                    added_tags.append(tag.name)
-                else:
-                    errors.append(f"Tag '{tag.name}' already exists on this article.")
-            except Tag.DoesNotExist:
-                errors.append(f"Tag with ID {tag_id} not found.")
+        # Save (creates the ArticleTag entries)
+        result = serializer.save()
         
         return Response({
-            "message": f"Added {len(added_tags)} tags to article.",
-            "added_tags": added_tags,
-            "errors": errors
+            "message": f"Added {len(result['created_tags'])} tags to article.",
+            "added_tags": result['created_tags'],
+            "errors": result['errors']
         }, status=status.HTTP_200_OK)
     
-    @action(detail=False, methods=['post'], url_path='bulk-remove')
+    @action(detail=False, methods=['post'], url_path='bulk-remove', url_name='bulk-remove')
     def bulk_remove_tags(self, request):
         """
         Bulk remove tags from an article.
-        URL: POST /api/v1/articles/article-tags/bulk-remove/
+        Expects: {'article_id': 1, 'tag_ids': [1, 2, 3]}
         """
-        article_id = request.data.get('article_id')
-        tag_ids = request.data.get('tag_ids', [])
+        # Validate input
+        serializer = BulkRemoveTagSerializer(data=request.data)
         
-        if not article_id:
-            return Response(
-                {"error": "article_id is required."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        try:
-            article = Article.objects.get(pk=article_id)
-        except Article.DoesNotExist:
-            return Response(
-                {"error": "Article not found."},
-                status=status.HTTP_404_NOT_FOUND
-            )
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
         # Check permission
+        article = Article.objects.get(pk=request.data['article_id'])
         if request.user.role != 'admin' and request.user != article.author:
             return Response(
                 {"error": "You can only remove tags from your own articles."},
                 status=status.HTTP_403_FORBIDDEN
             )
         
+        # Remove tags
         removed = ArticleTag.objects.filter(
             article=article,
-            tag__id__in=tag_ids
+            tag__id__in=request.data['tag_ids']
         )
         count = removed.count()
         removed.delete()
