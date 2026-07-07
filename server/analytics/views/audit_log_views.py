@@ -69,7 +69,7 @@ class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
         
         return queryset
     
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='stats')
     def stats(self, request):
         """
         Get statistics about audit logs.

@@ -12,7 +12,7 @@ class AuditLog(models.Model):
     Records who did what, when, and on which object.
     """
     
-    # Action types
+    # Action types just to prevent typos
     ACTION_CREATE = 'create'
     ACTION_UPDATE = 'update'
     ACTION_DELETE = 'delete'
@@ -55,7 +55,7 @@ class AuditLog(models.Model):
     )
     user_agent = models.TextField(
         blank=True,
-        help_text="Browser/device information"
+        help_text="Browser device information"
     )
     
     # What action was performed
