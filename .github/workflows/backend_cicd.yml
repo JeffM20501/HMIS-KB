@@ -85,6 +85,14 @@ jobs:
         env:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DEBUG: ${{secrets.DEBUG}}
+          DJANGO_SETTINGS_MODULE: app.settings
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+          EMAIL_HOST_USER: ${{secrets.EMAIL_HOST_USER}}
+          DEFAULT_FROM_EMAIL: ${{secrets.DEFAULT_FROM_EMAIL}}
+          EMAIL_HOST_PASSWORD: ${{secrets.EMAIL_HOST_PASSWORD}}
         run: |
           cd server
           docker compose -f docker-compose.prod.yml down
