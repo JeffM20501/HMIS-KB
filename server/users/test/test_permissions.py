@@ -7,22 +7,18 @@ from unittest import skip
 class UserPermissionTest(BaseAPITestCase):
     """Tests for user permissions (RBAC)."""
 
-    @skip('Article not yet implemented')
     def test_viewer_permissions(self):
         viewer = self._create_and_login_user(role='viewer')
 
-        # Viewer CAN view user list (should be denied - 403)
-        url_view = reverse('user-list')
+        url_view = reverse('users:user-list')
         res = self.client.get(url_view, content_type='application/json')
         self.assertEqual(res.status_code, 403)
 
-        # Viewer CAN view their own detail
-        url_detail = reverse('user-detail', kwargs={'pk': viewer.id})
+        url_detail = reverse('users:user-detail', kwargs={'pk': viewer.id})
         res = self.client.get(url_detail, content_type='application/json')
         self.assertEqual(res.status_code, 200)
 
-        # Viewer CANNOT create an article (will pass when articles is implemented)
-        url_post = reverse('article-list')
+        url_post = reverse('articles:article-list')
         res = self.client.post(
             url_post,
             {'title': 'Not auth', 'content': 'bad auth'},
@@ -30,47 +26,75 @@ class UserPermissionTest(BaseAPITestCase):
         )
         self.assertEqual(res.status_code, 403)
 
-    @skip("Articles app not implemented yet")
     def test_editor_permissions(self):
         e = self._create_and_login_user(role='editor')
 
         # Editor CAN create a draft
-        url_post = reverse('article-list')
+        url_post = reverse('articles:article-list')
         res_post = self.client.post(
             url_post,
             {
                 'title': 'test draft',
-                'content': 'test content',
+                'slug': 'test-draft-article',
+                'content': 'This is a detailed content for the new draft article. It needs to be at least 50 characters long to pass validation.',
                 'status': 'draft'
             },
             content_type='application/json'
         )
         self.assertEqual(res_post.status_code, 201)
+        article_id = res_post.data.get('id')
+        self.assertIsNotNone(article_id)
 
         # Editor CANNOT publish
-        url_patch = reverse('article-publish', kwargs={'pk': 1})
-        res_patch = self.client.patch(
+        url_patch = reverse('articles:article-publish', kwargs={'pk': article_id})
+        res_patch = self.client.post(
             url_patch,
             {'status': 'published'},
             content_type='application/json'
         )
         self.assertEqual(res_patch.status_code, 403)
 
-    @skip("Articles app not implemented yet")
     def test_admin_permissions(self):
+        # 1. Create an editor user and log in as editor
+        from users.test.helper import create_regular_user
+        editor_user = create_regular_user(role='editor')
+        self._login(editor_user)
+
+        # 2. Create a draft article as editor
+        url_create = reverse('articles:article-list')
+        create_res = self.client.post(
+            url_create,
+            {
+                'title': 'Test Article for Admin',
+                'slug': 'test-article-admin',
+                'content': 'This is a detailed content for the test article. It needs to be at least 50 characters long to pass validation.',
+                'status': 'draft'
+            },
+            content_type='application/json'
+        )
+        self.assertEqual(create_res.status_code, 201)
+        article_id = create_res.data.get('id')
+        self.assertIsNotNone(article_id)
+
+        # 3. Submit the article for review (as editor)
+        url_submit = reverse('articles:article-submit-for-review', kwargs={'pk': article_id})
+        submit_res = self.client.post(url_submit, content_type='application/json')
+        self.assertEqual(submit_res.status_code, 200)  # Success
+
+        # 4. Log in as admin
         admin = self._create_and_login_admin()
 
-        # Admin CAN publish
-        url_patch = reverse('article-publish', kwargs={'pk': 1})
-        res_patch = self.client.patch(
-            url_patch,
+        # 5. Admin CAN publish the article
+        url_publish = reverse('articles:article-publish', kwargs={'pk': article_id})
+        res_patch = self.client.post(
+            url_publish,
             {'status': 'published'},
             content_type='application/json'
         )
         self.assertEqual(res_patch.status_code, 200)
 
-        # Admin CAN view dashboard
-        url = reverse('users:admin_dashboard')
+        # 6. Admin CAN view dashboard
+        url = reverse('users:user-admin-dashboard')
         res_get = self.client.get(url, content_type='application/json')
         self.assertEqual(res_get.status_code, 200)
 
@@ -79,7 +103,7 @@ class UserPermissionTest(BaseAPITestCase):
         create_regular_user(username='user1', email='user1@gmail.com')
         create_regular_user(username='user2', email='user2@gmail.com')
 
-        url = reverse('user-list')
+        url = reverse('users:user-list')
         response = self.client.get(url, content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertGreaterEqual(len(response.data.get('results', response.data)), 3)
@@ -87,7 +111,7 @@ class UserPermissionTest(BaseAPITestCase):
     def test_viewer_cannot_list_all_users(self):
         viewer = self._create_and_login_user(role='viewer')
 
-        url = reverse('user-list')
+        url = reverse('users:user-list')
         response = self.client.get(url, content_type='application/json')
         self.assertEqual(response.status_code, 403)
 
@@ -95,7 +119,7 @@ class UserPermissionTest(BaseAPITestCase):
         admin = self._create_and_login_admin()
         v = create_regular_user(role='viewer')
 
-        url = reverse('user-detail', kwargs={'pk': v.id})
+        url = reverse('users:user-detail', kwargs={'pk': v.id})
         res_put = self.client.patch(
             url,
             {'role': 'editor'},
@@ -111,7 +135,7 @@ class UserPermissionTest(BaseAPITestCase):
         u2 = create_regular_user(username='u2', email='u2@gmail.com')
         self._login(u1)
 
-        url = reverse('user-detail', kwargs={'pk': u2.id})
+        url = reverse('users:user-detail', kwargs={'pk': u2.id})
         res = self.client.patch(
             url,
             {'department': 'hacked'},
@@ -120,10 +144,9 @@ class UserPermissionTest(BaseAPITestCase):
         self.assertEqual(res.status_code, 403)
 
     def test_user_cannot_change_own_role(self):
-        """Test that a user cannot change their own role."""
         viewer = self._create_and_login_user(role='viewer')
 
-        url = reverse('user-detail', kwargs={'pk': viewer.id})
+        url = reverse('users:user-detail', kwargs={'pk': viewer.id})
         response = self.client.patch(
             url,
             {'role': 'admin'},
@@ -135,11 +158,10 @@ class UserPermissionTest(BaseAPITestCase):
         self.assertEqual(viewer.role, 'viewer')
 
     def test_admin_can_change_any_user_role(self):
-        """Test that an admin can change any user's role."""
         admin = self._create_and_login_admin()
         viewer = create_regular_user(role='viewer')
 
-        url = reverse('user-detail', kwargs={'pk': viewer.id})
+        url = reverse('users:user-detail', kwargs={'pk': viewer.id})
         response = self.client.patch(
             url,
             {'role': 'editor'},

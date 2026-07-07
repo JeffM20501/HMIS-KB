@@ -9,7 +9,7 @@ User = get_user_model()
 class RegistrationTest(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.url = reverse('user-list')  # /api/v1/users/
+        self.url = reverse('users:user-list')
 
     def test_public_registration(self):
         """Test that anyone can register"""

@@ -14,7 +14,7 @@ class PasswordResetTest(TestCase):
         self.client = APIClient()
         self.user = create_regular_user(email='test@example.com', username='testuser')
 
-    @patch('users.serializers.password_reset_serializers.send_password_reset_email')
+    @patch('users.serializers.password_reset_serializer.send_password_reset_email')
     def test_request_reset_valid(self, mock_send):
         url = reverse('users:request-password-reset')
         response = self.client.post(url, {'email': 'test@example.com'})

@@ -63,19 +63,15 @@ jobs:
           SECRET_KEY: ${{ secrets.SECRET_KEY}}
           DEBUG: ${{secrets.DEBUG}}
           DJANGO_SETTINGS_MODULE: app.settings
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+          EMAIL_HOST_USER: ${{secrets.EMAIL_HOST_USER}}
+          DEFAULT_FROM_EMAIL: ${{secrets.DEFAULT_FROM_EMAIL}}
+          EMAIL_HOST_PASSWORD: ${{secrets.EMAIL_HOST_PASSWORD}}
         run: |
           cd server
           pytest -v --tb=short --cov=. --cov-report=term --cov-report=xml
-
-      # Upload coverage report (optional)
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          file: ./server/coverage.xml
-          flags: backend
-          name: backend-coverage
-          fail_ci_if_error: false
-
   deploy:
     needs: test
     runs-on: self-hosted

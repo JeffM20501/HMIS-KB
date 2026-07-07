@@ -123,7 +123,8 @@ class MediaTest(TestCase):
         self.assertEqual(response.data['count'], 1)
         self.assertEqual(response.data['results'][0]['filename'], 'test.jpg')
     
-    def test_delete_media(self):
+    @patch('articles.views.media_views.delete_from_cloudinary') 
+    def test_delete_media(self,mock_delete):
         """Test deleting media."""
         self._login(self.editor)
         
@@ -142,7 +143,8 @@ class MediaTest(TestCase):
         self.assertEqual(response.status_code, 204)
         self.assertEqual(Media.objects.count(), 0)
     
-    def test_admin_can_delete_any_media(self):
+    @patch('articles.views.media_views.delete_from_cloudinary') 
+    def test_admin_can_delete_any_media(self,mock_delete):
         """Test that admins can delete any media."""
         self._login(self.admin)
         
