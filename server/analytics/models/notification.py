@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.utils import timezone
+from utils.email_utils import send_article_published_email,send_article_rejected_email,send_article_submitted_email
 
 User = get_user_model()
 
@@ -115,12 +116,13 @@ class Notification(models.Model):
                 link=f"/articles/{article.id}/"
             )
             notifications.append(notification)
+            send_article_submitted_email(admin,article,editor)
         return notifications
     
     @classmethod
     def create_article_published_notification(cls, article, admin):
         """Create notification for editor when their article is published."""
-        return cls.objects.create(
+        notification= cls.objects.create(
             recipient=article.author,
             sender=admin,
             notification_type=cls.TYPE_ARTICLE_PUBLISHED,
@@ -129,11 +131,15 @@ class Notification(models.Model):
             message=f"Your article '{article.title}' has been published by {admin.username}.",
             link=f"/articles/{article.id}/"
         )
+        
+        send_article_published_email(article.author,article,admin)
+        
+        return notification
     
     @classmethod
     def create_article_rejected_notification(cls, article, admin, reason):
         """Create notification for editor when their article is rejected."""
-        return cls.objects.create(
+        notification = cls.objects.create(
             recipient=article.author,
             sender=admin,
             notification_type=cls.TYPE_ARTICLE_REJECTED,
@@ -142,3 +148,6 @@ class Notification(models.Model):
             message=f"Your article '{article.title}' was rejected. Reason: {reason}",
             link=f"/articles/{article.id}/"
         )
+        
+        send_article_rejected_email(article.author, article, admin, reason)
+        return notification

@@ -95,6 +95,9 @@ EMAIL_HOST_USER = os.getenv('BREVO_SMTP_USER')
 EMAIL_HOST_PASSWORD = os.getenv('BREVO_SMTP_PASSWORD') 
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@yourdomain.com')
 
+#frontend
+FRONTEND_URL=os.getenv('FRONTEND_URL', 'http://localhost:5173/')
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',

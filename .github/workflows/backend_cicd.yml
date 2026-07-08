@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 env:
-  PYTHON_VERSION: '3.12'
+  PYTHON_VERSION: '3.14' 
   DJANGO_SETTINGS_MODULE: app.settings
 
 jobs:
@@ -30,16 +30,13 @@ jobs:
           --health-retries 5
 
     steps:
-      # Checkout code
       - uses: actions/checkout@v4
 
-      # Set up Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      # Cache pip packages
       - name: Cache pip packages
         uses: actions/cache@v3
         with:
@@ -48,61 +45,73 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      # Install dependencies
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           cd server
           pip install -r requirements.txt
-          pip install pytest-cov  # Install coverage reporting
 
-      # Run Tests with coverage
-      - name: Run Tests with Coverage
+      - name: Run Tests
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/github_actions
-          SECRET_KEY: ${{ secrets.SECRET_KEY}}
-          DEBUG: ${{secrets.DEBUG}}
-          DJANGO_SETTINGS_MODULE: app.settings
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          DEBUG: 0
           CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
           CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
-          EMAIL_HOST_USER: ${{secrets.EMAIL_HOST_USER}}
-          DEFAULT_FROM_EMAIL: ${{secrets.DEFAULT_FROM_EMAIL}}
-          EMAIL_HOST_PASSWORD: ${{secrets.EMAIL_HOST_PASSWORD}}
-          EMAIL_HOST: ${{secrets.EMAIL_HOST}}
+          EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
+          EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
+          EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
+          DEFAULT_FROM_EMAIL: ${{ secrets.DEFAULT_FROM_EMAIL }}
         run: |
           cd server
-          pytest -v --tb=short --cov=. --cov-report=term --cov-report=xml
+          pytest -v --tb=short 
+
   deploy:
     needs: test
     runs-on: self-hosted
     if: github.ref == 'refs/heads/main'
     
     steps:
-      - uses: actions/checkout@v4
+      - name: Pull Docker image
+        run: |
+          docker pull kimmuna/hmis-kb-backend:latest
 
-      # Build and Deploy with Docker Compose
-      - name: Build and Deploy Docker containers
+      - name: Stop and remove old container
+        run: |
+          docker stop hmis-kb-backend || true
+          docker rm hmis-kb-backend || true
+
+      - name: Run new container
         env:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          DEBUG: ${{secrets.DEBUG}}
-          DJANGO_SETTINGS_MODULE: app.settings
+          DEBUG: 0
           CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
           CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
-          EMAIL_HOST_USER: ${{secrets.EMAIL_HOST_USER}}
-          DEFAULT_FROM_EMAIL: ${{secrets.DEFAULT_FROM_EMAIL}}
-          EMAIL_HOST_PASSWORD: ${{secrets.EMAIL_HOST_PASSWORD}}
-          EMAIL_HOST: ${{secrets.EMAIL_HOST}}
+          EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
+          EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
+          EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
+          DEFAULT_FROM_EMAIL: ${{ secrets.DEFAULT_FROM_EMAIL }}
         run: |
-          cd server
-          docker compose -f docker-compose.prod.yml down
-          docker compose -f docker-compose.prod.yml build --no-cache
-          docker compose -f docker-compose.prod.yml up -d
+          docker run -d \
+            --name hmis-kb-backend \
+            -p 8000:8080 \
+            --restart=unless-stopped \
+            -e SECRET_KEY="$SECRET_KEY" \
+            -e DATABASE_URL="$DATABASE_URL" \
+            -e DEBUG="$DEBUG" \
+            -e CLOUDINARY_CLOUD_NAME="$CLOUDINARY_CLOUD_NAME" \
+            -e CLOUDINARY_API_KEY="$CLOUDINARY_API_KEY" \
+            -e CLOUDINARY_API_SECRET="$CLOUDINARY_API_SECRET" \
+            -e EMAIL_HOST_USER="$EMAIL_HOST_USER" \
+            -e EMAIL_HOST_PASSWORD="$EMAIL_HOST_PASSWORD" \
+            -e EMAIL_HOST="$EMAIL_HOST" \
+            -e DEFAULT_FROM_EMAIL="$DEFAULT_FROM_EMAIL" \
+            kimmuna/hmis-kb-backend:v1.0.0
 
-      # Verify deployment
       - name: Verify deployment
         run: |
-          sleep 5
+          sleep 10
           curl -f http://localhost:8000/health || exit 1
