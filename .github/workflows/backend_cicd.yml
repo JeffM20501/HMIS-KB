@@ -69,6 +69,7 @@ jobs:
           EMAIL_HOST_USER: ${{secrets.EMAIL_HOST_USER}}
           DEFAULT_FROM_EMAIL: ${{secrets.DEFAULT_FROM_EMAIL}}
           EMAIL_HOST_PASSWORD: ${{secrets.EMAIL_HOST_PASSWORD}}
+          EMAIL_HOST: ${{secrets.EMAIL_HOST}}
         run: |
           cd server
           pytest -v --tb=short --cov=. --cov-report=term --cov-report=xml
@@ -93,6 +94,7 @@ jobs:
           EMAIL_HOST_USER: ${{secrets.EMAIL_HOST_USER}}
           DEFAULT_FROM_EMAIL: ${{secrets.DEFAULT_FROM_EMAIL}}
           EMAIL_HOST_PASSWORD: ${{secrets.EMAIL_HOST_PASSWORD}}
+          EMAIL_HOST: ${{secrets.EMAIL_HOST}}
         run: |
           cd server
           docker compose -f docker-compose.prod.yml down
