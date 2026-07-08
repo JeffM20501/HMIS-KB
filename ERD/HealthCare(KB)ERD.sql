@@ -21,7 +21,7 @@ CREATE TABLE "categories" (
 
 CREATE TABLE "articles" (
   "id" integer PRIMARY KEY,
-  "slug" text,
+  "slug" text UNIQUE NOT NULL,
   "category_id" integer,
   "title" text,
   "content" text,
@@ -41,7 +41,8 @@ CREATE TABLE "media" (
   "url" text NOT NULL,
   "type" enum NOT NULL,
   "uploaded_by" integer NOT NULL,
-  "created_at" timestamp
+  "created_at" timestamp,
+  "public_id" text
 );
 
 CREATE TABLE "tags" (
@@ -70,7 +71,7 @@ CREATE TABLE "chat_logs" (
   "user_id" integer NOT NULL,
   "question" text NOT NULL,
   "answer" text NOT NULL,
-  "conversation_id" integer,
+  "conversation_id" integer NOT NULL,
   "article_ref_id" integer,
   "was_helpful" bool,
   "created_at" timestamp DEFAULT (now())
@@ -83,6 +84,37 @@ CREATE TABLE "search_logs" (
   "result_count" integer,
   "created_at" timestamp DEFAULT (now())
 );
+
+CREATE TABLE "password_reset_otp" (
+  "id" integer PRIMARY KEY,
+  "user_id" integer,
+  "otp" text,
+  "created_at" timestamp DEFAULT (now()),
+  "expires_at" timestamp,
+  "used" bool
+);
+
+CREATE TABLE "notification" (
+  "id" integer PRIMARY KEY,
+  "recipient_id" integer,
+  "sender_id" integer,
+  "notification_type" text,
+  "content_type" integer,
+  "object_id" integer,
+  "content_object" integer,
+  "title" text,
+  "message" text,
+  "link" text,
+  "read" bool DEFAULT false,
+  "read_at" timestamp,
+  "email_sent" bool,
+  "created_at" timestamp,
+  "updated_at" timestamp
+);
+
+ALTER TABLE "notification" ADD FOREIGN KEY ("recipient_id") REFERENCES "user" ("id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "password_reset_otp" ADD FOREIGN KEY ("user_id") REFERENCES "user" ("id") DEFERRABLE INITIALLY IMMEDIATE;
 
 ALTER TABLE "articles" ADD FOREIGN KEY ("author_id") REFERENCES "user" ("id") DEFERRABLE INITIALLY IMMEDIATE;
 
