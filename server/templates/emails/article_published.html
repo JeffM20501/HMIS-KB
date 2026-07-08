@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+</head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+    <h2 style="color: #27ae60;">Article Published</h2>
+    
+    <p>Dear {{ editor_username }},</p>
+    
+    <p>Your article <strong>"{{ article_title }}"</strong> has been published by <strong>{{ admin_username }}</strong>.</p>
+    
+    <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0;">
+        <p><strong>Published:</strong> {{ published_at }}</p>
+    </div>
+    
+    <p>Your article is now live and visible to all users.</p>
+    
+    <p>
+        <a href="{{ article_url }}" style="background: #27ae60; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
+            View Published Article
+        </a>
+    </p>
+    
+    <hr style="border: 1px solid #eee; margin: 20px 0;">
+    <p style="color: #888; font-size: 12px;">HMIS Knowledge Base Team</p>
+</body>
+</html>
