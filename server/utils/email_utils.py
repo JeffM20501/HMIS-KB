@@ -15,8 +15,8 @@ def send_email(to_email, subject, template_name, context):
     send_mail(
         subject=subject,
         message=plain_message,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[to_email],
+        from_email=settings.DEFAULT_FROM_EMAIL, #conf in settings
+        recipient_list=[to_email], #users email
         html_message=html_message,
         fail_silently=False,
     )
