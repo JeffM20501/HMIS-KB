@@ -12,6 +12,7 @@ from articles.permissions.article_permissions import (
 )
 
 from utils.audit_log_helper import log_audit_action
+from analytics.models import Notification
 
 class ArticleViewSet(viewsets.ModelViewSet):
     
@@ -94,6 +95,11 @@ class ArticleViewSet(viewsets.ModelViewSet):
         article.status = 'pending_review'
         article.save()
         
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        admins = User.objects.filter(role='admin')
+        Notification.create_article_submitted_notification(article, request.user, admins)
+        
         return Response(
             {'message': 'Article submitted for review successfully.'},
             status=status.HTTP_200_OK
@@ -116,13 +122,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
             )
         
         article.publish(request.user)
-        
-        log_audit_action(
-            user=request.user,
-            action='publish',
-            obj=article,
-            request=request
-        )
+        Notification.create_article_published_notification(article, request.user)
         
         return Response(
             {'message': 'Article published successfully.'},
@@ -132,7 +132,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
         """
-        PRD FR-1.3: Admin rejects article draft.
+        PRD FR-1.3: Admin rejects article.
         """
         article = self.get_object()
         
@@ -146,17 +146,10 @@ class ArticleViewSet(viewsets.ModelViewSet):
             )
         
         reason = request.data.get('reason', 'No reason provided.')
-        
         article.status = 'draft'
         article.save()
         
-        log_audit_action(
-            user=request.user,
-            action='reject',
-            obj=article,
-            request=request,
-            reason=reason
-        )
+        Notification.create_article_rejected_notification(article, request.user, reason)
         
         return Response(
             {'message': f'Article rejected. Reason: {reason}'},
