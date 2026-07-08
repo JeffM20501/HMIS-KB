@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Feedback,ChatLog,SearchLog
+from .models import Feedback,ChatLog,SearchLog,Notification
 
 
 @admin.register(Feedback)
@@ -47,3 +47,27 @@ class SearchLogAdmin(admin.ModelAdmin):
     def query_preview(self, obj):
         return obj.query[:30] + '...' if len(obj.query) > 30 else obj.query
     query_preview.short_description = 'Query'
+    
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ['id', 'recipient', 'sender', 'title', 'notification_type', 'read', 'created_at']
+    list_filter = ['notification_type', 'read', 'created_at']
+    search_fields = ['recipient__username', 'sender__username', 'title', 'message']
+    readonly_fields = ['created_at', 'updated_at']
+    
+    fieldsets = (
+        ('Recipients', {
+            'fields': ('recipient', 'sender')
+        }),
+        ('Notification', {
+            'fields': ('notification_type', 'title', 'message', 'link')
+        }),
+        ('Status', {
+            'fields': ('read', 'read_at', 'email_sent')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
