@@ -54,11 +54,10 @@ jobs:
       - name: Run DB migrations
         env:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          DATABASE_URL: postgres://postgres@localhost:5432/github_actions
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/github_actions
         run: |
           cd server
           python manage.py migrate
-        
 
       - name: Run Tests
         env:
