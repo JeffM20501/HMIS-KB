@@ -9,9 +9,7 @@ class VectorStoreManager:
     def __init__(self, collection_name="articles"):
         self.embeddings = EmbeddingManager().get_embeddings()
         self.collection_name = collection_name
-        
-        # Use Chroma for development (local file-based)[reference:8]
-        self._init_chroma()
+        self._init_pgvector()
     
     def _init_chroma(self):
         """Use Chroma (local, file-based, good for development)."""

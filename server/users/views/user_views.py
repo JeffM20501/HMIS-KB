@@ -75,7 +75,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[IsAdmin])
     def admin_users(self, request):
-        """GET /api/v1/users/admin_users/ → List all users (admin only)"""
+        """ List all users (admin only)"""
         users = get_user_model().objects.all()
         serializer = UserSerializer(users, many=True)
         return Response(serializer.data)
@@ -97,69 +97,3 @@ class UserViewSet(viewsets.ModelViewSet):
         user.save()
         return Response({'message':f'User role Updated to {new_role}'},status=status.HTTP_200_OK)
 
-# class ListUsers(APIView):
-    
-#     permission_classes=[IsAdmin]
-    
-#     def get(self,request,format=None):
-#         users=  User.objects.all()
-#         serializer=UserSerializer(users,many=True)
-#         return Response(serializer.data)
-
-# class ChangeUserRole(APIView):
-#     permission_classes=[IsAdmin]
-    
-#     def patch(self,request,user_id,format=None):
-#         try:
-#             user=User.objects.get(pk=user_id)
-#         except User.DoesNotExist:
-#             return Response({'error':'User not found'},status=status.HTTP_404_NOT_FOUND)
-        
-#         new_role=request.data.get('role')
-        
-#         if new_role not in ['admin','editor','viewer']:
-#             return Response({'error':'Invaild role'},status=status.HTTP_400_BAD_REQUEST)
-        
-#         user.role=new_role
-#         user.save()
-#         return Response({'message':f'User role Updated to {new_role}'},status=status.HTTP_200_OK)
-    
-    
-# class AdminDashboard(APIView):
-#     permission_classes=[IsAdmin]
-    
-#     def get(self,request, role, format=None):
-        
-#         total_users=User.objects.count()
-#         admins = User.objects.filter(role='admin').count()
-#         editors = User.objects.filter(role='editor').count()
-#         viewers = User.objects.filter(role='viewer').count()
-        
-#         data={
-#             'total_users': total_users,
-#             'admins': admins,
-#             'editors': editors,
-#             'viewers': viewers,
-#         }
-#         return Response(data)
-
-# class Dashboard(APIView):
-#     permission_classes=[permissions.IsAuthenticated]
-    
-#     def get(self,request,format=None):
-#         serializer=UserSerializer(request.user)
-#         return Response(serializer.data)
-    
-
-# class RequestPasswordResetView(APIView):
-#     permission_classes = []  # Allow anyone
-
-#     def post(self, request):
-#         serializer = PasswordResetRequestSerializer(data=request.data)
-#         if serializer.is_valid():
-#             serializer.save()
-#             return Response(
-#                 {"message": "If an account with that email exists, an OTP has been sent."},
-#                 status=status.HTTP_200_OK
-#             )
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

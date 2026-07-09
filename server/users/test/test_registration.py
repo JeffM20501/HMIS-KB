@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
+from unittest.mock import patch
 
 User = get_user_model()
 
@@ -10,8 +11,10 @@ class RegistrationTest(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.url = reverse('users:user-list')
-
-    def test_public_registration(self):
+        
+        
+    @patch('users.signals.send_welcome_email')
+    def test_public_registration(self,mock_send):
         """Test that anyone can register"""
         data = {
             'username': 'newuser',
