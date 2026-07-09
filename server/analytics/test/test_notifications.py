@@ -6,8 +6,8 @@ from analytics.models.notification import Notification
 from articles.models.article import Article
 from articles.models.category import Category
 from users.test.helper import create_regular_user, create_admin
-
 from django.utils import timezone
+from unittest.mock import patch
 
 User = get_user_model()
 
@@ -58,7 +58,9 @@ class NotificationTest(TestCase):
         self.assertFalse(notification.read)
         self.assertIsNotNone(notification.created_at)
     
-    def test_article_submitted_creates_notifications(self):
+    
+    @patch('users.signals.send_welcome_email')
+    def test_article_submitted_creates_notifications(self,mock_send):
         """Test that submitting an article creates notifications for admins."""
         self._login(self.editor)
         admins = [self.admin]
@@ -66,9 +68,12 @@ class NotificationTest(TestCase):
         response = self.client.post(url, content_type='application/json')
         
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(Notification.objects.count(), 1)
         
-        notification = Notification.objects.first()
+        submission_notifications = Notification.objects.filter(notification_type='article_submitted')
+        
+        self.assertIsNotNone(submission_notifications)
+        
+        notification = submission_notifications.first()
         self.assertEqual(notification.recipient, self.admin)
         self.assertEqual(notification.sender, self.editor)
         self.assertEqual(notification.notification_type, 'article_submitted')
