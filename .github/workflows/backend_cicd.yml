@@ -56,7 +56,7 @@ jobs:
           DATABASE_URL: postgres://postgres@localhost:5432/github_actions
         run: |
           cd server
-          python mange.py migrate
+          python manage.py migrate
         
 
       - name: Run Tests
