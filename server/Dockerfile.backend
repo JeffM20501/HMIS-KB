@@ -5,6 +5,7 @@ FROM python:3.14-slim AS builder
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     gcc \
+    libmagic-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Create the app directory
@@ -32,6 +33,7 @@ FROM python:3.14-slim
 # Install PostgreSQL runtime libraries (smaller than dev libraries)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
+    libmagic1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user and app directory

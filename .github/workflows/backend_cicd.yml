@@ -63,6 +63,7 @@ jobs:
           EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
           EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
           DEFAULT_FROM_EMAIL: ${{ secrets.DEFAULT_FROM_EMAIL }}
+          HUGGINGFACE_API_KEY: ${{secrets.HUGGINGFACE_API_KEY}}
         run: |
           cd server
           pytest -v --tb=short 
@@ -94,22 +95,9 @@ jobs:
           EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
           EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
           DEFAULT_FROM_EMAIL: ${{ secrets.DEFAULT_FROM_EMAIL }}
+          HUGGINGFACE_API_KEY: ${{secrets.HUGGINGFACE_API_KEY}}
         run: |
-          docker run -d \
-            --name hmis-kb-backend \
-            -p 8000:8080 \
-            --restart=unless-stopped \
-            -e SECRET_KEY="$SECRET_KEY" \
-            -e DATABASE_URL="$DATABASE_URL" \
-            -e DEBUG="$DEBUG" \
-            -e CLOUDINARY_CLOUD_NAME="$CLOUDINARY_CLOUD_NAME" \
-            -e CLOUDINARY_API_KEY="$CLOUDINARY_API_KEY" \
-            -e CLOUDINARY_API_SECRET="$CLOUDINARY_API_SECRET" \
-            -e EMAIL_HOST_USER="$EMAIL_HOST_USER" \
-            -e EMAIL_HOST_PASSWORD="$EMAIL_HOST_PASSWORD" \
-            -e EMAIL_HOST="$EMAIL_HOST" \
-            -e DEFAULT_FROM_EMAIL="$DEFAULT_FROM_EMAIL" \
-            kimmuna/hmis-kb-backend:v1.0.0
+          docker run -d --name hmis-kb-backend -p 8000:8080 --restart=unless-stopped --env-file .env kimmuna/hmis-kb-backend:v2.0.0
 
       - name: Verify deployment
         run: |
