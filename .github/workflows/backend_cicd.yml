@@ -72,6 +72,7 @@ jobs:
           EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
           DEFAULT_FROM_EMAIL: ${{ secrets.DEFAULT_FROM_EMAIL }}
           HUGGINGFACE_API_KEY: ${{secrets.HUGGINGFACE_API_KEY}}
+          SIGNING_KEY: ${{secrets.SIGNING_KEY}}
         run: |
           cd server
           pytest -v --tb=short 
@@ -104,6 +105,7 @@ jobs:
           EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
           DEFAULT_FROM_EMAIL: ${{ secrets.DEFAULT_FROM_EMAIL }}
           HUGGINGFACE_API_KEY: ${{secrets.HUGGINGFACE_API_KEY}}
+          SIGNING_KEY: ${{secrets.SIGNING_KEY}}
         run: |
           docker run -d --name hmis-kb-backend -p 8000:8080 --restart=unless-stopped --env-file .env kimmuna/hmis-kb-backend:v2.0.0
 

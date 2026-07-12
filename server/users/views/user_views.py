@@ -96,4 +96,40 @@ class UserViewSet(viewsets.ModelViewSet):
         user.role=new_role
         user.save()
         return Response({'message':f'User role Updated to {new_role}'},status=status.HTTP_200_OK)
+    
+    @action(detail=True, methods=['post'])
+    def set_password(self, request, pk=None):
+        """
+        POST /api/v1/u/users/{id}/set-password/
+        Change password for a logged-in user.
+        """
+        user = self.get_object()
+        current_password = request.data.get('current_password')
+        new_password = request.data.get('new_password')
+
+        if not current_password or not new_password:
+            return Response(
+                {'error': 'Current password and new password are required.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not user.check_password(current_password):
+            return Response(
+                {'error': 'Current password is incorrect.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if len(new_password) < 8:
+            return Response(
+                {'error': 'New password must be at least 8 characters.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user.set_password(new_password)
+        user.save()
+
+        return Response(
+            {'message': 'Password updated successfully.'},
+            status=status.HTTP_200_OK
+        )
 

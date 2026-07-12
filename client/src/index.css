@@ -1,111 +1,163 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;1,14..32,400&display=swap');
+@import 'tailwindcss';
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+@theme {
+  --font-inter: 'Inter', system-ui, sans-serif;
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* Twilio-inspired brand palette */
+  --color-twilio-red: #F22F46;
+  --color-twilio-red-dark: #C21B2E;
+  --color-twilio-red-light: #FDEEF0;
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+  /* Navy sidebar / hero surfaces */
+  --color-navy-900: #06033A;
+  --color-navy-800: #0D1232;
+  --color-navy-700: #161B4A;
+  --color-navy-600: #222860;
+
+  /* Neutrals / text */
+  --color-ink-darkest: #121C2D;
+  --color-ink-dark: #243656;
+  --color-ink: #455A77;
+  --color-ink-light: #696E7A;
+  --color-ink-lighter: #9EA6B3;
+
+  /* Surface */
+  --color-gray-50: #F9FAFB;
+  --color-gray-100: #F4F4F6;
+  --color-gray-200: #E8E8EC;
+  --color-gray-300: #D1D5DB;
+
+  /* Semantic */
+  --color-green-500: #00A368;
+  --color-green-50: #E6F7F1;
+  --color-yellow-500: #F7C948;
+  --color-yellow-50: #FEF9E7;
+  --color-blue-500: #0263E0;
+  --color-blue-50: #E8F0FD;
+  --color-orange-500: #E87722;
+  --color-orange-50: #FEF3E7;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
-
-body {
-  margin: 0;
-}
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
+* {
   box-sizing: border-box;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
+html, body, #root {
+  height: 100%;
   margin: 0;
+  padding: 0;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+body {
+  font-family: var(--font-inter);
+  color: var(--color-ink-darkest);
+  background-color: var(--color-gray-100);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+/* Hide scrollbar until hovering */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 3px;
+}
+*:hover::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.15);
+}
+
+/* Prose-style article content (also used for live preview in the article editor) */
+.article-body h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-ink-darkest);
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-gray-200);
+}
+.article-body h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-ink-dark);
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+.article-body p {
+  line-height: 1.75;
+  margin-bottom: 1rem;
+  color: var(--color-ink);
+}
+.article-body ul, .article-body ol {
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+.article-body li {
+  line-height: 1.75;
+  margin-bottom: 0.25rem;
+  color: var(--color-ink);
+}
+.article-body img {
+  max-width: 100%;
+  border-radius: 8px;
+  margin: 1rem 0;
+  border: 1px solid var(--color-gray-200);
+}
+.article-body code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--color-gray-100);
+  border: 1px solid var(--color-gray-200);
+  border-radius: 3px;
+  padding: 0.1em 0.4em;
+  color: var(--color-twilio-red);
+}
+.article-body pre {
+  background: var(--color-navy-900);
+  color: #e8e8ec;
+  padding: 1rem 1.25rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+  font-family: 'JetBrains Mono', monospace;
+}
+.article-body pre code {
+  background: none;
+  border: none;
+  color: inherit;
+  padding: 0;
+}
+.article-body blockquote {
+  border-left: 3px solid var(--color-twilio-red);
+  background: var(--color-twilio-red-light);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 0 4px 4px 0;
+}
+.article-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+.article-body th {
+  background: var(--color-gray-100);
+  border: 1px solid var(--color-gray-300);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-ink-dark);
+}
+.article-body td {
+  border: 1px solid var(--color-gray-200);
+  padding: 0.5rem 0.75rem;
+  color: var(--color-ink);
 }

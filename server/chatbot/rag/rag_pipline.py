@@ -18,7 +18,6 @@ class RAGPipeline:
         # Initialize vector store for retrieval
         self.vectorstore = VectorStoreManager()
         
-        # ✅ Use Hugging Face Inference API (FREE, no local models needed)
         self.llm = HuggingFaceEndpoint(
             repo_id="google/flan-t5-large",  # Good free model
             huggingfacehub_api_token=settings.HUGGINGFACE_API_KEY,
@@ -36,15 +35,15 @@ class RAGPipeline:
         self.prompt = ChatPromptTemplate.from_messages([
             ("system", """You are a helpful healthcare assistant for the HMIS Knowledge Base.
 
-IMPORTANT RULES:
-1. ONLY answer using the provided context. Do not use outside knowledge.
-2. If the context doesn't contain the answer, say: "I cannot find an answer to that question in the knowledge base. Please contact support for assistance."
-3. Always cite the source article(s) by mentioning the article title.
-4. Do not provide medical advice. You are providing information from documented procedures.
-5. Keep responses clear, concise, and professional.
+            IMPORTANT RULES:
+            1. ONLY answer using the provided context. Do not use outside knowledge.
+            2. If the context doesn't contain the answer, say: "I cannot find an answer to that question in the knowledge base. Please contact support for assistance."
+            3. Always cite the source article(s) by mentioning the article title.
+            4. Do not provide medical advice. You are providing information from documented procedures.
+            5. Keep responses clear, concise, and professional.
 
-CONTEXT:
-{context}"""),
+            CONTEXT:
+            {context}"""),
             ("user", "{question}"),
         ])
     
