@@ -2,28 +2,90 @@
 <html>
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Article Rejected</title>
 </head>
-<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
-    <h2 style="color: #e74c3c;">Article Rejected</h2>
-    
-    <p>Dear {{ editor_username }},</p>
-    
-    <p>Your article <strong>"{{ article_title }}"</strong> was rejected by <strong>{{ admin_username }}</strong>.</p>
-    
-    <div style="background: #fef9e7; padding: 15px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #e74c3c;">
-        <p><strong>Reason for rejection:</strong></p>
-        <p style="color: #555;">{{ reason }}</p>
-    </div>
-    
-    <p>Please review the feedback, make necessary changes, and resubmit.</p>
-    
-    <p>
-        <a href="{{ edit_url }}" style="background: #3498db; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
-            Edit Article
-        </a>
-    </p>
-    
-    <hr style="border: 1px solid #eee; margin: 20px 0;">
-    <p style="color: #888; font-size: 12px;">HMIS Knowledge Base Team</p>
+<body style="margin:0; padding:0; background-color:#F4F4F6; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F4F4F6;">
+        <tr>
+            <td align="center" style="padding: 40px 16px;">
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px; width:100%; background-color:#FFFFFF; border-radius:12px; overflow:hidden; border:1px solid #E1E3EA;">
+
+                    <!-- Header -->
+                    <tr>
+                        <td bgcolor="#06033A" style="background-color:#06033A; padding: 28px 40px;">
+                            <table role="presentation" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td bgcolor="#F22F46" style="background-color:#F22F46; width:32px; height:32px; border-radius:7px; text-align:center; vertical-align:middle; font-size:16px; font-weight:700; color:#FFFFFF;">
+                                        K
+                                    </td>
+                                    <td style="padding-left:10px; color:#FFFFFF; font-size:17px; font-weight:600; font-family: 'Inter', Arial, sans-serif;">
+                                        HealthKB
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px;">
+                            <span style="display:inline-block; background-color:#FDEEF0; color:#F22F46; font-size:11px; font-weight:600; padding:4px 10px; border-radius:20px; margin-bottom:16px; font-family: 'Inter', Arial, sans-serif;">
+                                CHANGES REQUESTED
+                            </span>
+                            <h2 style="margin:12px 0 16px 0; color:#121C2D; font-size:22px; font-weight:600; font-family: 'Inter', Arial, sans-serif;">
+                                Article sent back for changes
+                            </h2>
+                            <p style="margin:0 0 20px 0; color:#455A77; font-size:15px; line-height:1.6;">
+                                Dear <strong style="color:#121C2D;">{{ editor_username }}</strong>,
+                            </p>
+                            <p style="margin:0 0 20px 0; color:#455A77; font-size:15px; line-height:1.6;">
+                                Your article <strong style="color:#121C2D;">&ldquo;{{ article_title }}&rdquo;</strong> was reviewed by <strong style="color:#121C2D;">{{ admin_username }}</strong> and needs some changes before it can be published.
+                            </p>
+
+                            <!-- Reason card -->
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td bgcolor="#FDEEF0" style="background-color:#FDEEF0; border-left:4px solid #F22F46; border-radius:6px; padding: 18px 20px;">
+                                        <p style="margin:0 0 6px 0; color:#C21B2E; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.4px; font-family: 'Inter', Arial, sans-serif;">
+                                            Reason for rejection
+                                        </p>
+                                        <p style="margin:0; color:#455A77; font-size:14px; line-height:1.6;">
+                                            {{ reason }}
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="margin:24px 0 20px 0; color:#455A77; font-size:15px; line-height:1.6;">
+                                Please review the feedback, make the necessary changes, and resubmit for another review.
+                            </p>
+
+                            <!-- Bulletproof button -->
+                            <table role="presentation" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td bgcolor="#0263E0" style="background-color:#0263E0; border-radius:6px;">
+                                        <a href="{{ edit_url }}" target="_blank" style="display:inline-block; padding: 12px 28px; color:#FFFFFF; font-size:14px; font-weight:600; text-decoration:none; font-family: 'Inter', Arial, sans-serif;">
+                                            Edit Article
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td bgcolor="#F9FAFB" style="background-color:#F9FAFB; border-top:1px solid #E8E8EC; padding: 20px 40px;">
+                            <p style="margin:0; color:#9EA6B3; font-size:12px; line-height:1.5; font-family: 'Inter', Arial, sans-serif;">
+                                HMIS Knowledge Base Team &middot; This is an automated message, please do not reply.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>

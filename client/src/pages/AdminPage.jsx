@@ -120,19 +120,7 @@ export default function AdminPage() {
       setBusyId(null);
     }
   };
-
-  const handleRoleChange = async (u, role) => {
-    setBusyId(u.id);
-    try {
-      await updateUserRole(u.id, role);
-      setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, role } : x)));
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusyId(null);
-    }
-  };
-
+  
   const handleDeleteUser = async (u) => {
     if (!window.confirm(`Remove ${u.name}'s access?`)) return;
     setBusyId(u.id);
@@ -404,30 +392,54 @@ export default function AdminPage() {
                       <tr key={u.id} className="border-t hover:bg-gray-50 transition-colors" style={{ borderColor: "#F4F4F6" }}>
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-3">
-                            <div className="flex items-center justify-center rounded-full text-xs font-bold flex-shrink-0" style={{ width: 30, height: 30, background: "#F22F46", color: "white" }}>
+                            <div
+                              className="flex items-center justify-center rounded-full text-xs font-bold flex-shrink-0"
+                              style={{ width: 30, height: 30, background: "#F22F46", color: "white" }}
+                            >
                               {u.avatar ?? u.name?.slice(0, 2).toUpperCase()}
                             </div>
-                            <span className="text-sm font-medium whitespace-nowrap" style={{ color: "#121C2D" }}>{u.name}</span>
+                            <span className="text-sm font-medium whitespace-nowrap" style={{ color: "#121C2D" }}>
+                              {u.name}
+                            </span>
                           </div>
                         </td>
-                        <td className="px-5 py-3.5 text-xs whitespace-nowrap" style={{ color: "#696E7A" }}>{u.email}</td>
-                        <td className="px-5 py-3.5">
-                          <select
-                            value={u.role}
-                            disabled={busyId === u.id}
-                            onChange={(e) => handleRoleChange(u, e.target.value)}
-                            className="text-xs font-medium px-2 py-1 rounded-md border outline-none capitalize disabled:opacity-50"
-                            style={{ background: roleColors[u.role]?.bg, color: roleColors[u.role]?.color, borderColor: "transparent" }}
-                          >
-                            {Object.entries(ROLE_LABELS).map(([r, l]) => <option key={r} value={r}>{l}</option>)}
-                          </select>
+                        <td className="px-5 py-3.5 text-xs whitespace-nowrap" style={{ color: "#696E7A" }}>
+                          {u.email}
                         </td>
-                        <td className="px-5 py-3.5 text-xs whitespace-nowrap" style={{ color: "#696E7A" }}>{u.department}</td>
-                        <td className="px-5 py-3.5 text-xs whitespace-nowrap" style={{ color: "#9EA6B3" }}>{u.lastActive}</td>
                         <td className="px-5 py-3.5">
-                          <button onClick={() => handleDeleteUser(u)} disabled={busyId === u.id} className="p-1 rounded hover:bg-red-50 transition-colors" title="Remove access">
-                            <Trash2 size={13} style={{ color: "#9EA6B3" }} />
-                          </button>
+                          <span
+                            className="text-xs font-medium px-2.5 py-1 rounded-full capitalize"
+                            style={{ background: roleColors[u.role]?.bg || "#F4F4F6", color: roleColors[u.role]?.color || "#696E7A" }}
+                          >
+                            {ROLE_LABELS[u.role] || u.role}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3.5 text-xs whitespace-nowrap" style={{ color: "#696E7A" }}>
+                          {u.department || "—"}
+                        </td>
+                        <td className="px-5 py-3.5 text-xs whitespace-nowrap" style={{ color: "#9EA6B3" }}>
+                          {u.lastActive || "—"}
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => navigate(`/app/users/${u.id}`)}
+                              className="p-1.5 rounded hover:bg-blue-50 transition-colors"
+                              title="View details"
+                              style={{ color: "#0263E0" }}
+                            >
+                              <Eye size={14} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteUser(u)}
+                              disabled={busyId === u.id}
+                              className="p-1 rounded hover:bg-red-50 transition-colors disabled:opacity-40"
+                              title="Remove access"
+                              style={{ color: "#9EA6B3" }}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

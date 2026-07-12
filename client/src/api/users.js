@@ -10,7 +10,8 @@ export const listUsers = (params = {}) =>
 
 /** GET /api/v1/u/users/:id/ */
 export const getUser = (id) =>
-  client.get(`/u/users/${id}/`).then((res) => normalizeUser(res.data));
+  client.get(`/u/users/${id}/`)
+    .then((res) => normalizeUser(res.data));
 
 /**
  * PATCH /api/v1/u/users/:id/ — admin changes role

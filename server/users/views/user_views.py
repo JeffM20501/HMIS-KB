@@ -56,6 +56,12 @@ class UserViewSet(viewsets.ModelViewSet):
         """GET /api/v1/users/dashboard/ → Current user's profile"""
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def me(self, request):
+        """GET /api/v1/u/users/me/ → Current user's profile"""
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data)
 
     @action(detail=False, methods=['get'], permission_classes=[IsAdmin])
     def admin_dashboard(self, request):

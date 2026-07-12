@@ -13,6 +13,8 @@ import SettingsPage from "./pages/SettingsPage.jsx";
 import NotFoundPage from "./pages/NotFoundPage.jsx";
 import AppLayout from "./components/layout/AppLayout.jsx";
 import ProtectedRoute from "./components/common/ProtectedRoute.jsx";
+import VerifyOtpPage from "./pages/auth/VerifyOTPPage.jsx";
+import UserDetailPage from "./pages/UserDetailPage.jsx";
 import { ROLES } from "./utils/constants";
 
 export default function App() {
@@ -24,10 +26,12 @@ export default function App() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path='/verify-otp' element={<VerifyOtpPage/>}/>
 
       {/* Authenticated app shell */}
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
+          <Route path="/app/users/:id" element={<UserDetailPage/>}/>
           <Route path="/app/dashboard" element={<DashboardPage />} />
           <Route path="/app/knowledge-base" element={<KnowledgeBasePage />} />
           <Route path="/app/knowledge-base/:slug" element={<ArticlePage />} />

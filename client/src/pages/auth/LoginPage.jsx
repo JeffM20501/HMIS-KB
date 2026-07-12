@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { BookOpen, Eye, EyeOff, Loader2 } from "lucide-react";
 import useAuth from "../../hooks/useAuth";
 import ErrorBanner from "../../components/common/ErrorBanner.jsx";
+import client from "../../api/client";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -16,6 +17,35 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [stats, setStats] = useState({
+    total_articles: 85,
+    avg_rating: 4.4,
+    search_success_rate: 75,
+    total_views: 0,
+  });
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  // Fetch real stats from the backend
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await client.get("/stats/");
+        setStats(res.data);
+      } catch (err) {
+        console.warn("Failed to fetch stats, using fallback values.");
+        // fallback values already set in initial state
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  const statsDisplay = [
+    { value: `${stats.total_articles}+`, label: "Articles" },
+    { value: `${stats.avg_rating.toFixed(1)}★`, label: "Avg Rating" },
+    { value: stats.search_success_rate ? `${stats.search_success_rate}%` : "—", label: "Search Success" },
+  ];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,7 +67,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex" style={{ fontFamily: "var(--font-inter)" }}>
-      {/* Left panel */}
+      {/* Left panel — now showing real stats */}
       <div className="hidden lg:flex flex-col justify-between p-12 w-2/5" style={{ background: "#06033A" }}>
         <Link to="/" className="flex items-center gap-3">
           <div className="flex items-center justify-center rounded-md" style={{ width: 36, height: 36, background: "#F22F46" }}>
@@ -59,21 +89,22 @@ export default function LoginPage() {
           </div>
         </div>
 
+        {/* Stats section — real data from DB */}
         <div className="grid grid-cols-3 gap-4">
-          {[
-            { value: "85+", label: "Articles" },
-            { value: "4.4★", label: "Avg Rating" },
-            { value: "3.8k", label: "Searches/mo" },
-          ].map((s) => (
+          {statsDisplay.map((s) => (
             <div key={s.label} className="rounded-lg p-4" style={{ background: "rgba(255,255,255,0.06)" }}>
-              <div className="text-xl font-semibold mb-0.5" style={{ color: "white" }}>{s.value}</div>
+              {statsLoading ? (
+                <div className="h-8 w-12 mx-auto bg-white/10 animate-pulse rounded" />
+              ) : (
+                <div className="text-xl font-semibold mb-0.5" style={{ color: "white" }}>{s.value}</div>
+              )}
               <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>{s.label}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Right panel */}
+      {/* Right panel — login form (unchanged) */}
       <div className="flex-1 flex items-center justify-center p-8" style={{ background: "#F4F4F6" }}>
         <div className="w-full max-w-md">
           <Link to="/" className="flex items-center gap-2 mb-8 lg:hidden">

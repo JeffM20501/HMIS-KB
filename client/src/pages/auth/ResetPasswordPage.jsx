@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { BookOpen, Eye, EyeOff, Loader2, CheckCircle2, AlertTriangle, Check } from "lucide-react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { BookOpen, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { resetPassword } from "../../api/auth";
 
 function PasswordStrength({ password }) {
@@ -16,15 +16,11 @@ function PasswordStrength({ password }) {
   );
 }
 
-// The emailed reset link should point here with the identifiers your backend
-// needs, e.g. https://app.example.com/reset-password?uid=MQ&token=abc123.
-// ASSUMPTION: query params are named `uid` and `token` — rename below to
-// match whatever RequestPasswordResetView actually puts in the email.
 export default function ResetPasswordPage() {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const uid = searchParams.get("uid");
-  const token = searchParams.get("token");
+  const location = useLocation();
+  const email = location.state?.email || "";
+  const otp = location.state?.otp||""
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -34,17 +30,17 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
 
-  if (!token) {
+  if (!email) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "#F4F4F6", fontFamily: "var(--font-inter)" }}>
         <div className="w-full max-w-md bg-white rounded-xl border p-8 text-center" style={{ borderColor: "#E1E3EA" }}>
-          <AlertTriangle size={28} className="mx-auto mb-4" style={{ color: "#E87722" }} />
-          <h1 className="text-lg font-semibold mb-2" style={{ color: "#121C2D" }}>Invalid or missing reset link</h1>
+          <AlertCircle size={28} className="mx-auto mb-4" style={{ color: "#E87722" }} />
+          <h1 className="text-lg font-semibold mb-2" style={{ color: "#121C2D" }}>Missing email</h1>
           <p className="text-sm mb-6" style={{ color: "#696E7A" }}>
-            This link is missing its reset token. Please request a new password reset email.
+            Please start the password reset process again.
           </p>
           <Link to="/forgot-password" className="inline-block px-4 py-2 rounded-md text-sm font-medium" style={{ background: "#F22F46", color: "white" }}>
-            Request a new link
+            Start over
           </Link>
         </div>
       </div>
@@ -60,10 +56,10 @@ export default function ResetPasswordPage() {
     setError("");
     setLoading(true);
     try {
-      await resetPassword(uid, token, password);
+      await resetPassword(email, password);
       setDone(true);
     } catch (err) {
-      setError(err.message || "This reset link may have expired. Please request a new one.");
+      setError(err.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -95,7 +91,9 @@ export default function ResetPasswordPage() {
             <>
               <div className="text-center mb-7">
                 <h1 className="text-xl font-semibold mb-1.5" style={{ color: "#121C2D" }}>Set a new password</h1>
-                <p className="text-sm" style={{ color: "#696E7A" }}>Choose a strong password for your account.</p>
+                <p className="text-sm" style={{ color: "#696E7A" }}>
+                  For account: <strong>{email}</strong>
+                </p>
               </div>
               <form onSubmit={handleSubmit} className="space-y-4">
                 {error && (

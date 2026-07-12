@@ -7,15 +7,21 @@ import { normalizeUser } from "../utils/normalize";
  * ASSUMPTION: SimpleJWT uses "username" field.
  */
 export const obtainToken = (username, password) =>
-  client.post("/auth/token/", { username, password }).then((res) => res.data);
+  client
+    .post("/auth/token/", { username, password })
+    .then((res) => res.data);
 
 /** POST /api/v1/auth/token/refresh/ */
 export const refreshToken = (refresh) =>
-  client.post("/auth/token/refresh/", { refresh }).then((res) => res.data);
+  client
+    .post("/auth/token/refresh/", { refresh })
+    .then((res) => res.data);
 
 /** POST /api/v1/auth/token/verify/ */
 export const verifyToken = (token) =>
-  client.post("/auth/token/verify/", { token }).then((res) => res.data);
+  client
+    .post("/auth/token/verify/", { token })
+    .then((res) => res.data);
 
 /**
  * POST /api/v1/u/users/
@@ -47,7 +53,16 @@ export const fetchCurrentUser = async (accessToken) => {
 
 /** POST /api/v1/u/auth/request-password-reset/ */
 export const requestPasswordReset = (email) =>
-  client.post("/u/auth/request-password-reset/", { email }).then((res) => res.data);
+  client
+    .post("/u/auth/request-password-reset/", { email })
+    .then((res) => res.data);
+
+/** POST /api/v1/u/auth/verify-otp/  */
+export const verifyOtp = (email, otp) =>
+  client
+    .post("/u/auth/verify-otp/", { email, otp })
+    .then((res) => res.data);
+
 
 /**
  * POST /api/v1/u/auth/reset-password/
@@ -57,6 +72,7 @@ export const resetPassword = (email, otp, newPassword) =>
   client
     .post("/u/auth/reset-password/", { email, otp, new_password: newPassword })
     .then((res) => res.data);
+
 
 /** SimpleJWT logout - discard tokens locally. */
 export const logout = () => Promise.resolve();

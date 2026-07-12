@@ -1,6 +1,19 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { BookOpen, Eye, EyeOff, AlertCircle, Loader2, CheckCircle2, Check, ArrowLeft } from "lucide-react";
+import {
+  BookOpen,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  Loader2,
+  CheckCircle2,
+  Check,
+  ArrowLeft,
+  Search,
+  Bot,
+  ClipboardList,
+  Shield,
+} from "lucide-react";
 import useAuth from "../../hooks/useAuth";
 import { DEPARTMENTS } from "../../utils/constants";
 
@@ -151,16 +164,26 @@ export default function RegisterPage() {
           </h2>
           <div className="space-y-4">
             {[
-              { icon: "🔍", text: "Search 85+ SOPs and how-to guides instantly" },
-              { icon: "🤖", text: "Ask the KB Assistant from within HMIS — no context switch" },
-              { icon: "📋", text: "Structured templates for every article type" },
-              { icon: "🔒", text: "Role-based access — you only see what you need" },
-            ].map((f) => (
-              <div key={f.text} className="flex items-start gap-3">
-                <span className="text-base flex-shrink-0 mt-0.5">{f.icon}</span>
-                <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>{f.text}</p>
-              </div>
-            ))}
+              { icon: Search, text: "Search 85+ SOPs and how-to guides instantly", color: "#0263E0" },
+              { icon: Bot, text: "Ask the KB Assistant from within HMIS — no context switch", color: "#F22F46" },
+              { icon: ClipboardList, text: "Structured templates for every article type", color: "#00A368" },
+              { icon: Shield, text: "Role-based access — you only see what you need", color: "#7B2FBE" },
+            ].map((f) => {
+              const Icon = f.icon;
+              return (
+                <div key={f.text} className="flex items-start gap-3">
+                  <div
+                    className="flex items-center justify-center rounded-lg flex-shrink-0 mt-0.5"
+                    style={{ width: 32, height: 32, background: `${f.color}20`, color: f.color }}
+                  >
+                    <Icon size={16} />
+                  </div>
+                  <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>
+                    {f.text}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
 
