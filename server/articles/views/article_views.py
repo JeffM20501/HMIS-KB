@@ -18,6 +18,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
     
     queryset = Article.objects.all().order_by('-created_at')
     serializer_class = ArticleSerializer
+    lookup_field='slug'
     
     def get_serializer_context(self):
         """Add request to serializer context for permission checks."""
@@ -63,6 +64,15 @@ class ArticleViewSet(viewsets.ModelViewSet):
             author=self.request.user,
             status='draft'
         )
+        
+    def retrieve(self, request, *args, **kwargs):
+        slug = kwargs.get('slug')
+        print(f"Retrieving article with slug: {slug}")
+        try:
+            return super().retrieve(request, *args, **kwargs)
+        except Exception as e:
+            print(f"Error: {e}")
+            raise
     
     def perform_update(self, serializer):
         """

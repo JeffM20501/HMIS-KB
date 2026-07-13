@@ -20,7 +20,7 @@ class CategorySerializer(serializers.ModelSerializer):
         read_only_fields = ['created_at', 'updated_at']
     
     def get_article_count(self, obj):
-        return obj.get_article_count()
+        return obj.articles.filter(status='published').count()
     
     def get_children(self, obj):
         children = obj.children.all()

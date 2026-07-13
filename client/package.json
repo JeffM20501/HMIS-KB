@@ -11,6 +11,10 @@
     "lint": "eslint src"
   },
   "dependencies": {
+    "@tiptap/extension-image": "^3.27.3",
+    "@tiptap/extension-link": "^3.27.3",
+    "@tiptap/react": "^3.27.3",
+    "@tiptap/starter-kit": "^3.27.3",
     "axios": "^1.7.7",
     "lucide-react": "^0.383.0",
     "react": "^18.3.1",

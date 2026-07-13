@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, BookOpen, Settings, Users, Shield, CreditCard,
   Stethoscope, Tag, LogOut, ChevronDown, X, Wrench, BookMarked,
-  SlidersHorizontal,
+  SlidersHorizontal, PlusCircle, // ✅ Added PlusCircle icon
 } from "lucide-react";
 import useAuth from "../../hooks/useAuth";
 import { ROLES } from "../../utils/constants";
@@ -13,6 +13,8 @@ const navItems = [
   { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/app/knowledge-base", label: "Knowledge Base", icon: BookOpen },
   { to: "/app/admin", label: "Admin Panel", icon: Settings, adminOnly: true },
+  // ✅ NEW: Editor-only nav item for creating articles
+  { to: "/app/articles/new", label: "New Article", icon: PlusCircle, editorOnly: true },
   { to: "/app/settings", label: "Settings", icon: SlidersHorizontal },
 ];
 
@@ -63,7 +65,11 @@ export default function Sidebar({ open, onClose }) {
         <nav className="flex-1 overflow-y-auto py-4">
           <div className="px-3 space-y-0.5">
             {navItems.map((item) => {
+              // ✅ Handle admin-only items
               if (item.adminOnly && user?.role !== ROLES.ADMIN) return null;
+              // ✅ Handle editor-only items (visible to editors AND admins)
+              if (item.editorOnly && user?.role !== ROLES.EDITOR && user?.role !== ROLES.ADMIN) return null;
+              
               const Icon = item.icon;
               return (
                 <NavLink

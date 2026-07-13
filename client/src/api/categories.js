@@ -1,7 +1,11 @@
 import client from "./client";
 
 /** GET /api/v1/categories/ */
+/** GET /api/v1/categories/ */
 export const listCategories = (params = {}) => client.get("/categories/", { params }).then((res) => res.data);
+
+/** GET /api/v1/categories/:id/ — Get single category */
+export const getCategory = (id) => client.get(`/categories/${id}/`).then((res) => res.data);
 
 /** POST /api/v1/categories/ — admin only */
 export const createCategory = (payload) => client.post("/categories/", payload).then((res) => res.data);

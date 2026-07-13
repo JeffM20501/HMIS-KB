@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft, Save, Send, CheckCircle2, Loader2, X, Plus,
@@ -9,13 +9,12 @@ import {
   publishArticle, uploadArticleMedia, deleteArticleMedia,
 } from "../api/articles";
 import { listCategories } from "../api/categories";
+import RichTextEditor from "../components/editor/RichTextEditor.jsx";
 import MediaUploader from "../components/editor/MediaUploader.jsx";
 import ErrorBanner from "../components/common/ErrorBanner.jsx";
 import Spinner from "../components/common/Spinner.jsx";
 import useAuth from "../hooks/useAuth";
-import {
-  ARTICLE_TYPES, ARTICLE_TYPE_LABELS, TEMPLATE_SECTIONS, ROLES,
-} from "../utils/constants";
+import { ARTICLE_TYPES, ARTICLE_TYPE_LABELS, TEMPLATE_SECTIONS, ROLES } from "../utils/constants";
 
 const TEMPLATE_ICONS = {
   [ARTICLE_TYPES.HOW_TO]: BookMarked,
@@ -26,9 +25,11 @@ const TEMPLATE_ICONS = {
   [ARTICLE_TYPES.RELEASE_NOTES]: Rss,
 };
 
-function emptySections(type) {
-  const sections = TEMPLATE_SECTIONS[type] ?? [];
-  return Object.fromEntries(sections.map((s) => [s, ""]));
+function generateSlug(title) {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 export default function ArticleEditorPage() {
@@ -37,42 +38,47 @@ export default function ArticleEditorPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [step, setStep] = useState(isEditMode ? 2 : 1); // 1 = choose template, 2 = fill in content
+  const [step, setStep] = useState(isEditMode ? 2 : 1);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(isEditMode);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
 
+  // Article fields (aligned with backend model)
   const [articleId, setArticleId] = useState(id ?? null);
-  const [type, setType] = useState("");
+  const [slug, setSlug] = useState("");
   const [title, setTitle] = useState("");
+  const [type, setType] = useState(""); // UI only – not sent to backend
   const [categoryId, setCategoryId] = useState("");
-  const [productVersion, setProductVersion] = useState("");
-  const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState([]);
-  const [sections, setSections] = useState({});
+  const [tagInput, setTagInput] = useState("");
+  const [content, setContent] = useState("");
   const [media, setMedia] = useState([]);
   const [status, setStatus] = useState("draft");
 
+  // Load categories
   useEffect(() => {
-    listCategories().then((data) => setCategories(data.results ?? data ?? [])).catch(() => setCategories([]));
+    listCategories()
+      .then((data) => setCategories(data.results ?? data ?? []))
+      .catch(() => setCategories([]));
   }, []);
 
+  // Load existing article in edit mode
   useEffect(() => {
     if (!isEditMode) return;
     let cancelled = false;
     getArticle(id)
       .then((data) => {
         if (cancelled) return;
-        const a = data; // DRF retrieve() returns the object directly
+        const a = data;
         setArticleId(a.id);
-        setType(a.type);
+        setSlug(a.slug ?? "");
         setTitle(a.title ?? "");
+        setType(a.type ?? "");
         setCategoryId(a.category?.id ?? a.category ?? "");
-        setProductVersion(a.product_version ?? "");
         setTags(a.tags ?? []);
-        setSections(a.sections ?? emptySections(a.type));
+        setContent(a.content ?? "");
         setMedia(a.media ?? []);
         setStatus(a.status ?? "draft");
       })
@@ -81,11 +87,8 @@ export default function ArticleEditorPage() {
     return () => { cancelled = true; };
   }, [id, isEditMode]);
 
-  const requiredSections = useMemo(() => TEMPLATE_SECTIONS[type] ?? [], [type]);
-
   const selectTemplate = (t) => {
     setType(t);
-    setSections(emptySections(t));
     setStep(2);
   };
 
@@ -94,33 +97,31 @@ export default function ArticleEditorPage() {
     if (t && !tags.includes(t)) setTags([...tags, t]);
     setTagInput("");
   };
-
   const removeTag = (t) => setTags(tags.filter((x) => x !== t));
 
-  // ASSUMPTION: ArticleSerializer accepts `category` (FK id), `product_version`,
-  // `tags` (list of tag names/ids — if it doesn't accept nested writes because
-  // of the separate ArticleTagViewSet through-table, swap this for a create,
-  // then N calls to attachTagToArticle() from api/categories.js), and a
-  // `sections` JSONField. Rename any of these to match your ArticleSerializer.
+  const handleTitleChange = (e) => {
+    const newTitle = e.target.value;
+    setTitle(newTitle);
+    if (!isEditMode || !slug) {
+      setSlug(generateSlug(newTitle));
+    }
+  };
+
+  // ✅ Build payload – only fields that exist in the Article model
   const buildPayload = (nextStatus) => ({
     title,
-    type,
-    category: categoryId,
-    product_version: productVersion,
-    tags,
-    sections,
-    // Concatenate sections into renderable HTML/content for the article body.
-    content: requiredSections
-      .map((s) => (sections[s]?.trim() ? `<h2>${s}</h2><p>${sections[s].replace(/\n/g, "<br/>")}</p>` : ""))
-      .join(""),
+    slug: slug || generateSlug(title),
+    category: categoryId,       // backend expects integer ID
+    tags,                       // list of tag names (or IDs, adjust if needed)
+    content,
     status: nextStatus,
   });
 
   const validate = () => {
-    if (!title.trim()) return "Give the article a title.";
-    if (!categoryId) return "Choose a category.";
-    const missing = requiredSections.filter((s) => !sections[s]?.trim());
-    if (missing.length) return `Please fill in: ${missing.join(", ")}.`;
+    if (!title.trim()) return "Please give the article a title.";
+    if (!slug.trim()) return "Slug is required.";
+    if (!categoryId) return "Please choose a category.";
+    if (!content?.trim()) return "Article content is required.";
     return "";
   };
 
@@ -134,16 +135,19 @@ export default function ArticleEditorPage() {
     setSaving(true);
     try {
       const payload = buildPayload(nextStatus);
-      let saved;
+      console.log("Saving article with payload:", payload); // debug
+
+      let savedArticle;
       if (articleId) {
-        saved = await updateArticle(articleId, payload);
+        savedArticle = await updateArticle(articleId, payload);
       } else {
-        saved = await createArticle(payload);
-        setArticleId(saved.id ?? saved.article?.id);
+        savedArticle = await createArticle(payload);
+        setArticleId(savedArticle.id ?? savedArticle.article?.id);
       }
 
-      const finalId = articleId ?? saved.id ?? saved.article?.id;
+      const finalId = articleId ?? savedArticle.id ?? savedArticle.article?.id;
 
+      // Extra actions (submit for review, publish)
       if (nextStatus === "review") {
         await submitArticleForReview(finalId);
       } else if (nextStatus === "published" && user?.role === ROLES.ADMIN) {
@@ -154,6 +158,7 @@ export default function ArticleEditorPage() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (err) {
+      console.error("Save error:", err);
       setError(err.message || "Couldn't save the article. Please try again.");
     } finally {
       setSaving(false);
@@ -162,9 +167,11 @@ export default function ArticleEditorPage() {
 
   const handleUpload = async (file) => {
     const tempId = `temp_${Date.now()}`;
-    setMedia((prev) => [...prev, { id: tempId, name: file.name, type: file.type, size: file.size, uploading: true, progress: 0 }]);
+    setMedia((prev) => [
+      ...prev,
+      { id: tempId, name: file.name, type: file.type, size: file.size, uploading: true, progress: 0 },
+    ]);
 
-    // If the article hasn't been saved yet, save a draft first so media has somewhere to attach.
     let targetId = articleId;
     if (!targetId) {
       try {
@@ -172,7 +179,11 @@ export default function ArticleEditorPage() {
         targetId = created.id ?? created.article?.id;
         setArticleId(targetId);
       } catch (err) {
-        setMedia((prev) => prev.map((m) => (m.id === tempId ? { ...m, uploading: false, error: "Save the article first" } : m)));
+        setMedia((prev) =>
+          prev.map((m) =>
+            m.id === tempId ? { ...m, uploading: false, error: "Save the article first" } : m
+          )
+        );
         return;
       }
     }
@@ -180,11 +191,21 @@ export default function ArticleEditorPage() {
     try {
       const result = await uploadArticleMedia(targetId, file, (evt) => {
         const progress = Math.round((evt.loaded / evt.total) * 100);
-        setMedia((prev) => prev.map((m) => (m.id === tempId ? { ...m, progress } : m)));
+        setMedia((prev) =>
+          prev.map((m) => (m.id === tempId ? { ...m, progress } : m))
+        );
       });
-      setMedia((prev) => prev.map((m) => (m.id === tempId ? { ...result, uploading: false } : m)));
+      setMedia((prev) =>
+        prev.map((m) =>
+          m.id === tempId ? { ...result, uploading: false } : m
+        )
+      );
     } catch (err) {
-      setMedia((prev) => prev.map((m) => (m.id === tempId ? { ...m, uploading: false, error: err.message || "Upload failed" } : m)));
+      setMedia((prev) =>
+        prev.map((m) =>
+          m.id === tempId ? { ...m, uploading: false, error: err.message || "Upload failed" } : m
+        )
+      );
     }
   };
 
@@ -199,7 +220,11 @@ export default function ArticleEditorPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
-      <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-xs mb-5 hover:underline" style={{ color: "#696E7A" }}>
+      <button
+        onClick={() => navigate(-1)}
+        className="flex items-center gap-1.5 text-xs mb-5 hover:underline"
+        style={{ color: "#696E7A" }}
+      >
         <ArrowLeft size={13} /> Back
       </button>
 
@@ -209,7 +234,9 @@ export default function ArticleEditorPage() {
             {isEditMode ? "Edit article" : "New article"}
           </h1>
           <p className="text-sm mt-1" style={{ color: "#696E7A" }}>
-            {step === 1 ? "Choose a content template to get started." : "All articles must follow one of the six standardized templates."}
+            {step === 1
+              ? "Choose a content template to get started."
+              : "Fill in the article details below."}
           </p>
         </div>
         {saved && (
@@ -219,6 +246,7 @@ export default function ArticleEditorPage() {
         )}
       </div>
 
+      {/* Template selection */}
       {step === 1 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {Object.entries(ARTICLE_TYPE_LABELS).map(([key, label]) => {
@@ -230,10 +258,15 @@ export default function ArticleEditorPage() {
                 className="flex flex-col items-start text-left p-5 rounded-lg border hover:border-red-300 transition-colors"
                 style={{ borderColor: "#E1E3EA" }}
               >
-                <div className="flex items-center justify-center rounded-lg mb-3" style={{ width: 40, height: 40, background: "#FDEEF0" }}>
+                <div
+                  className="flex items-center justify-center rounded-lg mb-3"
+                  style={{ width: 40, height: 40, background: "#FDEEF0" }}
+                >
                   <Icon size={18} style={{ color: "#F22F46" }} />
                 </div>
-                <p className="text-sm font-semibold mb-1" style={{ color: "#121C2D" }}>{label}</p>
+                <p className="text-sm font-semibold mb-1" style={{ color: "#121C2D" }}>
+                  {label}
+                </p>
                 <p className="text-xs" style={{ color: "#9EA6B3" }}>
                   {TEMPLATE_SECTIONS[key].join(" · ")}
                 </p>
@@ -243,67 +276,98 @@ export default function ArticleEditorPage() {
         </div>
       )}
 
+      {/* Article editor */}
       {step === 2 && (
         <div className="space-y-6">
           <ErrorBanner message={error} />
 
+          {/* Basic info */}
           <div className="bg-white rounded-lg border p-6 space-y-5" style={{ borderColor: "#E1E3EA" }}>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-medium px-2.5 py-1 rounded-full" style={{ background: "#FDEEF0", color: "#F22F46" }}>
-                {ARTICLE_TYPE_LABELS[type]}
+              <span
+                className="text-xs font-medium px-2.5 py-1 rounded-full"
+                style={{ background: "#FDEEF0", color: "#F22F46" }}
+              >
+                {ARTICLE_TYPE_LABELS[type] || "Article"}
               </span>
               {!isEditMode && (
-                <button onClick={() => setStep(1)} className="text-xs hover:underline" style={{ color: "#696E7A" }}>
+                <button
+                  onClick={() => setStep(1)}
+                  className="text-xs hover:underline"
+                  style={{ color: "#696E7A" }}
+                >
                   Change template
                 </button>
               )}
             </div>
 
+            {/* Title */}
             <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: "#243656" }}>Title</label>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: "#243656" }}>
+                Title <span style={{ color: "#F22F46" }}>*</span>
+              </label>
               <input
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={handleTitleChange}
                 placeholder="e.g. How to reverse a discharge entry"
-                className="w-full px-3.5 py-2.5 text-sm rounded-md border outline-none"
+                className="w-full px-3.5 py-2.5 text-sm rounded-md border outline-none focus:border-red-500 transition-colors"
                 style={{ borderColor: "#E1E3EA", color: "#121C2D" }}
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: "#243656" }}>Category</label>
-                <select
-                  value={categoryId}
-                  onChange={(e) => setCategoryId(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-sm rounded-md border outline-none"
-                  style={{ borderColor: "#E1E3EA", color: "#121C2D" }}
-                >
-                  <option value="">Select category…</option>
-                  {categories.map((c) => (
-                    <option key={c.id ?? c.slug} value={c.id ?? c.slug}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: "#243656" }}>Applies to product version</label>
-                <input
-                  value={productVersion}
-                  onChange={(e) => setProductVersion(e.target.value)}
-                  placeholder="e.g. 4.2.0"
-                  className="w-full px-3.5 py-2.5 text-sm rounded-md border outline-none"
-                  style={{ borderColor: "#E1E3EA", color: "#121C2D" }}
-                />
-              </div>
+            {/* Slug */}
+            <div>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: "#243656" }}>
+                Slug <span style={{ color: "#F22F46" }}>*</span>
+              </label>
+              <input
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+                placeholder="e.g. how-to-reverse-discharge"
+                className="w-full px-3.5 py-2.5 text-sm rounded-md border outline-none focus:border-red-500 transition-colors"
+                style={{ borderColor: "#E1E3EA", color: "#121C2D" }}
+              />
+              <p className="text-xs mt-1" style={{ color: "#9EA6B3" }}>
+                The slug is used in the URL. It should be lowercase, hyphen-separated, and unique.
+              </p>
             </div>
 
+            {/* Category */}
             <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: "#243656" }}>Tags</label>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: "#243656" }}>
+                Category <span style={{ color: "#F22F46" }}>*</span>
+              </label>
+              <select
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                className="w-full px-3.5 py-2.5 text-sm rounded-md border outline-none focus:border-red-500 transition-colors"
+                style={{ borderColor: "#E1E3EA", color: "#121C2D" }}
+              >
+                <option value="">Select category…</option>
+                {categories.map((c) => (
+                  <option key={c.id ?? c.slug} value={c.id ?? c.slug}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Tags */}
+            <div>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: "#243656" }}>
+                Tags
+              </label>
               <div className="flex flex-wrap items-center gap-2 mb-2">
                 {tags.map((t) => (
-                  <span key={t} className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full" style={{ background: "#F4F4F6", color: "#243656" }}>
+                  <span
+                    key={t}
+                    className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full"
+                    style={{ background: "#F4F4F6", color: "#243656" }}
+                  >
                     {t}
-                    <button onClick={() => removeTag(t)}><X size={11} /></button>
+                    <button onClick={() => removeTag(t)}>
+                      <X size={11} />
+                    </button>
                   </span>
                 ))}
               </div>
@@ -311,50 +375,62 @@ export default function ArticleEditorPage() {
                 <input
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTag(); } }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addTag();
+                    }
+                  }}
                   placeholder="Add a tag and press Enter"
-                  className="flex-1 px-3.5 py-2 text-sm rounded-md border outline-none"
+                  className="flex-1 px-3.5 py-2 text-sm rounded-md border outline-none focus:border-red-500 transition-colors"
                   style={{ borderColor: "#E1E3EA", color: "#121C2D" }}
                 />
-                <button onClick={addTag} type="button" className="flex items-center gap-1 px-3 py-2 rounded-md text-xs font-medium border" style={{ borderColor: "#E1E3EA", color: "#243656" }}>
+                <button
+                  onClick={addTag}
+                  type="button"
+                  className="flex items-center gap-1 px-3 py-2 rounded-md text-xs font-medium border transition-colors hover:bg-gray-50"
+                  style={{ borderColor: "#E1E3EA", color: "#243656" }}
+                >
                   <Plus size={13} /> Add
                 </button>
               </div>
             </div>
           </div>
 
-          
-          <div className="bg-white rounded-lg border p-6 space-y-5" style={{ borderColor: "#E1E3EA" }}>
-            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "#9EA6B3" }}>
-              Required sections for {ARTICLE_TYPE_LABELS[type]}
-            </p>
-            {requiredSections.map((section) => (
-              <div key={section}>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: "#243656" }}>{section}</label>
-                <textarea
-                  value={sections[section] ?? ""}
-                  onChange={(e) => setSections((prev) => ({ ...prev, [section]: e.target.value }))}
-                  rows={section === "Steps" || section === "Procedure Steps" ? 6 : 3}
-                  placeholder={`Write the ${section.toLowerCase()} here…`}
-                  className="w-full px-3.5 py-2.5 text-sm rounded-md border outline-none resize-y"
-                  style={{ borderColor: "#E1E3EA", color: "#121C2D" }}
-                />
-              </div>
-            ))}
+          {/* Content - Rich Text Editor */}
+          <div className="bg-white rounded-lg border p-6" style={{ borderColor: "#E1E3EA" }}>
+            <label className="block text-sm font-medium mb-1.5" style={{ color: "#243656" }}>
+              Content <span style={{ color: "#F22F46" }}>*</span>
+            </label>
+            <RichTextEditor
+              content={content}
+              onChange={setContent}
+              placeholder="Write your article content here…"
+            />
           </div>
 
-          
+          {/* Media uploader */}
           <div className="bg-white rounded-lg border p-6" style={{ borderColor: "#E1E3EA" }}>
             <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: "#9EA6B3" }}>
               Media (optional) — screenshots, PDFs, or training videos
             </p>
-            <MediaUploader items={media} onUpload={handleUpload} onRemove={handleRemoveMedia} />
+            <MediaUploader
+              items={media}
+              onUpload={handleUpload}
+              onRemove={handleRemoveMedia}
+            />
           </div>
 
-          
-          <div className="flex items-center justify-between sticky bottom-0 bg-white/95 backdrop-blur-sm rounded-lg border p-4" style={{ borderColor: "#E1E3EA" }}>
+          {/* Action buttons */}
+          <div
+            className="flex items-center justify-between sticky bottom-0 bg-white/95 backdrop-blur-sm rounded-lg border p-4"
+            style={{ borderColor: "#E1E3EA" }}
+          >
             <span className="text-xs" style={{ color: "#9EA6B3" }}>
-              Current status: <strong className="capitalize" style={{ color: "#243656" }}>{status}</strong>
+              Current status:{" "}
+              <strong className="capitalize" style={{ color: "#243656" }}>
+                {status}
+              </strong>
             </span>
             <div className="flex items-center gap-2.5">
               <button
@@ -363,7 +439,8 @@ export default function ArticleEditorPage() {
                 className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium border transition-colors hover:bg-gray-50 disabled:opacity-60"
                 style={{ borderColor: "#E1E3EA", color: "#243656" }}
               >
-                {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save draft
+                {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                Save draft
               </button>
               <button
                 onClick={() => persist("review")}
@@ -371,7 +448,8 @@ export default function ArticleEditorPage() {
                 className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-60"
                 style={{ background: "#F22F46", color: "white" }}
               >
-                {saving ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} Submit for review
+                {saving ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                Submit for review
               </button>
               {user?.role === ROLES.ADMIN && (
                 <button

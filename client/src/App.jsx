@@ -15,6 +15,7 @@ import AppLayout from "./components/layout/AppLayout.jsx";
 import ProtectedRoute from "./components/common/ProtectedRoute.jsx";
 import VerifyOtpPage from "./pages/auth/VerifyOTPPage.jsx";
 import UserDetailPage from "./pages/UserDetailPage.jsx";
+import CategoryEditorPage from "./pages/CategoryEditorPage.jsx";
 import { ROLES } from "./utils/constants";
 
 export default function App() {
@@ -46,6 +47,8 @@ export default function App() {
           {/* Admin only */}
           <Route element={<ProtectedRoute roles={[ROLES.ADMIN]} />}>
             <Route path="/app/admin" element={<AdminPage />} />
+            <Route path="/app/admin/categories/new" element={<CategoryEditorPage/>}/>
+            <Route path="/app/admin/categories/:id/edit" element={<CategoryEditorPage/>}/>
           </Route>
 
           <Route path="/app" element={<Navigate to="/app/dashboard" replace />} />

@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Search, SlidersHorizontal, PlusCircle, X, LifeBuoy } from "lucide-react";
+import {
+  Search, SlidersHorizontal, PlusCircle, X, LifeBuoy, BookOpen,
+  Rocket, User, Stethoscope, DollarSign, Settings, Shield, Wrench, FileText,
+} from "lucide-react";
 import { listCategories } from "../api/categories";
 import { listArticles, searchArticles } from "../api/articles";
 import useDebounce from "../hooks/useDebounce";
@@ -10,6 +13,18 @@ import EmptyState from "../components/common/EmptyState.jsx";
 import ErrorBanner from "../components/common/ErrorBanner.jsx";
 import RoleGate from "../components/common/RoleGate.jsx";
 import { ARTICLE_TYPE_LABELS, ROLES } from "../utils/constants";
+
+// Category icon mapping with colors (from Figma)
+const CATEGORY_CONFIG = {
+  "Getting Started": { icon: Rocket, color: "#0263E0", bg: "#E8F0FD" },
+  "Patient Management": { icon: User, color: "#00A368", bg: "#E6F7F1" },
+  "Clinical Modules": { icon: Stethoscope, color: "#E87722", bg: "#FEF3E7" },
+  "Billing & Finance": { icon: DollarSign, color: "#7B2FBE", bg: "#F0E6F7" },
+  "System Administration": { icon: Settings, color: "#F22F46", bg: "#FDEEF0" },
+  "Compliance & Security": { icon: Shield, color: "#243656", bg: "#E8E8EC" },
+  "Troubleshooting": { icon: Wrench, color: "#C21B2E", bg: "#FDEEF0" },
+  "Release Notes": { icon: FileText, color: "#696E7A", bg: "#F4F4F6" },
+};
 
 export default function KnowledgeBasePage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -29,7 +44,9 @@ export default function KnowledgeBasePage() {
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
-    listCategories().then((data) => setCategories(data.results ?? data ?? [])).catch(() => setCategories([]));
+    listCategories()
+      .then((data) => setCategories(data.results ?? data ?? []))
+      .catch(() => setCategories([]));
   }, []);
 
   useEffect(() => {
@@ -60,7 +77,7 @@ export default function KnowledgeBasePage() {
     return () => { cancelled = true; };
   }, [debouncedQuery, activeCategory, activeType, activeStatus]);
 
-  // Keep the URL's ?q= in sync so searches are shareable/bookmarkable
+  // Keep URL in sync
   useEffect(() => {
     const next = new URLSearchParams(searchParams);
     if (debouncedQuery.trim()) next.set("q", debouncedQuery.trim());
@@ -94,7 +111,7 @@ export default function KnowledgeBasePage() {
         <div>
           <h1 className="text-2xl font-semibold" style={{ color: "#121C2D" }}>Knowledge Base</h1>
           <p className="text-sm mt-1" style={{ color: "#696E7A" }}>
-            Search SOPs, how-to guides, troubleshooting, and release notes across all products.
+            SOPs, how-to guides, troubleshooting articles, and release notes for HMIS and healthcare products.
           </p>
         </div>
         <RoleGate allow={[ROLES.EDITOR, ROLES.ADMIN]}>
@@ -109,7 +126,7 @@ export default function KnowledgeBasePage() {
       </div>
 
       {/* Search bar */}
-      <div className="flex gap-2.5 mb-4">
+      <div className="flex gap-2.5 mb-6">
         <div className="relative flex-1">
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: "#9EA6B3" }} />
           <input
@@ -138,7 +155,7 @@ export default function KnowledgeBasePage() {
 
       {/* Filter panel */}
       {showFilters && (
-        <div className="bg-white rounded-lg border p-4 mb-4 grid grid-cols-1 sm:grid-cols-3 gap-4" style={{ borderColor: "#E1E3EA" }}>
+        <div className="bg-white rounded-lg border p-4 mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4" style={{ borderColor: "#E1E3EA" }}>
           <div>
             <label className="block text-xs font-medium mb-1.5" style={{ color: "#696E7A" }}>Category</label>
             <select
@@ -189,7 +206,7 @@ export default function KnowledgeBasePage() {
 
       {/* Active filter chips */}
       {hasActiveFilters && (
-        <div className="flex items-center flex-wrap gap-2 mb-4">
+        <div className="flex items-center flex-wrap gap-2 mb-6">
           {activeCategoryObj && (
             <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full" style={{ background: "#F4F4F6", color: "#243656" }}>
               {activeCategoryObj.name}
@@ -218,31 +235,70 @@ export default function KnowledgeBasePage() {
 
       {loading ? (
         <div className="flex justify-center py-20"><Spinner label="Searching…" /></div>
-      ) : articles.length === 0 ? (
-        <EmptyState
-          icon={Search}
-          title={query ? `No results for "${query}"` : "No articles found"}
-          description="Try a different search term, or browse by category. If you still can't find what you need, escalate to support."
-          action={
-            <button
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium mt-2"
-              style={{ background: "#F22F46", color: "white" }}
-              onClick={() => alert("This would open a support ticket with your search context attached.")}
-            >
-              <LifeBuoy size={14} /> Escalate to support
-            </button>
-          }
-        />
       ) : (
         <>
-          <p className="text-xs mb-4" style={{ color: "#9EA6B3" }}>
-            {total.toLocaleString()} article{total === 1 ? "" : "s"} found
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {articles.map((a) => (
-              <ArticleCard key={a.id} article={a} category={categories.find((c) => c.id === (a.category?.id ?? a.category))} />
-            ))}
-          </div>
+          {/* Browse by Category */}
+          {categories.length > 0 && !debouncedQuery && !activeCategory && !activeType && !activeStatus && (
+            <div className="mb-10">
+              <h2 className="text-lg font-semibold mb-4" style={{ color: "#121C2D" }}>Browse by Category</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {categories.slice(0, 8).map((cat) => {
+                  const config = CATEGORY_CONFIG[cat.name];
+                  const Icon = config?.icon || BookOpen;
+                  const color = config?.color || "#696E7A";
+                  const bg = config?.bg || "#F4F4F6";
+                  const count = cat.article_count || 0;
+
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => setFilter("category", cat.id)}
+                      className="flex flex-col items-center p-4 rounded-lg border hover:border-red-300 transition-colors text-center bg-white"
+                      style={{ borderColor: "#E1E3EA" }}
+                    >
+                      <div
+                        className="flex items-center justify-center rounded-full mb-3"
+                        style={{ width: 48, height: 48, background: bg }}
+                      >
+                        <Icon size={24} style={{ color }} strokeWidth={1.8} />
+                      </div>
+                      <span className="text-sm font-medium" style={{ color: "#121C2D" }}>{cat.name}</span>
+                      <span className="text-xs" style={{ color: "#9EA6B3" }}>{count} articles</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Articles grid */}
+          {articles.length === 0 ? (
+            <EmptyState
+              icon={Search}
+              title={query ? `No results for "${query}"` : "No articles found"}
+              description="Try a different search term, or browse by category. If you still can't find what you need, escalate to support."
+              action={
+                <button
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium mt-2"
+                  style={{ background: "#F22F46", color: "white" }}
+                  onClick={() => alert("This would open a support ticket with your search context attached.")}
+                >
+                  <LifeBuoy size={14} /> Escalate to support
+                </button>
+              }
+            />
+          ) : (
+            <>
+              <p className="text-xs mb-4" style={{ color: "#9EA6B3" }}>
+                {total.toLocaleString()} article{total === 1 ? "" : "s"} found
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {articles.map((a) => (
+                  <ArticleCard key={a.id} article={a} category={categories.find((c) => c.id === (a.category?.id ?? a.category))} />
+                ))}
+              </div>
+            </>
+          )}
         </>
       )}
     </div>

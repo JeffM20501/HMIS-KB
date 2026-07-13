@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Users, FileText, TrendingUp, AlertTriangle, CheckCircle2, XCircle,
-  Search, Trash2, Shield, Eye, Star, BarChart3, Loader2,
+  Search, Trash2, Shield, Eye, Star, BarChart3, Loader2,FolderTree,
 } from "lucide-react";
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
@@ -26,6 +26,7 @@ const TABS = [
   { key: "overview", label: "Overview", icon: BarChart3 },
   { key: "articles", label: "Articles", icon: FileText },
   { key: "users", label: "Users", icon: Users },
+  { key: "categories", label: "Categories", icon: FolderTree },
 ];
 
 export default function AdminPage() {
@@ -120,7 +121,7 @@ export default function AdminPage() {
       setBusyId(null);
     }
   };
-  
+
   const handleDeleteUser = async (u) => {
     if (!window.confirm(`Remove ${u.name}'s access?`)) return;
     setBusyId(u.id);
@@ -377,6 +378,73 @@ export default function AdminPage() {
                   );
                 })}
               </div>
+                {activeTab === "categories" && (
+                  <div>
+                    <div className="flex items-center justify-between mb-5">
+                      <h2 className="text-sm font-semibold" style={{ color: "#121C2D" }}>
+                        Manage Categories
+                      </h2>
+                      <button
+                        onClick={() => {
+                          // Open modal or navigate to category creation
+                          navigate("/app/admin/categories/new");
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-opacity hover:opacity-90"
+                        style={{ background: "#F22F46", color: "white" }}
+                      >
+                        <Plus size={15} /> New Category
+                      </button>
+                    </div>
+
+                    <div className="bg-white rounded-lg border overflow-hidden overflow-x-auto" style={{ borderColor: "#E1E3EA" }}>
+                      <table className="w-full">
+                        <thead>
+                          <tr style={{ background: "#FAFAFA" }}>
+                            {["Name", "Slug", "Parent", "Articles", "Actions"].map((h) => (
+                              <th key={h} className="px-5 py-3 text-left text-xs font-semibold whitespace-nowrap" style={{ color: "#9EA6B3" }}>
+                                {h}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {categories.map((c) => (
+                            <tr key={c.id} className="border-t hover:bg-gray-50 transition-colors" style={{ borderColor: "#F4F4F6" }}>
+                              <td className="px-5 py-3.5">
+                                <span className="text-sm font-medium" style={{ color: "#121C2D" }}>{c.name}</span>
+                              </td>
+                              <td className="px-5 py-3.5 text-xs" style={{ color: "#696E7A" }}>{c.slug}</td>
+                              <td className="px-5 py-3.5 text-xs" style={{ color: "#696E7A" }}>
+                                {c.parent_name || "—"}
+                              </td>
+                              <td className="px-5 py-3.5 text-xs" style={{ color: "#696E7A" }}>
+                                {c.article_count || 0}
+                              </td>
+                              <td className="px-5 py-3.5">
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => navigate(`/app/admin/categories/${c.id}/edit`)}
+                                    className="p-1 rounded hover:bg-gray-100 transition-colors"
+                                    title="Edit"
+                                  >
+                                    <FileText size={13} style={{ color: "#696E7A" }} />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteCategory(c)}
+                                    className="p-1 rounded hover:bg-red-50 transition-colors"
+                                    title="Delete"
+                                  >
+                                    <Trash2 size={13} style={{ color: "#9EA6B3" }} />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+              )}
 
               <div className="bg-white rounded-lg border overflow-hidden overflow-x-auto" style={{ borderColor: "#E1E3EA" }}>
                 <table className="w-full">

@@ -67,12 +67,12 @@ jobs:
           CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
           CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
-          EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
-          EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
+          EMAIL_HOST_USER: ${{ secrets.BREVO_SMTP_USER }}
+          EMAIL_HOST_PASSWORD: ${{ secrets.BREVO_SMTP_PASSWORD }}
           EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
           DEFAULT_FROM_EMAIL: ${{ secrets.DEFAULT_FROM_EMAIL }}
           HUGGINGFACE_API_KEY: ${{secrets.HUGGINGFACE_API_KEY}}
-          SIGNING_KEY: ${{secrets.SIGNING_KEY}}
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
         run: |
           cd server
           pytest -v --tb=short 
@@ -100,8 +100,8 @@ jobs:
           CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
           CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
-          EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
-          EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
+          EMAIL_HOST_USER: ${{ secrets.BREVO_SMTP_USER }}
+          EMAIL_HOST_PASSWORD: ${{ secrets.BREVO_SMTP_PASSWORD }}
           EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
           DEFAULT_FROM_EMAIL: ${{ secrets.DEFAULT_FROM_EMAIL }}
           HUGGINGFACE_API_KEY: ${{secrets.HUGGINGFACE_API_KEY}}
