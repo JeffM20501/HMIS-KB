@@ -105,11 +105,16 @@ class ArticleViewSet(viewsets.ModelViewSet):
         article.status = 'pending_review'
         article.save()
         
-        from django.contrib.auth import get_user_model
-        User = get_user_model()
-        admins = User.objects.filter(role='admin')
-        Notification.create_article_submitted_notification(article, request.user, admins)
-        
+        try:
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            admins = User.objects.filter(role='admin')
+            Notification.create_article_submitted_notification(article, request.user, admins)
+        except Exception as e:
+            # Log the error but don't break the flow
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to send notifications for article {article.id}: {e}")
         return Response(
             {'message': 'Article submitted for review successfully.'},
             status=status.HTTP_200_OK

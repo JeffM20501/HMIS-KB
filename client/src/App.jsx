@@ -17,6 +17,7 @@ import VerifyOtpPage from "./pages/auth/VerifyOTPPage.jsx";
 import UserDetailPage from "./pages/UserDetailPage.jsx";
 import CategoryEditorPage from "./pages/CategoryEditorPage.jsx";
 import { ROLES } from "./utils/constants";
+import EditorDraftsPage from "./pages/EditorDraftsPage.jsx";
 
 export default function App() {
   return (
@@ -42,6 +43,7 @@ export default function App() {
           <Route element={<ProtectedRoute roles={[ROLES.EDITOR, ROLES.ADMIN]} />}>
             <Route path="/app/articles/new" element={<ArticleEditorPage />} />
             <Route path="/app/articles/:id/edit" element={<ArticleEditorPage />} />
+            <Route path="/app/my-drafts" element={<EditorDraftsPage/>}/>
           </Route>
 
           {/* Admin only */}

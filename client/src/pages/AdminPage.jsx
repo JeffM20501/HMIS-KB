@@ -2,14 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Users, FileText, TrendingUp, AlertTriangle, CheckCircle2, XCircle,
-  Search, Trash2, Shield, Eye, Star, BarChart3, Loader2,FolderTree,
+  Search, Trash2, Shield, Eye, Star, BarChart3, Loader2, FolderTree, Plus, X,
 } from "lucide-react";
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
 import { listArticles, publishArticle, rejectArticle, deleteArticle } from "../api/articles";
 import { listUsers, updateUserRole, updateUserStatus, deleteUser } from "../api/users";
-import { listCategories } from "../api/categories";
+import { listCategories, createCategory, updateCategory, deleteCategory } from "../api/categories";
 import { getDashboardAnalytics } from "../api/analytics";
 import Spinner from "../components/common/Spinner.jsx";
 import ErrorBanner from "../components/common/ErrorBanner.jsx";
@@ -43,6 +43,19 @@ export default function AdminPage() {
   const [articleSearch, setArticleSearch] = useState("");
   const [userSearch, setUserSearch] = useState("");
   const [busyId, setBusyId] = useState(null);
+
+  // Category modal state
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [categoryForm, setCategoryForm] = useState({
+    name: "",
+    slug: "",
+    description: "",
+    parent: "",
+    sort_order: 0,
+    icon: "",
+  });
+  const [categoryFormError, setCategoryFormError] = useState("");
+  const [submittingCategory, setSubmittingCategory] = useState(false);
 
   const loadAll = () => {
     setLoading(true);
@@ -84,6 +97,7 @@ export default function AdminPage() {
   const timeSeries = analytics?.timeSeries ?? [];
   const ratingDist = analytics?.ratingDistribution ?? [];
 
+  // ---- Article actions ----
   const handlePublish = async (a) => {
     setBusyId(a.id);
     try {
@@ -122,6 +136,7 @@ export default function AdminPage() {
     }
   };
 
+  // ---- User actions ----
   const handleDeleteUser = async (u) => {
     if (!window.confirm(`Remove ${u.name}'s access?`)) return;
     setBusyId(u.id);
@@ -135,6 +150,46 @@ export default function AdminPage() {
     }
   };
 
+  // ---- Category actions ----
+  const handleDeleteCategory = async (c) => {
+    if (!window.confirm(`Delete category "${c.name}"? This will remove it from all articles.`)) return;
+    setBusyId(c.id);
+    try {
+      await deleteCategory(c.id);
+      setCategories((prev) => prev.filter((x) => x.id !== c.id));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleCategorySubmit = async (e) => {
+    e.preventDefault();
+    setCategoryFormError("");
+    setSubmittingCategory(true);
+    try {
+      await createCategory(categoryForm);
+      setShowCategoryModal(false);
+      // Refetch categories
+      const updated = await listCategories();
+      setCategories(updated.results ?? updated ?? []);
+      // Reset form
+      setCategoryForm({ name: "", slug: "", description: "", parent: "", sort_order: 0, icon: "" });
+    } catch (err) {
+      setCategoryFormError(err.response?.data?.detail || err.message || "Failed to create category.");
+    } finally {
+      setSubmittingCategory(false);
+    }
+  };
+
+  // Auto-generate slug from name
+  const handleNameChange = (name) => {
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    setCategoryForm({ ...categoryForm, name, slug });
+  };
+
+  // ---- Render ----
   return (
     <div className="max-w-6xl mx-auto px-6 py-8">
       <div className="mb-6">
@@ -175,6 +230,7 @@ export default function AdminPage() {
         <>
           {activeTab === "overview" && (
             <div className="space-y-6">
+              {/* ... (same as before) ... */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
                   { icon: FileText, label: "Total articles", value: analytics?.totalArticles ?? articles.length, color: "#0263E0" },
@@ -378,73 +434,6 @@ export default function AdminPage() {
                   );
                 })}
               </div>
-                {activeTab === "categories" && (
-                  <div>
-                    <div className="flex items-center justify-between mb-5">
-                      <h2 className="text-sm font-semibold" style={{ color: "#121C2D" }}>
-                        Manage Categories
-                      </h2>
-                      <button
-                        onClick={() => {
-                          // Open modal or navigate to category creation
-                          navigate("/app/admin/categories/new");
-                        }}
-                        className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-opacity hover:opacity-90"
-                        style={{ background: "#F22F46", color: "white" }}
-                      >
-                        <Plus size={15} /> New Category
-                      </button>
-                    </div>
-
-                    <div className="bg-white rounded-lg border overflow-hidden overflow-x-auto" style={{ borderColor: "#E1E3EA" }}>
-                      <table className="w-full">
-                        <thead>
-                          <tr style={{ background: "#FAFAFA" }}>
-                            {["Name", "Slug", "Parent", "Articles", "Actions"].map((h) => (
-                              <th key={h} className="px-5 py-3 text-left text-xs font-semibold whitespace-nowrap" style={{ color: "#9EA6B3" }}>
-                                {h}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {categories.map((c) => (
-                            <tr key={c.id} className="border-t hover:bg-gray-50 transition-colors" style={{ borderColor: "#F4F4F6" }}>
-                              <td className="px-5 py-3.5">
-                                <span className="text-sm font-medium" style={{ color: "#121C2D" }}>{c.name}</span>
-                              </td>
-                              <td className="px-5 py-3.5 text-xs" style={{ color: "#696E7A" }}>{c.slug}</td>
-                              <td className="px-5 py-3.5 text-xs" style={{ color: "#696E7A" }}>
-                                {c.parent_name || "—"}
-                              </td>
-                              <td className="px-5 py-3.5 text-xs" style={{ color: "#696E7A" }}>
-                                {c.article_count || 0}
-                              </td>
-                              <td className="px-5 py-3.5">
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    onClick={() => navigate(`/app/admin/categories/${c.id}/edit`)}
-                                    className="p-1 rounded hover:bg-gray-100 transition-colors"
-                                    title="Edit"
-                                  >
-                                    <FileText size={13} style={{ color: "#696E7A" }} />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteCategory(c)}
-                                    className="p-1 rounded hover:bg-red-50 transition-colors"
-                                    title="Delete"
-                                  >
-                                    <Trash2 size={13} style={{ color: "#9EA6B3" }} />
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-              )}
 
               <div className="bg-white rounded-lg border overflow-hidden overflow-x-auto" style={{ borderColor: "#E1E3EA" }}>
                 <table className="w-full">
@@ -516,7 +505,172 @@ export default function AdminPage() {
               </div>
             </div>
           )}
+
+          {activeTab === "categories" && (
+            <div>
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="text-sm font-semibold" style={{ color: "#121C2D" }}>
+                  Manage Categories
+                </h2>
+                <button
+                  onClick={() => setShowCategoryModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-opacity hover:opacity-90"
+                  style={{ background: "#F22F46", color: "white" }}
+                >
+                  <Plus size={15} /> New Category
+                </button>
+              </div>
+
+              <div className="bg-white rounded-lg border overflow-hidden overflow-x-auto" style={{ borderColor: "#E1E3EA" }}>
+                <table className="w-full">
+                  <thead>
+                    <tr style={{ background: "#FAFAFA" }}>
+                      {["Name", "Slug", "Parent", "Articles", "Actions"].map((h) => (
+                        <th key={h} className="px-5 py-3 text-left text-xs font-semibold whitespace-nowrap" style={{ color: "#9EA6B3" }}>
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {categories.map((c) => (
+                      <tr key={c.id} className="border-t hover:bg-gray-50 transition-colors" style={{ borderColor: "#F4F4F6" }}>
+                        <td className="px-5 py-3.5">
+                          <span className="text-sm font-medium" style={{ color: "#121C2D" }}>{c.name}</span>
+                        </td>
+                        <td className="px-5 py-3.5 text-xs" style={{ color: "#696E7A" }}>{c.slug}</td>
+                        <td className="px-5 py-3.5 text-xs" style={{ color: "#696E7A" }}>
+                          {c.parent_name || "—"}
+                        </td>
+                        <td className="px-5 py-3.5 text-xs" style={{ color: "#696E7A" }}>
+                          {c.article_count || 0}
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => navigate(`/app/admin/categories/${c.id}/edit`)}
+                              className="p-1 rounded hover:bg-gray-100 transition-colors"
+                              title="Edit"
+                            >
+                              <FileText size={13} style={{ color: "#696E7A" }} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteCategory(c)}
+                              className="p-1 rounded hover:bg-red-50 transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 size={13} style={{ color: "#9EA6B3" }} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </>
+      )}
+
+      {/* Category Modal */}
+      {showCategoryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg w-full max-w-md p-6 shadow-xl">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold" style={{ color: "#121C2D" }}>Add New Category</h3>
+              <button onClick={() => setShowCategoryModal(false)} className="p-1 rounded hover:bg-gray-100 transition-colors">
+                <X size={18} style={{ color: "#696E7A" }} />
+              </button>
+            </div>
+            {categoryFormError && (
+              <div className="mb-3 text-xs text-red-600 flex items-center gap-1">
+                <XCircle size={14} /> {categoryFormError}
+              </div>
+            )}
+            <form onSubmit={handleCategorySubmit} className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: "#696E7A" }}>Name *</label>
+                <input
+                  type="text"
+                  value={categoryForm.name}
+                  onChange={(e) => handleNameChange(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 text-sm rounded-md border outline-none"
+                  style={{ borderColor: "#E1E3EA", color: "#121C2D" }}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: "#696E7A" }}>Slug</label>
+                <input
+                  type="text"
+                  value={categoryForm.slug}
+                  onChange={(e) => setCategoryForm({ ...categoryForm, slug: e.target.value })}
+                  className="w-full px-3 py-2 text-sm rounded-md border outline-none"
+                  style={{ borderColor: "#E1E3EA", color: "#121C2D" }}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: "#696E7A" }}>Description</label>
+                <textarea
+                  value={categoryForm.description}
+                  onChange={(e) => setCategoryForm({ ...categoryForm, description: e.target.value })}
+                  rows={2}
+                  className="w-full px-3 py-2 text-sm rounded-md border outline-none resize-none"
+                  style={{ borderColor: "#E1E3EA", color: "#121C2D" }}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: "#696E7A" }}>Parent Category</label>
+                <select
+                  value={categoryForm.parent}
+                  onChange={(e) => setCategoryForm({ ...categoryForm, parent: e.target.value })}
+                  className="w-full px-3 py-2 text-sm rounded-md border outline-none"
+                  style={{ borderColor: "#E1E3EA", color: "#121C2D" }}
+                >
+                  <option value="">None (Root)</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: "#696E7A" }}>Sort Order</label>
+                <input
+                  type="number"
+                  value={categoryForm.sort_order}
+                  onChange={(e) => setCategoryForm({ ...categoryForm, sort_order: parseInt(e.target.value) || 0 })}
+                  className="w-full px-3 py-2 text-sm rounded-md border outline-none"
+                  style={{ borderColor: "#E1E3EA", color: "#121C2D" }}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: "#696E7A" }}>Icon (emoji or name)</label>
+                <input
+                  type="text"
+                  value={categoryForm.icon}
+                  onChange={(e) => setCategoryForm({ ...categoryForm, icon: e.target.value })}
+                  placeholder="e.g. rocket, user, settings"
+                  className="w-full px-3 py-2 text-sm rounded-md border outline-none"
+                  style={{ borderColor: "#E1E3EA", color: "#121C2D" }}
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setShowCategoryModal(false)} className="px-4 py-2 rounded-md text-sm font-medium border" style={{ borderColor: "#E1E3EA", color: "#696E7A" }}>
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingCategory}
+                  className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                  style={{ background: "#F22F46" }}
+                >
+                  {submittingCategory ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />} Create
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

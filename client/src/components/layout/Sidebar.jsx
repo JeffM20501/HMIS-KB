@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, BookOpen, Settings, Users, Shield, CreditCard,
   Stethoscope, Tag, LogOut, ChevronDown, X, Wrench, BookMarked,
-  SlidersHorizontal, PlusCircle, // ✅ Added PlusCircle icon
+  SlidersHorizontal, PlusCircle, FileText, 
 } from "lucide-react";
 import useAuth from "../../hooks/useAuth";
 import { ROLES } from "../../utils/constants";
@@ -12,8 +12,9 @@ import { listCategories } from "../../api/categories";
 const navItems = [
   { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/app/knowledge-base", label: "Knowledge Base", icon: BookOpen },
+  // NEW: My Drafts – visible to editors and admins
+  { to: "/app/my-drafts", label: "My Drafts", icon: FileText, editorOnly: true },
   { to: "/app/admin", label: "Admin Panel", icon: Settings, adminOnly: true },
-  // ✅ NEW: Editor-only nav item for creating articles
   { to: "/app/articles/new", label: "New Article", icon: PlusCircle, editorOnly: true },
   { to: "/app/settings", label: "Settings", icon: SlidersHorizontal },
 ];

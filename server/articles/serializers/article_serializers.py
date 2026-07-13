@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from articles.models import Article
+from articles.models import Article,Category,Tag
+from django.contrib.auth import get_user_model
 
 
 class ArticleSerializer(serializers.ModelSerializer):
@@ -47,3 +48,4 @@ class ArticleSerializer(serializers.ModelSerializer):
             validated_data['status'] = 'draft'
         
         return super().create(validated_data)
+    

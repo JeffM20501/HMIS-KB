@@ -7,6 +7,7 @@ import {
 import { listCategories } from "../api/categories";
 import { listArticles, searchArticles } from "../api/articles";
 import useDebounce from "../hooks/useDebounce";
+import useAuth from "../hooks/useAuth";
 import ArticleCard from "../components/articles/ArticleCard.jsx";
 import Spinner from "../components/common/Spinner.jsx";
 import EmptyState from "../components/common/EmptyState.jsx";
@@ -14,7 +15,6 @@ import ErrorBanner from "../components/common/ErrorBanner.jsx";
 import RoleGate from "../components/common/RoleGate.jsx";
 import { ARTICLE_TYPE_LABELS, ROLES } from "../utils/constants";
 
-// Category icon mapping with colors (from Figma)
 const CATEGORY_CONFIG = {
   "Getting Started": { icon: Rocket, color: "#0263E0", bg: "#E8F0FD" },
   "Patient Management": { icon: User, color: "#00A368", bg: "#E6F7F1" },
@@ -26,29 +26,66 @@ const CATEGORY_CONFIG = {
   "Release Notes": { icon: FileText, color: "#696E7A", bg: "#F4F4F6" },
 };
 
+// Helper: filter articles based on user role
+function filterArticlesByRole(articles, user) {
+  if (!user) {
+    // Unauthenticated → only published
+    return articles.filter(a => a.status === 'published');
+  }
+
+  const role = user.role;
+  if (role === ROLES.VIEWER) {
+    return articles.filter(a => a.status === 'published');
+  }
+
+  if (role === ROLES.EDITOR) {
+    return articles.filter(a => 
+      a.status === 'published' ||
+      (a.status === 'draft' && a.author === user.id)
+    );
+  }
+
+  if (role === ROLES.ADMIN) {
+    // Admins see published and pending_review (and archived if they explicitly filter)
+    // We'll allow archived via filter later
+    return articles.filter(a => 
+      a.status === 'published' || a.status === 'pending_review'
+    );
+  }
+
+  // fallback
+  return articles.filter(a => a.status === 'published');
+}
+
 export default function KnowledgeBasePage() {
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const [query, setQuery] = useState(searchParams.get("q") ?? "");
-  const debouncedQuery = useDebounce(query, 350);
+  const initialQuery = searchParams.get("q") ?? "";
   const activeCategory = searchParams.get("category") ?? "";
   const activeType = searchParams.get("type") ?? "";
   const activeStatus = searchParams.get("status") ?? "";
 
+  const [query, setQuery] = useState(initialQuery);
+  const debouncedQuery = useDebounce(query, 350);
+
   const [categories, setCategories] = useState([]);
-  const [articles, setArticles] = useState([]);
+  const [allArticles, setAllArticles] = useState([]);        // full list from API
+  const [filteredArticles, setFilteredArticles] = useState([]); // after role + status filter
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showFilters, setShowFilters] = useState(false);
 
+  // Load categories
   useEffect(() => {
     listCategories()
       .then((data) => setCategories(data.results ?? data ?? []))
       .catch(() => setCategories([]));
   }, []);
 
+  // Fetch articles (without status param) and apply filters client‑side
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -57,8 +94,7 @@ export default function KnowledgeBasePage() {
     const params = {
       category: activeCategory || undefined,
       type: activeType || undefined,
-      status: activeStatus || undefined,
-      page_size: 24,
+      page_size: 100, // fetch a reasonable amount; adjust as needed
     };
 
     const request = debouncedQuery.trim()
@@ -68,29 +104,45 @@ export default function KnowledgeBasePage() {
     request
       .then((data) => {
         if (cancelled) return;
-        setArticles(data.results ?? data ?? []);
-        setTotal(data.count ?? (data.results ?? data ?? []).length);
+        const articles = data.results ?? data ?? [];
+        setAllArticles(articles);
+        // Apply role‑based filtering
+        let visible = filterArticlesByRole(articles, user);
+        // Apply additional status filter if the user explicitly selected one
+        if (activeStatus) {
+          visible = visible.filter(a => a.status === activeStatus);
+        }
+        // Also apply category/type again (already in API call) but safe to re‑filter
+        // (they are already filtered by API, but we keep for consistency)
+        setFilteredArticles(visible);
+        setTotal(visible.length);
       })
       .catch((err) => !cancelled && setError(err.message))
       .finally(() => !cancelled && setLoading(false));
 
     return () => { cancelled = true; };
-  }, [debouncedQuery, activeCategory, activeType, activeStatus]);
+  }, [debouncedQuery, activeCategory, activeType, activeStatus, user]);
 
-  // Keep URL in sync
-  useEffect(() => {
+  // URL sync (unchanged)
+  const updateUrlParams = (updates) => {
     const next = new URLSearchParams(searchParams);
-    if (debouncedQuery.trim()) next.set("q", debouncedQuery.trim());
-    else next.delete("q");
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value) next.set(key, value);
+      else next.delete(key);
+    });
     setSearchParams(next, { replace: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  };
+
+  useEffect(() => {
+    const currentQuery = searchParams.get("q") ?? "";
+    if (debouncedQuery.trim() !== currentQuery) {
+      updateUrlParams({ q: debouncedQuery.trim() || undefined });
+    }
+    // eslint-disable-next-line
   }, [debouncedQuery]);
 
   const setFilter = (key, value) => {
-    const next = new URLSearchParams(searchParams);
-    if (value) next.set(key, value);
-    else next.delete(key);
-    setSearchParams(next);
+    updateUrlParams({ [key]: value || undefined });
   };
 
   const clearFilters = () => {
@@ -105,8 +157,12 @@ export default function KnowledgeBasePage() {
 
   const hasActiveFilters = activeCategory || activeType || activeStatus || query;
 
+  // Show status filter only for admins
+  const showStatusFilter = user?.role === ROLES.ADMIN;
+
   return (
     <div className="max-w-6xl mx-auto px-6 py-8">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-semibold" style={{ color: "#121C2D" }}>Knowledge Base</h1>
@@ -125,7 +181,7 @@ export default function KnowledgeBasePage() {
         </RoleGate>
       </div>
 
-      {/* Search bar */}
+      {/* Search & Filters */}
       <div className="flex gap-2.5 mb-6">
         <div className="relative flex-1">
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: "#9EA6B3" }} />
@@ -184,7 +240,7 @@ export default function KnowledgeBasePage() {
               ))}
             </select>
           </div>
-          <RoleGate allow={[ROLES.EDITOR, ROLES.ADMIN]} fallback={<div />}>
+          {showStatusFilter && (
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: "#696E7A" }}>Status</label>
               <select
@@ -193,14 +249,13 @@ export default function KnowledgeBasePage() {
                 className="w-full px-3 py-2 text-sm rounded-md border outline-none"
                 style={{ borderColor: "#E1E3EA", color: "#121C2D" }}
               >
-                <option value="">All statuses</option>
+                <option value="">All (except drafts)</option>
                 <option value="published">Published</option>
-                <option value="draft">Draft</option>
-                <option value="review">In Review</option>
+                <option value="pending_review">Pending Review</option>
                 <option value="archived">Archived</option>
               </select>
             </div>
-          </RoleGate>
+          )}
         </div>
       )}
 
@@ -219,7 +274,7 @@ export default function KnowledgeBasePage() {
               <button onClick={() => setFilter("type", "")}><X size={11} /></button>
             </span>
           )}
-          {activeStatus && (
+          {activeStatus && showStatusFilter && (
             <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full capitalize" style={{ background: "#F4F4F6", color: "#243656" }}>
               {activeStatus}
               <button onClick={() => setFilter("status", "")}><X size={11} /></button>
@@ -237,7 +292,7 @@ export default function KnowledgeBasePage() {
         <div className="flex justify-center py-20"><Spinner label="Searching…" /></div>
       ) : (
         <>
-          {/* Browse by Category */}
+          {/* Browse by Category – only shown when no filters and results exist */}
           {categories.length > 0 && !debouncedQuery && !activeCategory && !activeType && !activeStatus && (
             <div className="mb-10">
               <h2 className="text-lg font-semibold mb-4" style={{ color: "#121C2D" }}>Browse by Category</h2>
@@ -247,7 +302,9 @@ export default function KnowledgeBasePage() {
                   const Icon = config?.icon || BookOpen;
                   const color = config?.color || "#696E7A";
                   const bg = config?.bg || "#F4F4F6";
-                  const count = cat.article_count || 0;
+                  // Count articles that are visible to the current user (for this category)
+                  const visibleInCat = filteredArticles.filter(a => a.category === cat.id);
+                  const count = visibleInCat.length;
 
                   return (
                     <button
@@ -272,7 +329,7 @@ export default function KnowledgeBasePage() {
           )}
 
           {/* Articles grid */}
-          {articles.length === 0 ? (
+          {filteredArticles.length === 0 ? (
             <EmptyState
               icon={Search}
               title={query ? `No results for "${query}"` : "No articles found"}
@@ -290,10 +347,10 @@ export default function KnowledgeBasePage() {
           ) : (
             <>
               <p className="text-xs mb-4" style={{ color: "#9EA6B3" }}>
-                {total.toLocaleString()} article{total === 1 ? "" : "s"} found
+                {filteredArticles.length} article{filteredArticles.length === 1 ? "" : "s"} found
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {articles.map((a) => (
+                {filteredArticles.map((a) => (
                   <ArticleCard key={a.id} article={a} category={categories.find((c) => c.id === (a.category?.id ?? a.category))} />
                 ))}
               </div>

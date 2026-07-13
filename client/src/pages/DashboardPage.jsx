@@ -29,11 +29,15 @@ export default function DashboardPage() {
     setError("");
 
     const requests = [
-      listArticles({ sort: "views", page_size: 4 }),
-      listArticles({ sort: "recent", page_size: 6 }),
+      // Only published articles for top & recent
+      listArticles({ sort: "views", page_size: 4, status: "published" }),
+      listArticles({ sort: "recent", page_size: 6, status: "published" }),
     ];
     if (user?.role === ROLES.ADMIN) requests.push(getDashboardAnalytics());
-    if (user?.role !== ROLES.VIEWER) requests.push(listArticles({ author: user?.id, status: "draft", page_size: 4 }));
+    // Editors & Admins see their own drafts
+    if (user?.role !== ROLES.VIEWER) {
+      requests.push(listArticles({ author: user?.id, status: "draft", page_size: 4 }));
+    }
 
     Promise.all(requests)
       .then(([top, recent, analytics, drafts]) => {
@@ -90,7 +94,7 @@ export default function DashboardPage() {
               <div className="mb-8">
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-sm font-semibold" style={{ color: "#121C2D" }}>Your drafts</h2>
-                  <Link to="/app/knowledge-base?status=draft" className="text-xs font-medium flex items-center gap-1 hover:underline" style={{ color: "#F22F46" }}>
+                  <Link to="/app/my-drafts" className="text-xs font-medium flex items-center gap-1 hover:underline" style={{ color: "#F22F46" }}>
                     View all <ArrowRight size={12} />
                   </Link>
                 </div>
@@ -100,7 +104,7 @@ export default function DashboardPage() {
                       <FileText size={14} style={{ color: "#9EA6B3", flexShrink: 0 }} />
                       <span className="text-sm flex-1 truncate" style={{ color: "#121C2D" }}>{a.title}</span>
                       <Clock size={11} style={{ color: "#9EA6B3" }} />
-                      <span className="text-xs" style={{ color: "#9EA6B3" }}>{a.lastUpdated}</span>
+                      <span className="text-xs" style={{ color: "#9EA6B3" }}>{a.updated_at ? new Date(a.updated_at).toLocaleDateString() : "—"}</span>
                     </button>
                   ))}
                 </div>
@@ -108,7 +112,7 @@ export default function DashboardPage() {
             )}
           </RoleGate>
 
-          {/* Top articles */}
+          {/* Top articles (published only) */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-semibold" style={{ color: "#121C2D" }}>Most viewed this month</h2>
@@ -125,7 +129,7 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Recently updated */}
+          {/* Recently updated (published only) */}
           <div>
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-semibold" style={{ color: "#121C2D" }}>Recently updated</h2>
@@ -141,7 +145,7 @@ export default function DashboardPage() {
                     <span className="text-xs px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: "#F4F4F6", color: "#696E7A" }}>
                       {a.categoryName}
                     </span>
-                    <span className="text-xs flex-shrink-0" style={{ color: "#9EA6B3" }}>{a.lastUpdated}</span>
+                    <span className="text-xs flex-shrink-0" style={{ color: "#9EA6B3" }}>{a.updated_at ? new Date(a.updated_at).toLocaleDateString() : "—"}</span>
                   </button>
                 ))}
               </div>

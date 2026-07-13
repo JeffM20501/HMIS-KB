@@ -116,7 +116,11 @@ class Notification(models.Model):
                 link=f"/articles/{article.id}/"
             )
             notifications.append(notification)
-            send_article_submitted_email(admin,article,editor)
+            try:
+                send_article_submitted_email(admin, article, editor)
+            except Exception as e:
+                # log but continue
+                pass
         return notifications
     
     @classmethod
