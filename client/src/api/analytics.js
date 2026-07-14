@@ -3,6 +3,7 @@ import client from "./client";
 
 // FEEDBACK
 
+
 export const listFeedback = (params = {}) => client.get("/analytics/feedbacks/", { params }).then((res) => res.data);
 
 export const createFeedback = (payload) => client.post("/analytics/feedbacks/", payload).then((res) => res.data);
@@ -69,6 +70,7 @@ export const getUnreadNotificationCount = () =>
 
 // DASHBOARD AGGREGATION
 
+export const getPublicStats = () => client.get("/stats/").then((res) => res.data);
 
 export async function getDashboardAnalytics() {
   const [feedback, searchLogs] = await Promise.all([

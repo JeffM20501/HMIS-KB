@@ -43,19 +43,33 @@ export default function ArticleEditorPage() {
   const [loading, setLoading] = useState(isEditMode);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [saved, setSaved] = useState(false);
 
-  // Article fields (aligned with backend model)
   const [articleId, setArticleId] = useState(id ?? null);
   const [slug, setSlug] = useState("");
   const [title, setTitle] = useState("");
-  const [type, setType] = useState(""); // UI only – not sent to backend
+  const [type, setType] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState("");
   const [content, setContent] = useState("");
   const [media, setMedia] = useState([]);
   const [status, setStatus] = useState("draft");
+
+  // Modal states
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    confirmLabel: "",
+    confirmColor: "#00A368",
+    onConfirm: null,
+  });
+  const [resultModal, setResultModal] = useState({
+    isOpen: false,
+    type: "success",
+    title: "",
+    message: "",
+  });
 
   // Load categories
   useEffect(() => {
@@ -64,7 +78,7 @@ export default function ArticleEditorPage() {
       .catch(() => setCategories([]));
   }, []);
 
-  // Load existing article in edit mode
+  // Load existing article
   useEffect(() => {
     if (!isEditMode) return;
     let cancelled = false;
@@ -107,12 +121,11 @@ export default function ArticleEditorPage() {
     }
   };
 
-  // ✅ Build payload – only fields that exist in the Article model
   const buildPayload = (nextStatus) => ({
     title,
     slug: slug || generateSlug(title),
-    category: categoryId,       // backend expects integer ID
-    tags,                       // list of tag names (or IDs, adjust if needed)
+    category: categoryId,
+    tags,
     content,
     status: nextStatus,
   });
@@ -125,7 +138,38 @@ export default function ArticleEditorPage() {
     return "";
   };
 
-  const persist = async (nextStatus) => {
+  // ---- Modal helpers ----
+  const openConfirmModal = (title, message, confirmLabel, onConfirm, confirmColor = "#00A368") => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      confirmLabel,
+      confirmColor,
+      onConfirm,
+    });
+  };
+
+  const closeConfirmModal = () => {
+    setConfirmModal({ ...confirmModal, isOpen: false });
+  };
+
+  const openResultModal = (type, title, message) => {
+    setResultModal({
+      isOpen: true,
+      type,
+      title,
+      message,
+    });
+    setTimeout(() => closeResultModal(), 6000);
+  };
+
+  const closeResultModal = () => {
+    setResultModal({ ...resultModal, isOpen: false });
+  };
+
+  // ---- Core save logic ----
+  const performSave = async (nextStatus) => {
     const validationError = validate();
     if (validationError) {
       setError(validationError);
@@ -133,38 +177,80 @@ export default function ArticleEditorPage() {
     }
     setError("");
     setSaving(true);
+
     try {
       const payload = buildPayload(nextStatus);
-      console.log("Saving article with payload:", payload); // debug
+      let response;
+      let finalSlug = slug;
 
-      let savedArticle;
       if (articleId) {
-        savedArticle = await updateArticle(articleId, payload);
+        response = await updateArticle(slug, payload);
       } else {
-        savedArticle = await createArticle(payload);
-        setArticleId(savedArticle.id ?? savedArticle.article?.id);
+        response = await createArticle(payload);
+        const newId = response.id ?? response.article?.id;
+        const newSlug = response.slug ?? response.article?.slug;
+        if (newId) setArticleId(newId);
+        if (newSlug) {
+          setSlug(newSlug);
+          finalSlug = newSlug;
+        } else {
+          finalSlug = slug;
+        }
       }
 
-      const finalId = articleId ?? savedArticle.id ?? savedArticle.article?.id;
-
-      // Extra actions (submit for review, publish)
+      // Extra actions
       if (nextStatus === "review") {
-        await submitArticleForReview(finalId);
+        await submitArticleForReview(finalSlug);
+        openResultModal("success", "Submitted!", "Your article is now pending admin review.");
       } else if (nextStatus === "published" && user?.role === ROLES.ADMIN) {
-        await publishArticle(finalId);
+        await publishArticle(finalSlug);
+        openResultModal("success", "Published!", "The article is now visible to all users.");
+      } else {
+        openResultModal("success", "Saved!", "Your draft has been saved successfully.");
       }
 
       setStatus(nextStatus);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
     } catch (err) {
       console.error("Save error:", err);
-      setError(err.message || "Couldn't save the article. Please try again.");
+      const msg = err.response?.data?.error || err.response?.data?.message || err.message;
+      openResultModal("error", "Operation Failed", msg || "Couldn't save the article. Please try again.");
     } finally {
       setSaving(false);
     }
   };
 
+  // ---- Action handlers ----
+  const handleSaveDraft = () => {
+    performSave("draft");
+  };
+
+  const handleSubmitForReview = () => {
+    openConfirmModal(
+      "Submit for Review",
+      "Submit this draft for admin review? Once submitted, you cannot edit it until it's reviewed.",
+      "Submit",
+      () => {
+        closeConfirmModal();
+        performSave("review");
+      },
+      "#00A368"
+    );
+  };
+
+  const handlePublish = () => {
+    openConfirmModal(
+      "Publish Article",
+      "Are you sure you want to publish this article? It will become visible to all users.",
+      "Publish",
+      () => {
+        closeConfirmModal();
+        performSave("published");
+      },
+      "#00A368"
+    );
+  };
+
+  // ---- Upload / Remove ----
   const handleUpload = async (file) => {
     const tempId = `temp_${Date.now()}`;
     setMedia((prev) => [
@@ -220,6 +306,7 @@ export default function ArticleEditorPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
+      {/* Back button */}
       <button
         onClick={() => navigate(-1)}
         className="flex items-center gap-1.5 text-xs mb-5 hover:underline"
@@ -239,11 +326,6 @@ export default function ArticleEditorPage() {
               : "Fill in the article details below."}
           </p>
         </div>
-        {saved && (
-          <span className="flex items-center gap-1.5 text-sm font-medium" style={{ color: "#00A368" }}>
-            <CheckCircle2 size={15} /> Saved
-          </span>
-        )}
       </div>
 
       {/* Template selection */}
@@ -397,7 +479,7 @@ export default function ArticleEditorPage() {
             </div>
           </div>
 
-          {/* Content - Rich Text Editor */}
+          {/* Content */}
           <div className="bg-white rounded-lg border p-6" style={{ borderColor: "#E1E3EA" }}>
             <label className="block text-sm font-medium mb-1.5" style={{ color: "#243656" }}>
               Content <span style={{ color: "#F22F46" }}>*</span>
@@ -434,7 +516,7 @@ export default function ArticleEditorPage() {
             </span>
             <div className="flex items-center gap-2.5">
               <button
-                onClick={() => persist("draft")}
+                onClick={handleSaveDraft}
                 disabled={saving}
                 className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium border transition-colors hover:bg-gray-50 disabled:opacity-60"
                 style={{ borderColor: "#E1E3EA", color: "#243656" }}
@@ -443,7 +525,7 @@ export default function ArticleEditorPage() {
                 Save draft
               </button>
               <button
-                onClick={() => persist("review")}
+                onClick={handleSubmitForReview}
                 disabled={saving}
                 className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-60"
                 style={{ background: "#F22F46", color: "white" }}
@@ -453,7 +535,7 @@ export default function ArticleEditorPage() {
               </button>
               {user?.role === ROLES.ADMIN && (
                 <button
-                  onClick={() => persist("published")}
+                  onClick={handlePublish}
                   disabled={saving}
                   className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium border transition-colors disabled:opacity-60"
                   style={{ borderColor: "#00A368", color: "#00A368" }}
@@ -461,6 +543,90 @@ export default function ArticleEditorPage() {
                   <CheckCircle2 size={14} /> Publish
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---- Confirmation Modal ---- */}
+      {confirmModal.isOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+          onClick={closeConfirmModal}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold mb-2" style={{ color: "#121C2D" }}>
+              {confirmModal.title}
+            </h3>
+            <p className="text-sm mb-6" style={{ color: "#696E7A" }}>
+              {confirmModal.message}
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={closeConfirmModal}
+                className="px-4 py-2 rounded-md text-sm font-medium border transition-colors hover:bg-gray-50"
+                style={{ borderColor: "#E1E3EA", color: "#696E7A" }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmModal.onConfirm}
+                className="px-4 py-2 rounded-md text-sm font-medium text-white transition-colors hover:opacity-90"
+                style={{ background: confirmModal.confirmColor }}
+              >
+                {confirmModal.confirmLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---- Result Modal ---- */}
+      {resultModal.isOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+          onClick={closeResultModal}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {resultModal.type === "success" ? (
+              <CheckCircle2 size={48} style={{ color: "#00A368" }} className="mx-auto mb-3" />
+            ) : (
+              <XCircle size={48} style={{ color: "#F22F46" }} className="mx-auto mb-3" />
+            )}
+            <h3 className="text-lg font-semibold mb-2" style={{ color: "#121C2D" }}>
+              {resultModal.title}
+            </h3>
+            <p className="text-sm mb-6" style={{ color: "#696E7A" }}>
+              {resultModal.message}
+            </p>
+            <div className="flex justify-center gap-3">
+              {resultModal.type === "success" && (
+                <button
+                  onClick={() => {
+                    closeResultModal();
+                    navigate("/app/knowledge-base");
+                  }}
+                  className="px-4 py-2 rounded-md text-sm font-medium text-white transition-colors hover:opacity-90"
+                  style={{ background: "#00A368" }}
+                >
+                  Back to Knowledge Base
+                </button>
+              )}
+              <button
+                onClick={closeResultModal}
+                className="px-4 py-2 rounded-md text-sm font-medium border transition-colors hover:bg-gray-50"
+                style={{ borderColor: "#E1E3EA", color: "#696E7A" }}
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

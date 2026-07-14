@@ -3,10 +3,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft, Clock, Eye, Star, Edit3, ThumbsUp, ThumbsDown,
   CheckCircle2, LifeBuoy, Tag, User, Mail, Building2, Check,
-  XCircle, Loader2,
+  XCircle, Loader2, X,
 } from "lucide-react";
 import { getArticle, publishArticle, submitArticleForReview } from "../api/articles";
-import { createFeedback } from "../api/analytics";
+import { createFeedback, listFeedback, getMyFeedback } from "../api/analytics";
 import { getRootCategories } from "../api/categories";
 import StatusBadge from "../components/common/StatusBadge.jsx";
 import Spinner from "../components/common/Spinner.jsx";
@@ -64,17 +64,65 @@ export default function ArticlePage() {
 
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
-  const [submitSuccess, setSubmitSuccess] = useState(false); // new
 
-  // Fetch article and categories
+  // Rating stats
+  const [ratingStats, setRatingStats] = useState({ average: 0, count: 0 });
+  const [userAlreadyRated, setUserAlreadyRated] = useState(false);
+
+  // Confirmation modal state (before action)
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    confirmLabel: "",
+    confirmColor: "#00A368",
+    onConfirm: null,
+  });
+
+  // Result modal state (after action – success/error)
+  const [resultModal, setResultModal] = useState({
+    isOpen: false,
+    type: "success", // "success" or "error"
+    title: "",
+    message: "",
+  });
+
+  // Helper to fetch and compute rating stats
+  const fetchArticleRating = async (articleId) => {
+    try {
+      const data = await listFeedback({
+        content_type: 'article',
+        object_id: articleId,
+        page_size: 1000,
+      });
+      const feedbacks = data.results ?? data ?? [];
+      const ratings = feedbacks.filter(f => typeof f.rating === 'number' && f.rating !== null);
+      const count = ratings.length;
+      const average = count > 0 ? ratings.reduce((sum, f) => sum + f.rating, 0) / count : 0;
+      return { average, count };
+    } catch {
+      return {
+        average: article?.rating ?? 0,
+        count: article?.ratingCount ?? 0,
+      };
+    }
+  };
+
+  // Fetch article, categories, user feedback, and rating stats
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError("");
 
     getArticle(slug)
-      .then((data) => {
-        if (!cancelled) setArticle(data);
+      .then(async (data) => {
+        if (!cancelled) {
+          setArticle(data);
+          if (data.status === 'published') {
+            const stats = await fetchArticleRating(data.id);
+            if (!cancelled) setRatingStats(stats);
+          }
+        }
       })
       .catch((err) => {
         if (!cancelled) setError(err.message);
@@ -96,8 +144,28 @@ export default function ArticlePage() {
         if (!cancelled) setCategoriesLoading(false);
       });
 
+    if (user) {
+      getMyFeedback({ content_type: 'article', object_id: slug })
+        .then((data) => {
+          if (!cancelled) {
+            const hasRated = (data.results || data || []).some(f => f.rating !== null && f.rating !== undefined);
+            if (hasRated) {
+              setUserAlreadyRated(true);
+              setFeedbackSent(true);
+            }
+          }
+        })
+        .catch(() => {
+          const ratedKey = `rated_article_${slug}`;
+          if (localStorage.getItem(ratedKey)) {
+            setUserAlreadyRated(true);
+            setFeedbackSent(true);
+          }
+        });
+    }
+
     return () => { cancelled = true; };
-  }, [slug]);
+  }, [slug, user]);
 
   // Helpful feedback
   const handleHelpful = async (helpful) => {
@@ -125,52 +193,115 @@ export default function ArticlePage() {
         comment,
       });
       setFeedbackSent(true);
+      setUserAlreadyRated(true);
+      localStorage.setItem(`rated_article_${slug}`, 'true');
+      const stats = await fetchArticleRating(article.id);
+      setRatingStats(stats);
     } catch (err) {
       setError(err.message);
     }
   };
 
-  // Publish (admin)
-  const handlePublish = async () => {
-    if (!window.confirm("Are you sure you want to publish this article? It will become visible to all users.")) {
-      return;
-    }
-    setPublishing(true);
-    setPublishError("");
-    try {
-      await publishArticle(slug);
-      const updated = await getArticle(slug);
-      setArticle(updated);
-    } catch (err) {
-      setPublishError(err.response?.data?.error || err.message || "Failed to publish article.");
-    } finally {
-      setPublishing(false);
-    }
+  // ---- Confirmation modal helpers ----
+  const openConfirmModal = (title, message, confirmLabel, onConfirm, confirmColor = "#00A368") => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      confirmLabel,
+      confirmColor,
+      onConfirm,
+    });
   };
 
-  // Submit for review (editor)
-  const handleSubmitForReview = async () => {
-    if (!window.confirm("Submit this draft for admin review? Once submitted, you cannot edit it until it's reviewed.")) {
-      return;
-    }
-    setSubmitting(true);
-    setSubmitError("");
-    setSubmitSuccess(false);
-    try {
-      await submitArticleForReview(slug);
-      // Refetch to get updated status
-      const updated = await getArticle(slug);
-      setArticle(updated);
-      setSubmitSuccess(true);
-      // Auto-hide success after 4 seconds
-      setTimeout(() => setSubmitSuccess(false), 4000);
-    } catch (err) {
-      // Extract meaningful error message
-      const msg = err.response?.data?.error || err.response?.data?.message || err.message;
-      setSubmitError(msg || "Failed to submit for review. Please check server logs.");
-    } finally {
-      setSubmitting(false);
-    }
+  const closeConfirmModal = () => {
+    setConfirmModal({ ...confirmModal, isOpen: false });
+  };
+
+  // ---- Result modal helpers ----
+  const openResultModal = (type, title, message) => {
+    setResultModal({
+      isOpen: true,
+      type,
+      title,
+      message,
+    });
+    setTimeout(() => closeResultModal(), 6000);
+  };
+
+  const closeResultModal = () => {
+    setResultModal({ ...resultModal, isOpen: false });
+  };
+
+  // ---- Action handlers (with modal) ----
+  const handlePublishClick = () => {
+    openConfirmModal(
+      "Publish Article",
+      "Are you sure you want to publish this article? It will become visible to all users.",
+      "Publish",
+      async () => {
+        closeConfirmModal();
+        setPublishing(true);
+        setPublishError("");
+        try {
+          await publishArticle(slug);
+          const updated = await getArticle(slug);
+          setArticle(updated);
+          if (updated.status === 'published') {
+            const stats = await fetchArticleRating(updated.id);
+            setRatingStats(stats);
+          }
+          openResultModal(
+            "success",
+            "Published!",
+            "The article is now visible to all users."
+          );
+        } catch (err) {
+          const msg = err.response?.data?.error || err.message || "Failed to publish article.";
+          openResultModal(
+            "error",
+            "Publish Failed",
+            msg
+          );
+        } finally {
+          setPublishing(false);
+        }
+      },
+      "#00A368"
+    );
+  };
+
+  const handleSubmitClick = () => {
+    openConfirmModal(
+      "Submit for Review",
+      "Submit this draft for admin review? Once submitted, you cannot edit it until it's reviewed.",
+      "Submit",
+      async () => {
+        closeConfirmModal();
+        setSubmitting(true);
+        setSubmitError("");
+        try {
+          await submitArticleForReview(slug);
+          const updated = await getArticle(slug);
+          setArticle(updated);
+          openResultModal(
+            "success",
+            "Submitted!",
+            "Your article is now pending admin review."
+          );
+        } catch (err) {
+          const msg = err.response?.data?.error || err.response?.data?.message || err.message;
+          openResultModal(
+            "error",
+            "Submission Failed",
+            msg || "Failed to submit for review. Please check server logs."
+          );
+        } finally {
+          setSubmitting(false);
+        }
+      },
+      "#00A368"
+    );
   };
 
   // Loading & error states
@@ -213,6 +344,28 @@ export default function ArticlePage() {
   const showSubmitButton = user?.role === ROLES.EDITOR && article.status === 'draft' && articleAuthorId === user?.id;
 
   const isPublished = article.status === 'published';
+  const displayRating = isPublished ? ratingStats.average : 0;
+  const displayRatingCount = isPublished ? ratingStats.count : 0;
+
+  const renderRating = () => {
+    if (!isPublished) return null;
+    if (displayRatingCount === 0) {
+      return (
+        <span className="flex items-center gap-1.5 text-xs" style={{ color: "#9EA6B3" }}>
+          <Star size={12} style={{ color: "#E1E3EA", fill: "#E1E3EA" }} />
+          No ratings yet
+        </span>
+      );
+    }
+    return (
+      <span className="flex items-center gap-1.5">
+        <Star size={12} style={{ color: "#F7C948", fill: "#F7C948" }} />
+        {displayRating.toFixed(1)} ({displayRatingCount} {displayRatingCount === 1 ? 'rating' : 'ratings'})
+      </span>
+    );
+  };
+
+  const showFeedbackForm = isPublished && !userAlreadyRated;
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
@@ -226,7 +379,7 @@ export default function ArticlePage() {
       </button>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-8">
-        {/* Main content */}
+        {/* Main content – unchanged */}
         <div>
           {/* Badges */}
           <div className="flex items-center gap-2 flex-wrap mb-4">
@@ -276,12 +429,7 @@ export default function ArticlePage() {
             <span className="flex items-center gap-1.5">
               <Eye size={12} /> {(article.views ?? 0).toLocaleString()} views
             </span>
-            {article.rating > 0 && (
-              <span className="flex items-center gap-1.5">
-                <Star size={12} style={{ color: "#F7C948", fill: "#F7C948" }} />
-                {article.rating.toFixed(1)} ({article.ratingCount} ratings)
-              </span>
-            )}
+            {renderRating()}
             {article.product_version && (
               <span className="flex items-center gap-1.5">Applies to v{article.product_version}</span>
             )}
@@ -347,28 +495,35 @@ export default function ArticlePage() {
 
               {feedbackSent ? (
                 <div className="flex items-center gap-2 text-sm" style={{ color: "#00A368" }}>
-                  <CheckCircle2 size={15} /> Thanks — your feedback helps us keep this article accurate.
+                  <CheckCircle2 size={15} /> 
+                  {userAlreadyRated ? "You've already rated this article. Thank you!" : "Thanks — your feedback helps us keep this article accurate."}
                 </div>
               ) : (
-                <form onSubmit={handleSubmitReview} className="space-y-3">
-                  <StarRating value={rating} onChange={setRating} />
-                  <textarea
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    placeholder="Optional: tell us what could be improved…"
-                    rows={2}
-                    className="w-full px-3 py-2 text-sm rounded-md border outline-none resize-none"
-                    style={{ borderColor: "#E1E3EA", color: "#121C2D" }}
-                  />
-                  <button
-                    type="submit"
-                    disabled={!rating}
-                    className="px-4 py-2 rounded-md text-sm font-medium disabled:opacity-40 transition-opacity"
-                    style={{ background: "#F22F46", color: "white" }}
-                  >
-                    Submit feedback
-                  </button>
-                </form>
+                showFeedbackForm ? (
+                  <form onSubmit={handleSubmitReview} className="space-y-3">
+                    <StarRating value={rating} onChange={setRating} />
+                    <textarea
+                      value={comment}
+                      onChange={(e) => setComment(e.target.value)}
+                      placeholder="Optional: tell us what could be improved…"
+                      rows={2}
+                      className="w-full px-3 py-2 text-sm rounded-md border outline-none resize-none"
+                      style={{ borderColor: "#E1E3EA", color: "#121C2D" }}
+                    />
+                    <button
+                      type="submit"
+                      disabled={!rating}
+                      className="px-4 py-2 rounded-md text-sm font-medium disabled:opacity-40 transition-opacity"
+                      style={{ background: "#F22F46", color: "white" }}
+                    >
+                      Submit feedback
+                    </button>
+                  </form>
+                ) : (
+                  <div className="text-sm text-center" style={{ color: "#696E7A" }}>
+                    <CheckCircle2 size={15} className="inline mr-1" /> You've already shared your rating. Thank you!
+                  </div>
+                )
               )}
             </div>
           ) : (
@@ -409,6 +564,24 @@ export default function ArticlePage() {
                 <span style={{ color: "#696E7A" }}>Approved by</span>
                 <span style={{ color: "#121C2D" }}>{approvedBy}</span>
               </div>
+              {isPublished && (
+                <div className="flex justify-between">
+                  <span style={{ color: "#696E7A" }}>Rating</span>
+                  <span style={{ color: "#121C2D" }} className="flex items-center gap-1">
+                    {displayRatingCount === 0 ? (
+                      <>
+                        <Star size={12} style={{ color: "#E1E3EA", fill: "#E1E3EA" }} />
+                        No ratings
+                      </>
+                    ) : (
+                      <>
+                        <Star size={12} style={{ color: "#F7C948", fill: "#F7C948" }} />
+                        {displayRating.toFixed(1)} ({displayRatingCount})
+                      </>
+                    )}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -418,21 +591,11 @@ export default function ArticlePage() {
               <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: "#9EA6B3" }}>
                 Editor Actions
               </p>
-              {submitError && (
-                <div className="mb-2 text-xs text-red-600 flex items-center gap-1">
-                  <XCircle size={14} /> {submitError}
-                </div>
-              )}
-              {submitSuccess && (
-                <div className="mb-2 text-xs text-green-600 flex items-center gap-1">
-                  <CheckCircle2 size={14} /> Submitted successfully! Waiting for admin review.
-                </div>
-              )}
               <button
-                onClick={handleSubmitForReview}
-                disabled={submitting || submitSuccess}
+                onClick={handleSubmitClick}
+                disabled={submitting}
                 className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white transition-colors hover:opacity-90 disabled:opacity-60"
-                style={{ background: "#E87722" }}
+                style={{ background: "#00A368" }}
               >
                 {submitting ? (
                   <>
@@ -456,13 +619,8 @@ export default function ArticlePage() {
               <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: "#9EA6B3" }}>
                 Admin Actions
               </p>
-              {publishError && (
-                <div className="mb-2 text-xs text-red-600 flex items-center gap-1">
-                  <XCircle size={14} /> {publishError}
-                </div>
-              )}
               <button
-                onClick={handlePublish}
+                onClick={handlePublishClick}
                 disabled={publishing}
                 className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white transition-colors hover:opacity-90 disabled:opacity-60"
                 style={{ background: "#00A368" }}
@@ -483,7 +641,7 @@ export default function ArticlePage() {
             </div>
           )}
 
-          {/* Table of Contents & Related – unchanged */}
+          {/* Table of Contents */}
           {article.toc?.length > 0 && (
             <div className="bg-white rounded-lg border p-4" style={{ borderColor: "#E1E3EA" }}>
               <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: "#9EA6B3" }}>On this page</p>
@@ -497,6 +655,7 @@ export default function ArticlePage() {
             </div>
           )}
 
+          {/* Related Articles */}
           {article.relatedArticles?.length > 0 && (
             <div className="bg-white rounded-lg border p-4" style={{ borderColor: "#E1E3EA" }}>
               <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: "#9EA6B3" }}>Related articles</p>
@@ -527,6 +686,90 @@ export default function ArticlePage() {
           </RoleGate>
         </aside>
       </div>
+
+      {/* ---- Confirmation Modal (before action) ---- */}
+      {confirmModal.isOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+          onClick={closeConfirmModal}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold mb-2" style={{ color: "#121C2D" }}>
+              {confirmModal.title}
+            </h3>
+            <p className="text-sm mb-6" style={{ color: "#696E7A" }}>
+              {confirmModal.message}
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={closeConfirmModal}
+                className="px-4 py-2 rounded-md text-sm font-medium border transition-colors hover:bg-gray-50"
+                style={{ borderColor: "#E1E3EA", color: "#696E7A" }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmModal.onConfirm}
+                className="px-4 py-2 rounded-md text-sm font-medium text-white transition-colors hover:opacity-90"
+                style={{ background: confirmModal.confirmColor }}
+              >
+                {confirmModal.confirmLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---- Result Modal (after action – success/error) ---- */}
+      {resultModal.isOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+          onClick={closeResultModal}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {resultModal.type === "success" ? (
+              <CheckCircle2 size={48} style={{ color: "#00A368" }} className="mx-auto mb-3" />
+            ) : (
+              <XCircle size={48} style={{ color: "#F22F46" }} className="mx-auto mb-3" />
+            )}
+            <h3 className="text-lg font-semibold mb-2" style={{ color: "#121C2D" }}>
+              {resultModal.title}
+            </h3>
+            <p className="text-sm mb-6" style={{ color: "#696E7A" }}>
+              {resultModal.message}
+            </p>
+            <div className="flex justify-center gap-3">
+              {resultModal.type === "success" && (
+                <button
+                  onClick={() => {
+                    closeResultModal();
+                    navigate("/app/knowledge-base");
+                  }}
+                  className="px-4 py-2 rounded-md text-sm font-medium text-white transition-colors hover:opacity-90"
+                  style={{ background: "#00A368" }}
+                >
+                  Back to Knowledge Base
+                </button>
+              )}
+              <button
+                onClick={closeResultModal}
+                className="px-4 py-2 rounded-md text-sm font-medium border transition-colors hover:bg-gray-50"
+                style={{ borderColor: "#E1E3EA", color: "#696E7A" }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

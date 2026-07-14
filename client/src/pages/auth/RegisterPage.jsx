@@ -380,7 +380,7 @@ export default function RegisterPage() {
           <div className="mt-4 flex items-start gap-2.5 px-4 py-3 rounded-lg" style={{ background: "#E8F0FD", border: "1px solid rgba(2,99,224,0.15)" }}>
             <CheckCircle2 size={14} className="mt-0.5 flex-shrink-0" style={{ color: "#0263E0" }} />
             <p className="text-xs leading-relaxed" style={{ color: "#0263E0" }}>
-              New accounts are reviewed by an Admin before full access is granted. You will receive a confirmation email within 24 hours.
+              New accounts are created with Viewer permissions.
             </p>
           </div>
         </div>
