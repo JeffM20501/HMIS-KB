@@ -78,12 +78,44 @@ export default function AdminPage() {
 
   useEffect(loadAll, []);
 
-  const pendingReview = useMemo(() => articles.filter((a) => a.status === "review"), [articles]);
+  // -------- Lookup maps --------
+  const userMap = useMemo(() => {
+    const map = {};
+    users.forEach((u) => { map[u.id] = u; });
+    return map;
+  }, [users]);
 
+  const categoryMap = useMemo(() => {
+    const map = {};
+    categories.forEach((c) => { map[c.id] = c; });
+    return map;
+  }, [categories]);
+
+  // -------- Computed stats --------
+  const pendingReview = useMemo(
+    () => articles.filter((a) => a.status === "pending_review"),
+    [articles]
+  );
+
+  const nonDraftArticles = useMemo(
+    () => articles.filter((a) => a.status !== "draft"),
+    [articles]
+  );
+
+  const totalNonDraft = nonDraftArticles.length;
+  const draftCount = useMemo(
+    () => articles.filter((a) => a.status === "draft").length,
+    [articles]
+  );
+
+  // -------- Filtered data for tables --------
   const filteredArticles = useMemo(
-    () => articles.filter((a) => a.title.toLowerCase().includes(articleSearch.toLowerCase())),
+    () => articles
+      .filter((a) => a.status !== "draft")                      // hide drafts from the table
+      .filter((a) => a.title.toLowerCase().includes(articleSearch.toLowerCase())),
     [articles, articleSearch]
   );
+
   const filteredUsers = useMemo(
     () => users.filter((u) => u.name?.toLowerCase().includes(userSearch.toLowerCase()) || u.email?.toLowerCase().includes(userSearch.toLowerCase())),
     [users, userSearch]
@@ -171,10 +203,8 @@ export default function AdminPage() {
     try {
       await createCategory(categoryForm);
       setShowCategoryModal(false);
-      // Refetch categories
       const updated = await listCategories();
       setCategories(updated.results ?? updated ?? []);
-      // Reset form
       setCategoryForm({ name: "", slug: "", description: "", parent: "", sort_order: 0, icon: "" });
     } catch (err) {
       setCategoryFormError(err.response?.data?.detail || err.message || "Failed to create category.");
@@ -183,15 +213,14 @@ export default function AdminPage() {
     }
   };
 
-  // Auto-generate slug from name
   const handleNameChange = (name) => {
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
     setCategoryForm({ ...categoryForm, name, slug });
   };
 
-  // ---- Render ----
   return (
     <div className="max-w-6xl mx-auto px-6 py-8">
+      {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-semibold" style={{ color: "#121C2D" }}>Admin Panel</h1>
         <p className="text-sm mt-1" style={{ color: "#696E7A" }}>
@@ -230,12 +259,13 @@ export default function AdminPage() {
         <>
           {activeTab === "overview" && (
             <div className="space-y-6">
-              {/* ... (same as before) ... */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Stats cards – now 5 columns on large screens */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                 {[
-                  { icon: FileText, label: "Total articles", value: analytics?.totalArticles ?? articles.length, color: "#0263E0" },
+                  { icon: FileText, label: "Total articles", value: totalNonDraft, color: "#0263E0" },
                   { icon: Eye, label: "Total views", value: (analytics?.totalViews ?? 0).toLocaleString(), color: "#00A368" },
                   { icon: AlertTriangle, label: "Pending review", value: pendingReview.length, color: "#E87722" },
+                  { icon: FileText, label: "Drafts", value: draftCount, color: "#696E7A" },
                   { icon: Star, label: "Avg. rating", value: analytics?.avgRating ? analytics.avgRating.toFixed(1) : "—", color: "#F7C948" },
                 ].map((s) => {
                   const Icon = s.icon;
@@ -313,6 +343,7 @@ export default function AdminPage() {
 
           {activeTab === "articles" && (
             <div>
+              {/* Pending review queue */}
               {pendingReview.length > 0 && (
                 <div className="mb-5 bg-white rounded-lg border p-4" style={{ borderColor: "#FEF9E7", background: "#FFFDF5" }}>
                   <p className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: "#C9A000" }}>
@@ -377,8 +408,12 @@ export default function AdminPage() {
                             {a.title}
                           </button>
                         </td>
-                        <td className="px-5 py-3.5 text-xs whitespace-nowrap" style={{ color: "#696E7A" }}>{a.categoryName}</td>
-                        <td className="px-5 py-3.5 text-xs whitespace-nowrap" style={{ color: "#696E7A" }}>{a.author}</td>
+                        <td className="px-5 py-3.5 text-xs whitespace-nowrap" style={{ color: "#696E7A" }}>
+                          {categoryMap[a.category]?.name || a.category || "—"}
+                        </td>
+                        <td className="px-5 py-3.5 text-xs whitespace-nowrap" style={{ color: "#696E7A" }}>
+                          {a.author_username || userMap[a.author]?.name || a.author || "Unknown"}
+                        </td>
                         <td className="px-5 py-3.5"><StatusBadge status={a.status} /></td>
                         <td className="px-5 py-3.5 text-xs tabular-nums" style={{ color: "#696E7A" }}>{(a.views ?? 0).toLocaleString()}</td>
                         <td className="px-5 py-3.5">
@@ -573,7 +608,7 @@ export default function AdminPage() {
         </>
       )}
 
-      {/* Category Modal */}
+      {/* Category Modal (unchanged) */}
       {showCategoryModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white rounded-lg w-full max-w-md p-6 shadow-xl">

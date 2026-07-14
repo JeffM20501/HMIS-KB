@@ -87,7 +87,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
             serializer.save()
     
     @action(detail=True, methods=['post'])
-    def submit_for_review(self, request, pk=None):
+    def submit_for_review(self, request, slug=None):
         """
         PRD FR-3.3: Editor submits article for Admin review.
         """
@@ -121,7 +121,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         )
     
     @action(detail=True, methods=['post'])
-    def publish(self, request, pk=None):
+    def publish(self, request, slug=None):
         """
         PRD FR-1.3: Admin publishes article.
         """
@@ -145,7 +145,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         )
     
     @action(detail=True, methods=['post'])
-    def reject(self, request, pk=None):
+    def reject(self, request, slug=None):
         """
         PRD FR-1.3: Admin rejects article.
         """

@@ -29,23 +29,51 @@ export default function DashboardPage() {
     setError("");
 
     const requests = [
-      // Only published articles for top & recent
-      listArticles({ sort: "views", page_size: 4, status: "published" }),
-      listArticles({ sort: "recent", page_size: 6, status: "published" }),
+      listArticles({ sort: "views", page_size: 12 }),
+      listArticles({ sort: "recent", page_size: 12 }),
     ];
-    if (user?.role === ROLES.ADMIN) requests.push(getDashboardAnalytics());
-    // Editors & Admins see their own drafts
     if (user?.role !== ROLES.VIEWER) {
-      requests.push(listArticles({ author: user?.id, status: "draft", page_size: 4 }));
+      requests.push(listArticles({ page_size: 20 }));
+    }
+    if (user?.role === ROLES.ADMIN) {
+      requests.push(getDashboardAnalytics().catch(() => null));
     }
 
     Promise.all(requests)
-      .then(([top, recent, analytics, drafts]) => {
+      .then(([topRes, recentRes, allArticlesRes, analytics]) => {
         if (cancelled) return;
-        setTopArticles(top?.results ?? top ?? []);
-        setRecentArticles(recent?.results ?? recent ?? []);
-        if (analytics) setStats(analytics);
-        if (drafts) setMyDrafts(drafts?.results ?? drafts ?? []);
+
+        const allTop = topRes?.results ?? topRes ?? [];
+        const allRecent = recentRes?.results ?? recentRes ?? [];
+        const allArticles = allArticlesRes?.results ?? allArticlesRes ?? [];
+
+        const publishedTop = allTop.filter(a => a.status === 'published');
+        const publishedRecent = allRecent.filter(a => a.status === 'published');
+
+        setTopArticles(publishedTop.slice(0, 4));
+        setRecentArticles(publishedRecent.slice(0, 6));
+
+        if (user?.role !== ROLES.VIEWER && allArticles.length) {
+          const drafts = allArticles.filter(a => a.status === 'draft' && a.author === user?.id);
+          setMyDrafts(drafts.slice(0, 4));
+        }
+
+        if (analytics) {
+          setStats(analytics);
+        } else {
+          const publishedAll = allArticles.filter(a => a.status === 'published');
+          const totalViews = publishedAll.reduce((sum, a) => sum + (a.views || 0), 0);
+          const ratings = publishedAll.filter(a => a.rating > 0);
+          const avgRating = ratings.length
+            ? ratings.reduce((sum, a) => sum + (a.rating || 0), 0) / ratings.length
+            : 0;
+          setStats({
+            publishedCount: publishedAll.length,
+            totalViews,
+            avgRating,
+            searchSuccessRate: 0,
+          });
+        }
       })
       .catch((err) => !cancelled && setError(err.message))
       .finally(() => !cancelled && setLoading(false));
@@ -80,7 +108,7 @@ export default function DashboardPage() {
         <div className="flex justify-center py-20"><Spinner label="Loading your dashboard…" /></div>
       ) : (
         <>
-          {/* Stat cards */}
+          {/* Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <StatCard icon={BookOpen} label="Published articles" value={stats?.publishedCount ?? 0} color="#0263E0" badge="this month" />
             <StatCard icon={Eye} label="Total views" value={(stats?.totalViews ?? 0).toLocaleString()} color="#00A368" badge="this month" />
@@ -88,7 +116,7 @@ export default function DashboardPage() {
             <StatCard icon={TrendingUp} label="Search success rate" value={stats?.searchSuccessRate ? `${stats.searchSuccessRate}%` : "—"} color="#7B2FBE" badge="this month" />
           </div>
 
-          {/* My drafts */}
+          {/* My Drafts */}
           <RoleGate allow={[ROLES.EDITOR, ROLES.ADMIN]}>
             {myDrafts.length > 0 && (
               <div className="mb-8">
@@ -100,7 +128,11 @@ export default function DashboardPage() {
                 </div>
                 <div className="bg-white rounded-lg border divide-y" style={{ borderColor: "#E1E3EA" }}>
                   {myDrafts.map((a) => (
-                    <button key={a.id} onClick={() => navigate(`/app/articles/${a.id}/edit`)} className="flex items-center gap-3 w-full px-5 py-3.5 text-left hover:bg-gray-50 transition-colors">
+                    <button
+                      key={a.id}
+                      onClick={() => navigate(`/app/articles/${a.slug}/edit`)}  // ✅ use slug
+                      className="flex items-center gap-3 w-full px-5 py-3.5 text-left hover:bg-gray-50 transition-colors"
+                    >
                       <FileText size={14} style={{ color: "#9EA6B3", flexShrink: 0 }} />
                       <span className="text-sm flex-1 truncate" style={{ color: "#121C2D" }}>{a.title}</span>
                       <Clock size={11} style={{ color: "#9EA6B3" }} />
@@ -112,7 +144,7 @@ export default function DashboardPage() {
             )}
           </RoleGate>
 
-          {/* Top articles (published only) */}
+          {/* Top articles */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-semibold" style={{ color: "#121C2D" }}>Most viewed this month</h2>
@@ -129,7 +161,7 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Recently updated (published only) */}
+          {/* Recently updated */}
           <div>
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-semibold" style={{ color: "#121C2D" }}>Recently updated</h2>
@@ -139,7 +171,11 @@ export default function DashboardPage() {
             ) : (
               <div className="bg-white rounded-lg border divide-y" style={{ borderColor: "#E1E3EA" }}>
                 {recentArticles.map((a) => (
-                  <button key={a.id} onClick={() => navigate(`/app/knowledge-base/${a.slug ?? a.id}`)} className="flex items-center gap-3 w-full px-5 py-3.5 text-left hover:bg-gray-50 transition-colors">
+                  <button
+                    key={a.id}
+                    onClick={() => navigate(`/app/knowledge-base/${a.slug ?? a.id}`)}  // ✅ use slug (fallback to id)
+                    className="flex items-center gap-3 w-full px-5 py-3.5 text-left hover:bg-gray-50 transition-colors"
+                  >
                     <FileText size={14} style={{ color: "#9EA6B3", flexShrink: 0 }} />
                     <span className="text-sm flex-1 truncate" style={{ color: "#121C2D" }}>{a.title}</span>
                     <span className="text-xs px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: "#F4F4F6", color: "#696E7A" }}>

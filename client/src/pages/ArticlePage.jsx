@@ -245,7 +245,7 @@ export default function ArticlePage() {
             <StatusBadge status={article.status} />
             {canEdit && (
               <button
-                onClick={() => navigate(`/app/articles/${article.id}/edit`)}
+                onClick={() => navigate(`/app/articles/${article.slug}/edit`)}
                 className="ml-auto flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium border hover:bg-gray-50 transition-colors"
                 style={{ borderColor: "#E1E3EA", color: "#243656" }}
               >
