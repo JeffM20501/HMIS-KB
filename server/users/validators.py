@@ -102,6 +102,16 @@ def validate_password(value):
     
     return value
 
+def validate_url(value):
+    """Validate URL."""
+    if not value:
+        raise ValidationError(_("URL is required."))
+    
+    if not value.startswith('http://') and not value.startswith('https://'):
+        raise ValidationError(_("URL must start with http:// or https://"))
+    
+    return value
+
 
 def validate_admin_department(role, department):
     """

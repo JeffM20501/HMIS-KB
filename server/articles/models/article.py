@@ -59,6 +59,8 @@ class Article(models.Model):
         related_name='articles'
     )
     
+    article_type=models.CharField(blank=True)
+    
     def clean(self):
         """PRD: FR-3.3 Editors can create/edit but not publish."""
         super().clean()        

@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
-from users.validators import validate_admin_department,validate_department,validate_role
+from users.validators import validate_admin_department,validate_department,validate_role,validate_url
 # Create your models here.
 ROLES=[
         ('admin','Admin',),
@@ -13,7 +13,12 @@ ROLES=[
 class User(AbstractUser):
     department=models.CharField(default="staff", validators=[validate_department])
     role=models.CharField(max_length=20,choices=ROLES, default="viewer", validators=[validate_role])
-    updated_at=models.DateTimeField(auto_now=True)    
+    updated_at=models.DateTimeField(auto_now=True)  
+    avatar=models.URLField(
+        blank=True,
+        help_text='Cloudinary url',
+        validators=[validate_url]
+    )
     
     def clean(self):
         
