@@ -8,7 +8,7 @@ import DashboardPage from "./pages/DashboardPage.jsx";
 import KnowledgeBasePage from "./pages/KnowledgeBasePage.jsx";
 import ArticlePage from "./pages/ArticlePage.jsx";
 import ArticleEditorPage from "./pages/ArticleEditorPage.jsx";
-import AdminPage from "./pages/AdminPage.jsx";
+import AdminPage from "./pages/Admin/AdminPage.jsx";
 import SettingsPage from "./pages/SettingsPage.jsx";
 import NotFoundPage from "./pages/NotFoundPage.jsx";
 import AppLayout from "./components/layout/AppLayout.jsx";
