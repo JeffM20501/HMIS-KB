@@ -42,11 +42,11 @@ class UserPermissionTest(BaseAPITestCase):
             content_type='application/json'
         )
         self.assertEqual(res_post.status_code, 201)
-        article_id = res_post.data.get('id')
-        self.assertIsNotNone(article_id)
+        article_slug = res_post.data.get('slug')
+        self.assertIsNotNone(article_slug)
 
         # Editor CANNOT publish
-        url_patch = reverse('articles:article-publish', kwargs={'pk': article_id})
+        url_patch = reverse('articles:article-publish', kwargs={'slug': article_slug})
         res_patch = self.client.post(
             url_patch,
             {'status': 'published'},
@@ -73,11 +73,11 @@ class UserPermissionTest(BaseAPITestCase):
             content_type='application/json'
         )
         self.assertEqual(create_res.status_code, 201)
-        article_id = create_res.data.get('id')
-        self.assertIsNotNone(article_id)
+        article_slug = create_res.data.get('slug')
+        self.assertIsNotNone(article_slug)
 
         # 3. Submit the article for review (as editor)
-        url_submit = reverse('articles:article-submit-for-review', kwargs={'pk': article_id})
+        url_submit = reverse('articles:article-submit-for-review', kwargs={'slug': article_slug})
         submit_res = self.client.post(url_submit, content_type='application/json')
         self.assertEqual(submit_res.status_code, 200)  # Success
 
@@ -85,7 +85,7 @@ class UserPermissionTest(BaseAPITestCase):
         admin = self._create_and_login_admin()
 
         # 5. Admin CAN publish the article
-        url_publish = reverse('articles:article-publish', kwargs={'pk': article_id})
+        url_publish = reverse('articles:article-publish', kwargs={'slug': article_slug})
         res_patch = self.client.post(
             url_publish,
             {'status': 'published'},
