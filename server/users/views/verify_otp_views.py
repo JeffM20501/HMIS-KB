@@ -54,7 +54,7 @@ class VerifyOtpView(APIView):
             )
 
         #otp is valid mark it as used
-        otp_obj.mark_used()
+        otp_obj.mark_verified()
 
         return Response(
             {'message': 'OTP verified successfully.'},

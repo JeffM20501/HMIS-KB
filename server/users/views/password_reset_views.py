@@ -27,14 +27,16 @@ class ResetPasswordView(APIView):
     
     
 class VerifyOtpView(APIView):
+    '/api/v1/u/auth/verify-otp/'
     permission_classes = []
 
     def post(self, request):
         serializer = VerifyOTPSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()  # marks OTP as verified in DB
-            
+            #session flag
             request.session['password_reset_verified'] = True
+            request.session.save()
             return Response(
                 {"message": "OTP verified successfully"},
                 status=status.HTTP_200_OK

@@ -24,6 +24,7 @@ export const clearTokens = () => {
 const client = axios.create({
   baseURL: BASE_URL,
   headers: { "Content-Type": "application/json" },
+  withCredentials: true,
 });
 
 client.interceptors.request.use((config) => {

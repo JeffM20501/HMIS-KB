@@ -52,3 +52,9 @@ class PasswordResetOTP(models.Model):
         """Mark OTP as used."""
         self.used = True
         self.save()
+    
+    def mark_verified(self):
+        """Mark OTP as verified"""
+        self.verified=True
+        self.save()
+        

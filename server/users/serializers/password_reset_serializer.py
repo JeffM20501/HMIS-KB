@@ -24,34 +24,30 @@ class PasswordResetRequestSerializer(serializers.Serializer):
         send_password_reset_email(user, otp_obj.otp)
         return user
 
-
 class PasswordResetConfirmSerializer(serializers.Serializer):
     email = serializers.EmailField()
     new_password = serializers.CharField(min_length=8, write_only=True)
 
     def validate(self, data):
-        request = self.context.get('request')
-        email = data['email']
-        user = User.objects.get(email=email)
+        email = data['email'].strip().lower()
+        user = User.objects.filter(email__iexact=email).first()
+        if not user:
+            raise serializers.ValidationError("Email not found.")
 
-        # Check session flag
-        if not request or not request.session.get('password_reset_verified'):
-            raise serializers.ValidationError(
-                "OTP verification required. Please verify your OTP first."
-            )
-
-        # Find any valid unused OTP ignoring verified flag
-        
+        # Find a verified, unused, non‑expired OTP
         otp_obj = PasswordResetOTP.objects.filter(
             user=user,
             used=False,
+            verified=True,
             expires_at__gt=timezone.now()
-        ).first()
+        ).order_by('-created_at').first()
 
         if not otp_obj:
-            raise serializers.ValidationError(
-                "No valid OTP found. Request a new one."
-            )
+            # Provide specific feedback
+            if PasswordResetOTP.objects.filter(user=user, used=False, expires_at__gt=timezone.now()).exists():
+                raise serializers.ValidationError("OTP not yet verified. Please verify your OTP first.")
+            else:
+                raise serializers.ValidationError("No valid OTP found. Request a new one.")
 
         self.otp_obj = otp_obj
         self.user = user
@@ -60,16 +56,18 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
     def save(self, **kwargs):
         self.user.set_password(self.validated_data['new_password'])
         self.user.save()
-        self.otp_obj.mark_used()  # mark OTP as used
+        self.otp_obj.mark_used()
         return self.user
     
 class VerifyOTPSerializer(serializers.Serializer):
     email=serializers.EmailField()
     otp=serializers.CharField(max_length=6)
     
-    def validate_email(self,value):
-        if not User.objects.filter(email=value).exists():
+    def validate_email(self, value):
+        user = User.objects.filter(email__iexact=value.strip()).first()
+        if not user:
             raise serializers.ValidationError('Email not found')
+        self.user = user
         return value
     
     def validate_otp(self,value):
@@ -87,7 +85,6 @@ class VerifyOTPSerializer(serializers.Serializer):
         return value
     
     def save(self,**kwargs):
-        self.otp_obj.verified=True
-        self.otp_obj.save()
+        self.otp_obj.mark_verified()
         
         return self.otp_obj
