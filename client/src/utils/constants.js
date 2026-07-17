@@ -28,42 +28,32 @@ export const STATUS_CONFIG = {
 
 // The six standardized content templates required by the PRD (Section 8.2)
 export const ARTICLE_TYPES = {
-  HOW_TO: "how-to",
-  SOP: "sop",
-  FAQ: "faq",
-  TROUBLESHOOTING: "troubleshooting",
-  FEATURE_REF: "feature-ref",
-  RELEASE_NOTES: "release-notes",
+  HOW_TO: 'how_to',
+  SOP: 'sop',
+  FAQ: 'faq',
+  TROUBLESHOOTING: 'troubleshooting',
+  FEATURE_REF: 'feature_ref',
+  RELEASE_NOTES: 'release_notes',
 };
 
 export const ARTICLE_TYPE_LABELS = {
-  [ARTICLE_TYPES.HOW_TO]: "How-To Guide",
-  [ARTICLE_TYPES.SOP]: "Standard Operating Procedure",
-  [ARTICLE_TYPES.FAQ]: "FAQ Entry",
-  [ARTICLE_TYPES.TROUBLESHOOTING]: "Troubleshooting Guide",
-  [ARTICLE_TYPES.FEATURE_REF]: "Feature Reference",
-  [ARTICLE_TYPES.RELEASE_NOTES]: "Release Notes",
+  [ARTICLE_TYPES.HOW_TO]: 'How-To Guide',
+  [ARTICLE_TYPES.SOP]: 'SOP',
+  [ARTICLE_TYPES.FAQ]: 'FAQ',
+  [ARTICLE_TYPES.TROUBLESHOOTING]: 'Troubleshooting',
+  [ARTICLE_TYPES.FEATURE_REF]: 'Feature Reference',
+  [ARTICLE_TYPES.RELEASE_NOTES]: 'Release Notes',
 };
 
-export const ARTICLE_TYPE_SHORT_LABELS = {
-  [ARTICLE_TYPES.HOW_TO]: "How-To",
-  [ARTICLE_TYPES.SOP]: "SOP",
-  [ARTICLE_TYPES.FAQ]: "FAQ",
-  [ARTICLE_TYPES.TROUBLESHOOTING]: "Troubleshooting",
-  [ARTICLE_TYPES.FEATURE_REF]: "Feature Ref",
-  [ARTICLE_TYPES.RELEASE_NOTES]: "Release Notes",
-};
-
-// Required sections per template (Section 8.2 / 3.3 of the PRD) — used to
-// scaffold the article editor form so authors can't skip required fields.
 export const TEMPLATE_SECTIONS = {
-  [ARTICLE_TYPES.HOW_TO]: ["Overview", "Prerequisites", "Steps", "Troubleshooting", "Related Articles"],
-  [ARTICLE_TYPES.SOP]: ["Purpose", "Scope", "Responsible Parties", "Procedure Steps", "Exceptions", "Review Date"],
-  [ARTICLE_TYPES.FAQ]: ["Question", "Short Answer", "Detailed Answer", "Related Links"],
-  [ARTICLE_TYPES.FEATURE_REF]: ["Feature Name", "Module", "Description", "User Roles", "Configuration", "Known Issues"],
-  [ARTICLE_TYPES.TROUBLESHOOTING]: ["Symptom", "Possible Causes", "Diagnosis Steps", "Resolution", "Escalation Path"],
-  [ARTICLE_TYPES.RELEASE_NOTES]: ["Version", "New Features", "Bug Fixes", "Breaking Changes", "Upgrade Instructions"],
+  [ARTICLE_TYPES.HOW_TO]: ['Step-by-step', 'Procedures', 'Best practices'],
+  [ARTICLE_TYPES.SOP]: ['Standard Operating Procedure', 'Checklist', 'Compliance'],
+  [ARTICLE_TYPES.FAQ]: ['Questions', 'Answers', 'Troubleshooting'],
+  [ARTICLE_TYPES.TROUBLESHOOTING]: ['Problem', 'Diagnosis', 'Resolution'],
+  [ARTICLE_TYPES.FEATURE_REF]: ['Overview', 'Usage', 'Examples'],
+  [ARTICLE_TYPES.RELEASE_NOTES]: ['New features', 'Bug fixes', 'Upgrade notes'],
 };
+
 
 export const DEPARTMENTS = [
   "Nursing",
@@ -76,7 +66,6 @@ export const DEPARTMENTS = [
   "IT Systems",
   "Compliance",
   "Support",
-  "Administration",
   "Other",
 ];
 

@@ -2,7 +2,7 @@
 import { useMemo } from "react";
 import { BarChart3, Star, AlertTriangle, CheckCircle2, RefreshCw, Clock, ArrowUpRight } from "lucide-react";
 import { Line, Bar } from "react-chartjs-2";
-import StatCard from "./StatCard.jsx";
+import StatCard from "./StatCard";
 
 const CHART_COLORS = {
   views: "#F22F46",

@@ -59,7 +59,11 @@ class Article(models.Model):
         related_name='articles'
     )
     
-    article_type=models.CharField(blank=True)
+    article_type=models.CharField(
+        max_length=50, 
+        blank=True, 
+        default='article',
+    )
     
     def clean(self):
         """PRD: FR-3.3 Editors can create/edit but not publish."""

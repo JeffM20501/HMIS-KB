@@ -7,7 +7,7 @@ from .models import Tag,ArticleTag,Media,Article
 
 @admin.register(Article)
 class ArticleAdmin(admin.ModelAdmin):
-    list_display = ('id', 'title', 'author', 'category', 'created_at')  # adjust field names
+    list_display = ('id', 'title', 'author', 'category', 'created_at', 'article_type')  # adjust field names
     list_filter = ('category', 'author')
     search_fields = ('title', 'content')
 
