@@ -56,7 +56,7 @@ class TagAdmin(admin.ModelAdmin):
     def article_count_display(self, obj):
         """Display article count in admin."""
         count = obj.get_article_count()
-        return format_html(f'<b>{count}</b>')
+        return format_html('<b>{}</b>',count)
     article_count_display.short_description = 'Articles'
     
     fieldsets = (

@@ -8,6 +8,7 @@ import ArticleCard from "../components/articles/ArticleCard.jsx";
 import RoleGate from "../components/common/RoleGate.jsx";
 import { ROLES } from "../utils/constants";
 import { PlusCircle } from "lucide-react";
+import { useLookupMaps } from "../hooks/useLookupMaps";
 
 export default function EditorDraftsPage() {
     const [articles, setArticles] = useState([]);
@@ -15,6 +16,8 @@ export default function EditorDraftsPage() {
     const [error, setError] = useState("");
     const [categories, setCategories] = useState([]);
     const navigate = useNavigate();
+    
+    const { tagMap, loading: mapsLoading } = useLookupMaps();
 
     useEffect(() => {
     let cancelled = false;
@@ -86,7 +89,8 @@ export default function EditorDraftsPage() {
             <ArticleCard
                 key={a.id}
                 article={a}
-                category={categories.find((c) => c.id === (a.category?.id ?? a.category))}
+                category={categories.find((c) => String(c.id) === String(a.category))}
+                tagMap={tagMap}
             />
             ))}
         </div>

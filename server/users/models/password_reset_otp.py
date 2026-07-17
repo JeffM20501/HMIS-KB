@@ -16,6 +16,7 @@ class PasswordResetOTP(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
     used = models.BooleanField(default=False)
+    verified=models.BooleanField(default=False)
 
     class Meta:
         ordering = ['-created_at']
@@ -27,7 +28,7 @@ class PasswordResetOTP(models.Model):
     def generate_otp(cls, user):
         """Generate a 6-digit OTP and save it with 30-min expiry."""
         # Delete any existing unused OTPs for this user
-        cls.objects.filter(user=user, used=False).delete()
+        cls.objects.filter(user=user, used=False, verified=False).delete()
 
         otp_code = ''.join(random.choices(string.digits, k=6))
         expires_at = timezone.now() + timezone.timedelta(minutes=30)

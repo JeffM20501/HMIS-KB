@@ -214,12 +214,6 @@ function PasswordTab({ user }) {
           <SavedBadge show={saved} />
         </div>
       </form>
-
-      <p className="text-xs mt-4" style={{ color: "#9EA6B3" }}>
-        Note: this calls <code>POST /u/users/&#123;id&#125;/set-password/</code>, which doesn't exist in your
-        urls.py yet — add a <code>set_password</code> @action to <code>UserViewSet</code> (or tell me the route
-        you'd rather use) and this will work as-is.
-      </p>
     </div>
   );
 }
@@ -249,7 +243,7 @@ function NotificationsTab() {
     <div className="bg-white rounded-lg border p-6" style={{ borderColor: "#E1E3EA" }}>
       <h2 className="text-sm font-semibold mb-1" style={{ color: "#121C2D" }}>Notifications</h2>
       <p className="text-xs mb-5" style={{ color: "#9EA6B3" }}>
-        From <code>GET /analytics/notification/</code> — article approvals, low ratings, and category updates.
+        
       </p>
 
       <ErrorBanner message={error} />

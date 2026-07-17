@@ -14,6 +14,7 @@ import EmptyState from "../components/common/EmptyState.jsx";
 import ErrorBanner from "../components/common/ErrorBanner.jsx";
 import RoleGate from "../components/common/RoleGate.jsx";
 import { ARTICLE_TYPE_LABELS, ROLES } from "../utils/constants";
+import { useLookupMaps } from "../hooks/useLookupMaps";
 
 const CATEGORY_CONFIG = {
   "Getting Started": { icon: Rocket, color: "#0263E0", bg: "#E8F0FD" },
@@ -28,32 +29,20 @@ const CATEGORY_CONFIG = {
 
 // Helper: filter articles based on user role
 function filterArticlesByRole(articles, user) {
-  if (!user) {
-    // Unauthenticated → only published
-    return articles.filter(a => a.status === 'published');
-  }
-
+  if (!user) return articles.filter(a => a.status === 'published');
   const role = user.role;
-  if (role === ROLES.VIEWER) {
-    return articles.filter(a => a.status === 'published');
-  }
-
+  if (role === ROLES.VIEWER) return articles.filter(a => a.status === 'published');
   if (role === ROLES.EDITOR) {
     return articles.filter(a => 
       a.status === 'published' ||
       (a.status === 'draft' && a.author === user.id)
     );
   }
-
   if (role === ROLES.ADMIN) {
-    // Admins see published and pending_review (and archived if they explicitly filter)
-    // We'll allow archived via filter later
     return articles.filter(a => 
       a.status === 'published' || a.status === 'pending_review'
     );
   }
-
-  // fallback
   return articles.filter(a => a.status === 'published');
 }
 
@@ -71,21 +60,24 @@ export default function KnowledgeBasePage() {
   const debouncedQuery = useDebounce(query, 350);
 
   const [categories, setCategories] = useState([]);
-  const [allArticles, setAllArticles] = useState([]);        // full list from API
-  const [filteredArticles, setFilteredArticles] = useState([]); // after role + status filter
+  const [allArticles, setAllArticles] = useState([]);
+  const [filteredArticles, setFilteredArticles] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showFilters, setShowFilters] = useState(false);
 
-  // Load categories
+  // Use the lookup maps hook for tagMap
+  const { tagMap, loading: mapsLoading } = useLookupMaps();
+
+  // Load categories (we still need them for the category names)
   useEffect(() => {
     listCategories()
       .then((data) => setCategories(data.results ?? data ?? []))
       .catch(() => setCategories([]));
   }, []);
 
-  // Fetch articles (without status param) and apply filters client‑side
+  // Fetch articles and apply ALL filters client‑side
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -94,7 +86,7 @@ export default function KnowledgeBasePage() {
     const params = {
       category: activeCategory || undefined,
       type: activeType || undefined,
-      page_size: 100, // fetch a reasonable amount; adjust as needed
+      page_size: 200,
     };
 
     const request = debouncedQuery.trim()
@@ -105,17 +97,28 @@ export default function KnowledgeBasePage() {
       .then((data) => {
         if (cancelled) return;
         const articles = data.results ?? data ?? [];
-        setAllArticles(articles);
-        // Apply role‑based filtering
+
+        // 1. Role‑based filtering
         let visible = filterArticlesByRole(articles, user);
-        // Apply additional status filter if the user explicitly selected one
+
+        // 2. Category filter (client‑side)
+        if (activeCategory) {
+          visible = visible.filter(a => String(a.category) === activeCategory);
+        }
+
+        // 3. Type filter (client‑side)
+        if (activeType) {
+          visible = visible.filter(a => a.type === activeType);
+        }
+
+        // 4. Status filter (client‑side)
         if (activeStatus) {
           visible = visible.filter(a => a.status === activeStatus);
         }
-        // Also apply category/type again (already in API call) but safe to re‑filter
-        // (they are already filtered by API, but we keep for consistency)
+
         setFilteredArticles(visible);
         setTotal(visible.length);
+        setAllArticles(articles);
       })
       .catch((err) => !cancelled && setError(err.message))
       .finally(() => !cancelled && setLoading(false));
@@ -123,7 +126,7 @@ export default function KnowledgeBasePage() {
     return () => { cancelled = true; };
   }, [debouncedQuery, activeCategory, activeType, activeStatus, user]);
 
-  // URL sync (unchanged)
+  // URL sync
   const updateUrlParams = (updates) => {
     const next = new URLSearchParams(searchParams);
     Object.entries(updates).forEach(([key, value]) => {
@@ -156,9 +159,10 @@ export default function KnowledgeBasePage() {
   );
 
   const hasActiveFilters = activeCategory || activeType || activeStatus || query;
-
-  // Show status filter only for admins
   const showStatusFilter = user?.role === ROLES.ADMIN;
+
+  // Combine loading states
+  const isLoading = loading || mapsLoading;
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-8">
@@ -288,12 +292,12 @@ export default function KnowledgeBasePage() {
 
       <ErrorBanner message={error} />
 
-      {loading ? (
+      {isLoading ? (
         <div className="flex justify-center py-20"><Spinner label="Searching…" /></div>
       ) : (
         <>
-          {/* Browse by Category – only shown when no filters and results exist */}
-          {categories.length > 0 && !debouncedQuery && !activeCategory && !activeType && !activeStatus && (
+          {/* Browse by Category – hidden when any filter is active */}
+          {categories.length > 0 && !hasActiveFilters && (
             <div className="mb-10">
               <h2 className="text-lg font-semibold mb-4" style={{ color: "#121C2D" }}>Browse by Category</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
@@ -302,8 +306,7 @@ export default function KnowledgeBasePage() {
                   const Icon = config?.icon || BookOpen;
                   const color = config?.color || "#696E7A";
                   const bg = config?.bg || "#F4F4F6";
-                  // Count articles that are visible to the current user (for this category)
-                  const visibleInCat = filteredArticles.filter(a => a.category === cat.id);
+                  const visibleInCat = filteredArticles.filter(a => String(a.category) === String(cat.id));
                   const count = visibleInCat.length;
 
                   return (
@@ -351,7 +354,12 @@ export default function KnowledgeBasePage() {
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredArticles.map((a) => (
-                  <ArticleCard key={a.id} article={a} category={categories.find((c) => c.id === (a.category?.id ?? a.category))} />
+                  <ArticleCard
+                    key={a.id}
+                    article={a}
+                    category={categories.find((c) => String(c.id) === String(a.category))}
+                    tagMap={tagMap}
+                  />
                 ))}
               </div>
             </>

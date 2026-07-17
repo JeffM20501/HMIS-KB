@@ -43,21 +43,21 @@ export const searchTags = (query) => client.get("/tags/search/", { params: { q: 
 
 /**
  * Article-Tag junction (ArticleTagViewSet)
- * URLs: /api/v1/article-tags/
+ * URLs: /api/v1/article-tag/
  */
 export const listArticleTags = (articleId) =>
-  client.get("/article-tags/", { params: { article: articleId } }).then((res) => res.data);
+  client.get("/article-tag/", { params: { article: articleId } }).then((res) => res.data);
 
 export const attachTagToArticle = (articleId, tagId) =>
-  client.post("/article-tags/", { article: articleId, tag: tagId }).then((res) => res.data);
+  client.post("/article-tag/", { article: articleId, tag: tagId }).then((res) => res.data);
 
 export const detachTagFromArticle = (articleTagId) =>
-  client.delete(`/article-tags/${articleTagId}/`).then((res) => res.data);
+  client.delete(`/article-tag/${articleTagId}/`).then((res) => res.data);
 
-/** POST /api/v1/article-tags/bulk-add/ */
+/** POST /api/v1/article-tag/bulk-add/ */
 export const bulkAddTags = (articleId, tagIds) =>
-  client.post("/article-tags/bulk-add/", { article_id: articleId, tag_ids: tagIds }).then((res) => res.data);
+  client.post("/article-tag/bulk-add/", { article_id: articleId, tag_ids: tagIds }).then((res) => res.data);
 
-/** POST /api/v1/article-tags/bulk-remove/ */
+/** POST /api/v1/article-tag/bulk-remove/ */
 export const bulkRemoveTags = (articleId, tagIds) =>
-  client.post("/article-tags/bulk-remove/", { article_id: articleId, tag_ids: tagIds }).then((res) => res.data);
+  client.post("/article-tag/bulk-remove/", { article_id: articleId, tag_ids: tagIds }).then((res) => res.data);

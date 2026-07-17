@@ -1,11 +1,13 @@
+// src/pages/AdminPage.jsx
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Users, FileText, TrendingUp, AlertTriangle, CheckCircle2, XCircle,
   Search, Trash2, Shield, Eye, Star, BarChart3, Loader2, FolderTree, Plus, X,
+  RefreshCw, ArrowUpRight, Clock,
 } from "lucide-react";
 import {
-  AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+  AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
 } from "recharts";
 import { listArticles, publishArticle, rejectArticle, deleteArticle } from "../api/articles";
 import { listUsers, updateUserRole, updateUserStatus, deleteUser } from "../api/users";
@@ -28,6 +30,54 @@ const TABS = [
   { key: "users", label: "Users", icon: Users },
   { key: "categories", label: "Categories", icon: FolderTree },
 ];
+
+// How stale a published article has to be (no update) before it's flagged
+// for re-review — matches the PRD's 180-day content freshness policy.
+const STALE_DAYS = 180;
+
+/** Small stat card with an optional %-change badge and a tiny trend sparkline. */
+function StatCard({ label, value, sub, badgePct, color, sparkline, sparklineKey }) {
+  return (
+    <div className="bg-white rounded-lg p-5 border" style={{ borderColor: "#E1E3EA" }}>
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-xs font-medium" style={{ color: "#696E7A" }}>{label}</span>
+        {badgePct !== null && badgePct !== undefined && (
+          <span
+            className="text-xs font-semibold px-2 py-0.5 rounded-full"
+            style={{
+              background: badgePct >= 0 ? "#E6F7F1" : "#FDEEF0",
+              color: badgePct >= 0 ? "#00A368" : "#F22F46",
+            }}
+          >
+            {badgePct >= 0 ? "+" : ""}{badgePct}%
+          </span>
+        )}
+      </div>
+      <div className="text-2xl font-semibold mb-0.5" style={{ color: "#121C2D" }}>{value}</div>
+      <div className="text-xs mb-3" style={{ color: "#9EA6B3" }}>{sub}</div>
+      {sparkline && sparkline.length > 0 && (
+        <ResponsiveContainer width="100%" height={40}>
+          <AreaChart data={sparkline}>
+            <defs>
+              <linearGradient id={`spark-${sparklineKey}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={color} stopOpacity={0.3} />
+                <stop offset="100%" stopColor={color} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <Area
+              type="monotone"
+              dataKey={sparklineKey}
+              stroke={color}
+              strokeWidth={2}
+              fill={`url(#spark-${sparklineKey})`}
+              isAnimationActive={false}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      )}
+    </div>
+  );
+}
 
 export default function AdminPage() {
   const navigate = useNavigate();
@@ -61,16 +111,20 @@ export default function AdminPage() {
     setLoading(true);
     setError("");
     Promise.all([
-      getDashboardAnalytics().catch(() => null),
       listCategories().catch(() => []),
       listArticles({ page_size: 100 }).catch(() => []),
       listUsers().catch(() => []),
     ])
-      .then(([a, c, art, u]) => {
-        setAnalytics(a);
-        setCategories(c.results ?? c ?? []);
-        setArticles(art.results ?? art ?? []);
+      .then(async ([c, art, u]) => {
+        const categoriesData = c.results ?? c ?? [];
+        const articlesData = art.results ?? art ?? [];
+        setCategories(categoriesData);
+        setArticles(articlesData);
         setUsers(u.users ?? u.results ?? u ?? []);
+
+        const totalViews = articlesData.reduce((sum, a) => sum + (a.views ?? 0), 0);
+        const a = await getDashboardAnalytics(totalViews).catch(() => null);
+        setAnalytics(a);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -97,6 +151,11 @@ export default function AdminPage() {
     [articles]
   );
 
+  const publishedArticles = useMemo(
+    () => articles.filter((a) => a.status === "published"),
+    [articles]
+  );
+
   const nonDraftArticles = useMemo(
     () => articles.filter((a) => a.status !== "draft"),
     [articles]
@@ -107,6 +166,19 @@ export default function AdminPage() {
     () => articles.filter((a) => a.status === "draft").length,
     [articles]
   );
+
+  const totalViews = useMemo(
+    () => articles.reduce((sum, a) => sum + (a.views ?? 0), 0),
+    [articles]
+  );
+
+  // Published articles whose content hasn't been touched in STALE_DAYS+ —
+  // real computation from each article's `updated_at`, matching the PRD's
+  // 180-day freshness policy (no backend flag needed for this one).
+  const staleArticles = useMemo(() => {
+    const cutoff = Date.now() - STALE_DAYS * 24 * 60 * 60 * 1000;
+    return publishedArticles.filter((a) => a.updated_at && new Date(a.updated_at).getTime() < cutoff);
+  }, [publishedArticles]);
 
   // -------- Filtered data for tables --------
   const filteredArticles = useMemo(
@@ -121,13 +193,28 @@ export default function AdminPage() {
     [users, userSearch]
   );
 
-  const categoryStats = useMemo(
-    () => categories.map((c) => ({ name: c.name?.split(" ")[0] ?? c.name, articles: c.articleCount ?? 0, color: c.color ?? "#F22F46" })),
-    [categories]
-  );
+  // Real per-category totals from the articles already loaded — total views
+  // per category (not just article counts) to match "Articles & Views by
+  // Category".
+  const categoryViewStats = useMemo(() => {
+    const byCategory = {};
+    articles.forEach((a) => {
+      const catId = a.category?.id ?? a.category;
+      if (catId == null) return;
+      byCategory[catId] = (byCategory[catId] ?? 0) + (a.views ?? 0);
+    });
+    return categories
+      .map((c) => ({
+        name: c.name?.split(" ")[0] ?? c.name,
+        views: byCategory[c.id] ?? 0,
+      }))
+      .filter((c) => c.views > 0)
+      .sort((a, b) => b.views - a.views);
+  }, [categories, articles]);
 
   const timeSeries = analytics?.timeSeries ?? [];
   const ratingDist = analytics?.ratingDistribution ?? [];
+  const sparkline14 = timeSeries.slice(-14);
 
   // ---- Article actions ----
   const handlePublish = async (a) => {
@@ -259,84 +346,244 @@ export default function AdminPage() {
         <>
           {activeTab === "overview" && (
             <div className="space-y-6">
-              {/* Stats cards – now 5 columns on large screens */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                {[
-                  { icon: FileText, label: "Total articles", value: totalNonDraft, color: "#0263E0" },
-                  { icon: Eye, label: "Total views", value: (analytics?.totalViews ?? 0).toLocaleString(), color: "#00A368" },
-                  { icon: AlertTriangle, label: "Pending review", value: pendingReview.length, color: "#E87722" },
-                  { icon: FileText, label: "Drafts", value: draftCount, color: "#696E7A" },
-                  { icon: Star, label: "Avg. rating", value: analytics?.avgRating ? analytics.avgRating.toFixed(1) : "—", color: "#F7C948" },
-                ].map((s) => {
-                  const Icon = s.icon;
-                  return (
-                    <div key={s.label} className="bg-white rounded-lg p-5 border" style={{ borderColor: "#E1E3EA" }}>
-                      <div className="flex items-center justify-center rounded-md mb-4" style={{ width: 36, height: 36, background: `${s.color}14` }}>
-                        <Icon size={17} style={{ color: s.color }} />
-                      </div>
-                      <div className="text-2xl font-semibold mb-0.5" style={{ color: "#121C2D" }}>{s.value}</div>
-                      <div className="text-sm" style={{ color: "#696E7A" }}>{s.label}</div>
-                    </div>
-                  );
-                })}
+              {/* Stat cards with sparklines */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatCard
+                  label="Total Views (30d)"
+                  value={totalViews.toLocaleString()}
+                  sub="All articles"
+                  badgePct={analytics?.viewsChangePct}
+                  color="#F22F46"
+                  sparkline={sparkline14}
+                  sparklineKey="views"
+                />
+                <StatCard
+                  label="Searches (30d)"
+                  value={(analytics?.totalSearches ?? 0).toLocaleString()}
+                  sub="Full-text queries"
+                  badgePct={analytics?.searchesChangePct}
+                  color="#0263E0"
+                  sparkline={sparkline14}
+                  sparklineKey="searches"
+                />
+                <StatCard
+                  label="Avg Rating"
+                  value={analytics?.avgRating ? `${analytics.avgRating.toFixed(1)}/5` : "—"}
+                  sub={`Across ${analytics?.ratingCount ?? 0} ratings`}
+                  color="#F7C948"
+                />
+                <StatCard
+                  label="Articles"
+                  value={totalNonDraft}
+                  sub={`${publishedArticles.length} published \u00b7 ${pendingReview.length + draftCount} drafts/review`}
+                  color="#00A368"
+                />
               </div>
 
-              {timeSeries.length > 0 && (
+              {/* Activity trend + Rating distribution */}
+              <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
                 <div className="bg-white rounded-lg border p-5" style={{ borderColor: "#E1E3EA" }}>
-                  <p className="text-sm font-semibold mb-4" style={{ color: "#121C2D" }}>Searches &amp; views (last 30 days)</p>
-                  <ResponsiveContainer width="100%" height={220}>
-                    <AreaChart data={timeSeries}>
+                  <div className="flex items-center justify-between mb-1">
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: "#121C2D" }}>Activity — Last 30 Days</p>
+                      <p className="text-xs" style={{ color: "#9EA6B3" }}>Daily searches and article views</p>
+                    </div>
+                  </div>
+                  <ResponsiveContainer width="100%" height={260}>
+                    <AreaChart data={timeSeries} margin={{ top: 16, right: 8, left: -16, bottom: 0 }}>
                       <defs>
-                        <linearGradient id="views" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#F22F46" stopOpacity={0.25} />
+                        <linearGradient id="viewsFill" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#F22F46" stopOpacity={0.15} />
                           <stop offset="100%" stopColor="#F22F46" stopOpacity={0} />
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#F4F4F6" vertical={false} />
-                      <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#9EA6B3" }} axisLine={false} tickLine={false} />
+                      <XAxis
+                        dataKey="date"
+                        tick={{ fontSize: 11, fill: "#9EA6B3" }}
+                        axisLine={false}
+                        tickLine={false}
+                        interval={Math.ceil(timeSeries.length / 5)}
+                      />
                       <YAxis tick={{ fontSize: 11, fill: "#9EA6B3" }} axisLine={false} tickLine={false} />
                       <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #E1E3EA" }} />
-                      <Area type="monotone" dataKey="views" stroke="#F22F46" fill="url(#views)" strokeWidth={2} />
+                      <Legend
+                        verticalAlign="top"
+                        align="right"
+                        height={24}
+                        iconType="plainline"
+                        wrapperStyle={{ fontSize: 12, color: "#696E7A" }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="views"
+                        name="Views"
+                        stroke="#F22F46"
+                        fill="url(#viewsFill)"
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="searches"
+                        name="Searches"
+                        stroke="#0263E0"
+                        fill="transparent"
+                        strokeWidth={2}
+                        strokeDasharray="4 3"
+                        dot={false}
+                      />
                     </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="bg-white rounded-lg border p-5" style={{ borderColor: "#E1E3EA" }}>
+                  <p className="text-sm font-semibold" style={{ color: "#121C2D" }}>Rating Distribution</p>
+                  <p className="text-xs mb-4" style={{ color: "#9EA6B3" }}>From {analytics?.ratingCount ?? 0} article ratings</p>
+                  <div className="space-y-2.5">
+                    {ratingDist.map((r) => {
+                      const total = ratingDist.reduce((s, x) => s + x.count, 0) || 1;
+                      return (
+                        <div key={r.stars} className="flex items-center gap-3">
+                          <span className="text-xs w-8" style={{ color: "#696E7A" }}>{r.stars}</span>
+                          <div className="flex-1 h-2 rounded-full" style={{ background: "#F4F4F6" }}>
+                            <div className="h-2 rounded-full" style={{ width: `${(r.count / total) * 100}%`, background: r.color }} />
+                          </div>
+                          <span className="text-xs w-6 text-right" style={{ color: "#9EA6B3" }}>{r.count}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t" style={{ borderColor: "#F4F4F6" }}>
+                    <span className="text-xs font-medium" style={{ color: "#696E7A" }}>Average</span>
+                    <span className="flex items-center gap-1 text-sm font-semibold" style={{ color: "#121C2D" }}>
+                      <Star size={13} style={{ color: "#F7C948", fill: "#F7C948" }} />
+                      {analytics?.avgRating ? analytics.avgRating.toFixed(1) : "—"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Articles & Views by Category */}
+              {categoryViewStats.length > 0 && (
+                <div className="bg-white rounded-lg border p-5" style={{ borderColor: "#E1E3EA" }}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: "#121C2D" }}>Articles &amp; Views by Category</p>
+                      <p className="text-xs" style={{ color: "#9EA6B3" }}>All-time article view counts per category</p>
+                    </div>
+                    <BarChart3 size={16} style={{ color: "#D1D5DB" }} />
+                  </div>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <BarChart data={categoryViewStats}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#F4F4F6" vertical={false} />
+                      <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#9EA6B3" }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 11, fill: "#9EA6B3" }} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #E1E3EA" }} />
+                      <Bar dataKey="views" name="Views" radius={[4, 4, 0, 0]} fill="#F4818C" />
+                    </BarChart>
                   </ResponsiveContainer>
                 </div>
               )}
 
+              {/* Content Health + Pending Actions */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {categoryStats.length > 0 && (
-                  <div className="bg-white rounded-lg border p-5" style={{ borderColor: "#E1E3EA" }}>
-                    <p className="text-sm font-semibold mb-4" style={{ color: "#121C2D" }}>Articles by category</p>
-                    <ResponsiveContainer width="100%" height={220}>
-                      <BarChart data={categoryStats}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#F4F4F6" vertical={false} />
-                        <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#9EA6B3" }} axisLine={false} tickLine={false} />
-                        <YAxis tick={{ fontSize: 11, fill: "#9EA6B3" }} axisLine={false} tickLine={false} />
-                        <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #E1E3EA" }} />
-                        <Bar dataKey="articles" radius={[4, 4, 0, 0]} fill="#0263E0" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-
-                {ratingDist.length > 0 && (
-                  <div className="bg-white rounded-lg border p-5" style={{ borderColor: "#E1E3EA" }}>
-                    <p className="text-sm font-semibold mb-4" style={{ color: "#121C2D" }}>Rating distribution</p>
-                    <div className="space-y-2.5">
-                      {ratingDist.map((r) => {
-                        const total = ratingDist.reduce((s, x) => s + x.count, 0) || 1;
-                        return (
-                          <div key={r.stars} className="flex items-center gap-3">
-                            <span className="text-xs w-8" style={{ color: "#696E7A" }}>{r.stars}</span>
-                            <div className="flex-1 h-2 rounded-full" style={{ background: "#F4F4F6" }}>
-                              <div className="h-2 rounded-full" style={{ width: `${(r.count / total) * 100}%`, background: r.color }} />
-                            </div>
-                            <span className="text-xs w-6 text-right" style={{ color: "#9EA6B3" }}>{r.count}</span>
+                <div className="bg-white rounded-lg border p-5" style={{ borderColor: "#E1E3EA" }}>
+                  <p className="text-sm font-semibold mb-4" style={{ color: "#121C2D" }}>Content Health</p>
+                  <div className="space-y-4">
+                    {[
+                      { label: "Published", count: publishedArticles.length, color: "#00A368" },
+                      { label: "In Review", count: pendingReview.length, color: "#0263E0" },
+                      { label: "Drafts", count: draftCount, color: "#9EA6B3" },
+                      { label: "Needs Re-review", count: staleArticles.length, color: "#E87722" },
+                    ].map((row) => {
+                      const scale = totalNonDraft + draftCount || 1;
+                      const width = Math.min(100, Math.round((row.count / scale) * 100));
+                      return (
+                        <div key={row.label}>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-xs font-medium" style={{ color: "#455A77" }}>{row.label}</span>
+                            <span className="text-xs font-semibold" style={{ color: "#121C2D" }}>{row.count}</span>
                           </div>
-                        );
-                      })}
-                    </div>
+                          <div className="h-2 rounded-full" style={{ background: "#F4F4F6" }}>
+                            <div className="h-2 rounded-full" style={{ width: `${width}%`, background: row.color }} />
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                )}
+                </div>
+
+                <div className="bg-white rounded-lg border p-5" style={{ borderColor: "#E1E3EA" }}>
+                  <p className="text-sm font-semibold mb-4" style={{ color: "#121C2D" }}>Pending Actions</p>
+                  <div className="divide-y" style={{ borderColor: "#F4F4F6" }}>
+                    {staleArticles.length > 0 && (
+                      <div className="flex items-center gap-3 py-3 first:pt-0">
+                        <div className="flex items-center justify-center rounded-full flex-shrink-0" style={{ width: 34, height: 34, background: "#FEF3E7" }}>
+                          <AlertTriangle size={15} style={{ color: "#E87722" }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium" style={{ color: "#121C2D" }}>
+                            {staleArticles.length} article{staleArticles.length === 1 ? "" : "s"} need re-review
+                          </p>
+                          <p className="text-xs" style={{ color: "#9EA6B3" }}>Not reviewed in {STALE_DAYS}+ days</p>
+                        </div>
+                        <button
+                          onClick={() => setActiveTab("articles")}
+                          className="flex items-center gap-1 text-xs font-medium hover:underline flex-shrink-0"
+                          style={{ color: "#E87722" }}
+                        >
+                          View <ArrowUpRight size={12} />
+                        </button>
+                      </div>
+                    )}
+
+                    {pendingReview.length > 0 && (
+                      <div className="flex items-center gap-3 py-3 first:pt-0">
+                        <div className="flex items-center justify-center rounded-full flex-shrink-0" style={{ width: 34, height: 34, background: "#E8F0FD" }}>
+                          <RefreshCw size={15} style={{ color: "#0263E0" }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium" style={{ color: "#121C2D" }}>
+                            {pendingReview.length} article{pendingReview.length === 1 ? "" : "s"} awaiting review
+                          </p>
+                          <p className="text-xs" style={{ color: "#9EA6B3" }}>Submitted by editors</p>
+                        </div>
+                        <button
+                          onClick={() => setActiveTab("articles")}
+                          className="flex items-center gap-1 text-xs font-medium hover:underline flex-shrink-0"
+                          style={{ color: "#0263E0" }}
+                        >
+                          View <ArrowUpRight size={12} />
+                        </button>
+                      </div>
+                    )}
+
+                    {staleArticles.length === 0 && pendingReview.length === 0 && (
+                      <div className="flex items-center gap-3 py-3 first:pt-0">
+                        <div className="flex items-center justify-center rounded-full flex-shrink-0" style={{ width: 34, height: 34, background: "#E6F7F1" }}>
+                          <CheckCircle2 size={15} style={{ color: "#00A368" }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium" style={{ color: "#121C2D" }}>All critical articles current</p>
+                          <p className="text-xs" style={{ color: "#9EA6B3" }}>No pending reviews, nothing overdue</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {(staleArticles.length > 0 || pendingReview.length > 0) && (
+                      <div className="flex items-center gap-3 py-3">
+                        <div className="flex items-center justify-center rounded-full flex-shrink-0" style={{ width: 34, height: 34, background: "#F4F4F6" }}>
+                          <Clock size={15} style={{ color: "#9EA6B3" }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium" style={{ color: "#121C2D" }}>{draftCount} draft{draftCount === 1 ? "" : "s"} in progress</p>
+                          <p className="text-xs" style={{ color: "#9EA6B3" }}>Not yet submitted by editors</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           )}

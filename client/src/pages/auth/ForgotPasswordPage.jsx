@@ -93,7 +93,6 @@ export default function ForgotPasswordPage() {
                 <p className="text-sm mb-6" style={{ color: "#696E7A" }}>
                   The OTP is valid for <strong>30 minutes</strong>.
                 </p>
-                {/* ✅ NEW: Button to go to OTP verification */}
                 <button
                   onClick={() => navigate("/verify-otp", { state: { email } })}
                   className="w-full flex items-center justify-center gap-2 py-2.5 rounded-md text-sm font-medium transition-opacity hover:opacity-90"

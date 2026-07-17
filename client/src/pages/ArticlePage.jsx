@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { getArticle, publishArticle, submitArticleForReview } from "../api/articles";
 import { createFeedback, listFeedback, getMyFeedback } from "../api/analytics";
-import { getRootCategories } from "../api/categories";
+import { getRootCategories, listTags } from "../api/categories";
 import StatusBadge from "../components/common/StatusBadge.jsx";
 import Spinner from "../components/common/Spinner.jsx";
 import ErrorBanner from "../components/common/ErrorBanner.jsx";
@@ -57,6 +57,7 @@ export default function ArticlePage() {
   const [helpfulVote, setHelpfulVote] = useState(null);
 
   const [categoryMap, setCategoryMap] = useState({});
+  const [tagMap, setTagMap] = useState({});
   const [categoriesLoading, setCategoriesLoading] = useState(true);
 
   const [publishing, setPublishing] = useState(false);
@@ -69,7 +70,7 @@ export default function ArticlePage() {
   const [ratingStats, setRatingStats] = useState({ average: 0, count: 0 });
   const [userAlreadyRated, setUserAlreadyRated] = useState(false);
 
-  // Confirmation modal state (before action)
+  // Confirmation modal for publish / submit
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
     title: "",
@@ -79,10 +80,17 @@ export default function ArticlePage() {
     onConfirm: null,
   });
 
-  // Result modal state (after action – success/error)
+  // Confirmation modal for thumbs up/down
+  const [helpfulConfirmModal, setHelpfulConfirmModal] = useState({
+    isOpen: false,
+    helpful: false,
+    onConfirm: null,
+  });
+
+  // Result modal
   const [resultModal, setResultModal] = useState({
     isOpen: false,
-    type: "success", // "success" or "error"
+    type: "success",
     title: "",
     message: "",
   });
@@ -108,19 +116,44 @@ export default function ArticlePage() {
     }
   };
 
-  // Fetch article, categories, user feedback, and rating stats
+  // Fetch article, categories, tags, and user's feedback for this article only
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError("");
 
+    // Load article
     getArticle(slug)
       .then(async (data) => {
-        if (!cancelled) {
-          setArticle(data);
-          if (data.status === 'published') {
-            const stats = await fetchArticleRating(data.id);
-            if (!cancelled) setRatingStats(stats);
+        if (cancelled) return;
+        setArticle(data);
+
+        if (data.status === 'published') {
+          const stats = await fetchArticleRating(data.id);
+          if (!cancelled) setRatingStats(stats);
+        }
+
+        if (user) {
+          try {
+            const feedbackData = await getMyFeedback({ page_size: 1000 });
+            if (cancelled) return;
+            const feedbacks = feedbackData.results ?? feedbackData ?? [];
+            const hasRated = feedbacks.some(f =>
+              f.content_type === 'article' &&
+              f.object_id === data.id &&
+              f.rating !== null &&
+              f.rating !== undefined
+            );
+            if (hasRated) {
+              setUserAlreadyRated(true);
+              setFeedbackSent(true);
+            }
+          } catch (err) {
+            const ratedKey = `rated_article_${slug}`;
+            if (localStorage.getItem(ratedKey)) {
+              setUserAlreadyRated(true);
+              setFeedbackSent(true);
+            }
           }
         }
       })
@@ -131,57 +164,74 @@ export default function ArticlePage() {
         if (!cancelled) setLoading(false);
       });
 
+    // Load categories for mapping
     getRootCategories()
       .then((cats) => {
-        if (!cancelled) {
-          const map = {};
-          cats.forEach((c) => { map[c.id] = c.name; });
-          setCategoryMap(map);
-          setCategoriesLoading(false);
-        }
+        if (cancelled) return;
+        const map = {};
+        cats.forEach((c) => { map[c.id] = c.name; });
+        setCategoryMap(map);
+        setCategoriesLoading(false);
       })
       .catch(() => {
         if (!cancelled) setCategoriesLoading(false);
       });
 
-    if (user) {
-      getMyFeedback({ content_type: 'article', object_id: slug })
-        .then((data) => {
-          if (!cancelled) {
-            const hasRated = (data.results || data || []).some(f => f.rating !== null && f.rating !== undefined);
-            if (hasRated) {
-              setUserAlreadyRated(true);
-              setFeedbackSent(true);
-            }
-          }
-        })
-        .catch(() => {
-          const ratedKey = `rated_article_${slug}`;
-          if (localStorage.getItem(ratedKey)) {
-            setUserAlreadyRated(true);
-            setFeedbackSent(true);
-          }
-        });
-    }
+    // Load tags for mapping
+    listTags()
+      .then((tags) => {
+        if (cancelled) return;
+        const map = {};
+        (tags.results ?? tags ?? []).forEach((t) => { map[t.id] = t.name; });
+        setTagMap(map);
+      })
+      .catch(() => {
+        // ignore tag loading errors – tags will fallback to IDs
+      });
 
     return () => { cancelled = true; };
   }, [slug, user]);
 
-  // Helpful feedback
-  const handleHelpful = async (helpful) => {
-    setHelpfulVote(helpful);
-    try {
-      await createFeedback({
-        content_type: 'article',
-        object_id: article.id,
-        helpful,
-      });
-    } catch (err) {
-      // ignore
-    }
+  // ---- Helpful feedback with confirmation ----
+  const handleHelpfulClick = (helpful) => {
+    if (userAlreadyRated) return;
+    setHelpfulConfirmModal({
+      isOpen: true,
+      helpful: helpful,
+      onConfirm: async () => {
+        setHelpfulConfirmModal({ isOpen: false, helpful: false, onConfirm: null });
+        const ratingValue = helpful ? 5 : 1;
+        try {
+          await createFeedback({
+            content_type: 'article',
+            object_id: article.id,
+            helpful: helpful,
+            rating: ratingValue,
+            comment: helpful ? "Thumbs up - helpful" : "Thumbs down - needs improvement",
+          });
+          setHelpfulVote(helpful);
+          setUserAlreadyRated(true);
+          setFeedbackSent(true);
+          localStorage.setItem(`rated_article_${slug}`, 'true');
+          const stats = await fetchArticleRating(article.id);
+          setRatingStats(stats);
+          openResultModal(
+            "success",
+            "Thank you!",
+            `You rated this article ${ratingValue} star${ratingValue > 1 ? 's' : ''}.`
+          );
+        } catch (err) {
+          openResultModal(
+            "error",
+            "Feedback Failed",
+            err.message || "Could not submit your feedback. Please try again."
+          );
+        }
+      }
+    });
   };
 
-  // Rating feedback
+  // ---- Rating feedback (star rating + comment) ----
   const handleSubmitReview = async (e) => {
     e.preventDefault();
     if (!rating) return;
@@ -202,38 +252,19 @@ export default function ArticlePage() {
     }
   };
 
-  // ---- Confirmation modal helpers ----
+  // ---- Modals ----
   const openConfirmModal = (title, message, confirmLabel, onConfirm, confirmColor = "#00A368") => {
-    setConfirmModal({
-      isOpen: true,
-      title,
-      message,
-      confirmLabel,
-      confirmColor,
-      onConfirm,
-    });
+    setConfirmModal({ isOpen: true, title, message, confirmLabel, confirmColor, onConfirm });
   };
+  const closeConfirmModal = () => setConfirmModal(prev => ({ ...prev, isOpen: false }));
 
-  const closeConfirmModal = () => {
-    setConfirmModal({ ...confirmModal, isOpen: false });
-  };
-
-  // ---- Result modal helpers ----
   const openResultModal = (type, title, message) => {
-    setResultModal({
-      isOpen: true,
-      type,
-      title,
-      message,
-    });
+    setResultModal({ isOpen: true, type, title, message });
     setTimeout(() => closeResultModal(), 6000);
   };
+  const closeResultModal = () => setResultModal(prev => ({ ...prev, isOpen: false }));
 
-  const closeResultModal = () => {
-    setResultModal({ ...resultModal, isOpen: false });
-  };
-
-  // ---- Action handlers (with modal) ----
+  // ---- Action handlers ----
   const handlePublishClick = () => {
     openConfirmModal(
       "Publish Article",
@@ -251,18 +282,10 @@ export default function ArticlePage() {
             const stats = await fetchArticleRating(updated.id);
             setRatingStats(stats);
           }
-          openResultModal(
-            "success",
-            "Published!",
-            "The article is now visible to all users."
-          );
+          openResultModal("success", "Published!", "The article is now visible to all users.");
         } catch (err) {
           const msg = err.response?.data?.error || err.message || "Failed to publish article.";
-          openResultModal(
-            "error",
-            "Publish Failed",
-            msg
-          );
+          openResultModal("error", "Publish Failed", msg);
         } finally {
           setPublishing(false);
         }
@@ -284,18 +307,10 @@ export default function ArticlePage() {
           await submitArticleForReview(slug);
           const updated = await getArticle(slug);
           setArticle(updated);
-          openResultModal(
-            "success",
-            "Submitted!",
-            "Your article is now pending admin review."
-          );
+          openResultModal("success", "Submitted!", "Your article is now pending admin review.");
         } catch (err) {
           const msg = err.response?.data?.error || err.response?.data?.message || err.message;
-          openResultModal(
-            "error",
-            "Submission Failed",
-            msg || "Failed to submit for review. Please check server logs."
-          );
+          openResultModal("error", "Submission Failed", msg || "Failed to submit for review.");
         } finally {
           setSubmitting(false);
         }
@@ -304,7 +319,7 @@ export default function ArticlePage() {
     );
   };
 
-  // Loading & error states
+  // ---- Loading / Error ----
   if (loading) {
     return <div className="flex justify-center py-24"><Spinner label="Loading article…" /></div>;
   }
@@ -367,6 +382,33 @@ export default function ArticlePage() {
 
   const showFeedbackForm = isPublished && !userAlreadyRated;
 
+  // Helper to render tags
+  const renderTags = () => {
+    if (!article.tags?.length) return null;
+    return (
+      <div className="flex flex-wrap items-center gap-2 mt-8 pt-6 border-t" style={{ borderColor: "#E8E8EC" }}>
+        <Tag size={13} style={{ color: "#9EA6B3" }} />
+        {article.tags.map((tag) => {
+          // If tag is already an object, extract name; if it's an ID, look up in tagMap
+          let tagName;
+          let tagKey;
+          if (typeof tag === 'object') {
+            tagName = tag.name;
+            tagKey = tag.id;
+          } else {
+            tagKey = tag;
+            tagName = tagMap[tag] || `Tag ${tag}`;
+          }
+          return (
+            <span key={tagKey} className="text-xs px-2.5 py-1 rounded-full" style={{ background: "#F4F4F6", color: "#696E7A" }}>
+              {tagName}
+            </span>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
       {/* Back button */}
@@ -379,7 +421,7 @@ export default function ArticlePage() {
       </button>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-8">
-        {/* Main content – unchanged */}
+        {/* Main content */}
         <div>
           {/* Badges */}
           <div className="flex items-center gap-2 flex-wrap mb-4">
@@ -450,57 +492,56 @@ export default function ArticlePage() {
           {/* Content */}
           <div className="article-body" dangerouslySetInnerHTML={{ __html: article.content ?? article.body ?? "" }} />
 
-          {/* Tags */}
-          {article.tags?.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2 mt-8 pt-6 border-t" style={{ borderColor: "#E8E8EC" }}>
-              <Tag size={13} style={{ color: "#9EA6B3" }} />
-              {article.tags.map((tag) => (
-                <span key={tag} className="text-xs px-2.5 py-1 rounded-full" style={{ background: "#F4F4F6", color: "#696E7A" }}>
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
+          {/* Tags - using renderTags helper */}
+          {renderTags()}
 
-          {/* Feedback section */}
+          {/* Feedback section (unchanged) */}
           {isPublished ? (
             <div className="mt-8 p-5 rounded-lg" style={{ background: "#F9FAFB", border: "1px solid #E8E8EC" }}>
               <div className="flex items-center justify-between mb-4">
                 <p className="text-sm font-medium" style={{ color: "#121C2D" }}>Was this article helpful?</p>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleHelpful(true)}
-                    className="p-2 rounded-md border transition-colors"
-                    style={{
-                      borderColor: helpfulVote === true ? "#00A368" : "#E1E3EA",
-                      background: helpfulVote === true ? "#E6F7F1" : "white",
-                      color: helpfulVote === true ? "#00A368" : "#696E7A",
-                    }}
-                  >
-                    <ThumbsUp size={15} />
-                  </button>
-                  <button
-                    onClick={() => handleHelpful(false)}
-                    className="p-2 rounded-md border transition-colors"
-                    style={{
-                      borderColor: helpfulVote === false ? "#F22F46" : "#E1E3EA",
-                      background: helpfulVote === false ? "#FDEEF0" : "white",
-                      color: helpfulVote === false ? "#F22F46" : "#696E7A",
-                    }}
-                  >
-                    <ThumbsDown size={15} />
-                  </button>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => handleHelpfulClick(true)}
+                      disabled={userAlreadyRated}
+                      className="p-2 rounded-md border transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        borderColor: helpfulVote === true ? "#00A368" : "#E1E3EA",
+                        background: helpfulVote === true ? "#E6F7F1" : "white",
+                        color: helpfulVote === true ? "#00A368" : "#696E7A",
+                      }}
+                    >
+                      <ThumbsUp size={15} />
+                    </button>
+                    <span className="text-xs" style={{ color: "#9EA6B3" }}>This was helpful</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => handleHelpfulClick(false)}
+                      disabled={userAlreadyRated}
+                      className="p-2 rounded-md border transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        borderColor: helpfulVote === false ? "#F22F46" : "#E1E3EA",
+                        background: helpfulVote === false ? "#FDEEF0" : "white",
+                        color: helpfulVote === false ? "#F22F46" : "#696E7A",
+                      }}
+                    >
+                      <ThumbsDown size={15} />
+                    </button>
+                    <span className="text-xs" style={{ color: "#9EA6B3" }}>This needs improvement</span>
+                  </div>
                 </div>
               </div>
 
               {feedbackSent ? (
-                <div className="flex items-center gap-2 text-sm" style={{ color: "#00A368" }}>
+                <div className="flex items-center gap-2 text-sm mt-4" style={{ color: "#00A368" }}>
                   <CheckCircle2 size={15} /> 
                   {userAlreadyRated ? "You've already rated this article. Thank you!" : "Thanks — your feedback helps us keep this article accurate."}
                 </div>
               ) : (
                 showFeedbackForm ? (
-                  <form onSubmit={handleSubmitReview} className="space-y-3">
+                  <form onSubmit={handleSubmitReview} className="space-y-3 mt-4">
                     <StarRating value={rating} onChange={setRating} />
                     <textarea
                       value={comment}
@@ -520,7 +561,7 @@ export default function ArticlePage() {
                     </button>
                   </form>
                 ) : (
-                  <div className="text-sm text-center" style={{ color: "#696E7A" }}>
+                  <div className="text-sm text-center mt-4" style={{ color: "#696E7A" }}>
                     <CheckCircle2 size={15} className="inline mr-1" /> You've already shared your rating. Thank you!
                   </div>
                 )
@@ -536,7 +577,7 @@ export default function ArticlePage() {
           )}
         </div>
 
-        {/* Sidebar */}
+        {/* Sidebar – unchanged */}
         <aside className="space-y-5">
           {/* Article Meta Card */}
           <div className="bg-white rounded-lg border p-4" style={{ borderColor: "#E1E3EA" }}>
@@ -687,7 +728,7 @@ export default function ArticlePage() {
         </aside>
       </div>
 
-      {/* ---- Confirmation Modal (before action) ---- */}
+      {/* ---- Modals – unchanged ---- */}
       {confirmModal.isOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -724,7 +765,44 @@ export default function ArticlePage() {
         </div>
       )}
 
-      {/* ---- Result Modal (after action – success/error) ---- */}
+      {helpfulConfirmModal.isOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+          onClick={() => setHelpfulConfirmModal({ isOpen: false, helpful: false, onConfirm: null })}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold mb-2" style={{ color: "#121C2D" }}>
+              {helpfulConfirmModal.helpful ? "Mark as Helpful" : "Mark as Needs Improvement"}
+            </h3>
+            <p className="text-sm mb-6" style={{ color: "#696E7A" }}>
+              {helpfulConfirmModal.helpful
+                ? "This will give the article a 5-star rating. You won't be able to change it later. Continue?"
+                : "This will give the article a 1-star rating. You won't be able to change it later. Continue?"}
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setHelpfulConfirmModal({ isOpen: false, helpful: false, onConfirm: null })}
+                className="px-4 py-2 rounded-md text-sm font-medium border transition-colors hover:bg-gray-50"
+                style={{ borderColor: "#E1E3EA", color: "#696E7A" }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={helpfulConfirmModal.onConfirm}
+                className="px-4 py-2 rounded-md text-sm font-medium text-white transition-colors hover:opacity-90"
+                style={{ background: helpfulConfirmModal.helpful ? "#00A368" : "#F22F46" }}
+              >
+                {helpfulConfirmModal.helpful ? "Yes, it was helpful" : "Yes, needs improvement"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {resultModal.isOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"

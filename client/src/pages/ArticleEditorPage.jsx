@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-  ArrowLeft, Save, Send, CheckCircle2, Loader2, X, Plus,
+  ArrowLeft, Save, Send, CheckCircle2, Loader2, X, XCircle, Plus,
   FileQuestion, ClipboardList, HelpCircle, Wrench, BookMarked, Rss,
 } from "lucide-react";
 import {
@@ -9,6 +9,7 @@ import {
   publishArticle, uploadArticleMedia, deleteArticleMedia,
 } from "../api/articles";
 import { listCategories } from "../api/categories";
+import { listTags, createTag, bulkAddTags, bulkRemoveTags, listArticleTags } from "../api/categories";
 import RichTextEditor from "../components/editor/RichTextEditor.jsx";
 import MediaUploader from "../components/editor/MediaUploader.jsx";
 import ErrorBanner from "../components/common/ErrorBanner.jsx";
@@ -40,6 +41,7 @@ export default function ArticleEditorPage() {
 
   const [step, setStep] = useState(isEditMode ? 2 : 1);
   const [categories, setCategories] = useState([]);
+  const [allTags, setAllTags] = useState([]);
   const [loading, setLoading] = useState(isEditMode);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -71,11 +73,15 @@ export default function ArticleEditorPage() {
     message: "",
   });
 
-  // Load categories
+  // Load categories and tags
   useEffect(() => {
     listCategories()
       .then((data) => setCategories(data.results ?? data ?? []))
       .catch(() => setCategories([]));
+
+    listTags()
+      .then((data) => setAllTags(data.results ?? data ?? []))
+      .catch(() => setAllTags([]));
   }, []);
 
   // Load existing article
@@ -91,7 +97,9 @@ export default function ArticleEditorPage() {
         setTitle(a.title ?? "");
         setType(a.type ?? "");
         setCategoryId(a.category?.id ?? a.category ?? "");
-        setTags(a.tags ?? []);
+        const tagList = a.tags ?? [];
+        const tagNames = tagList.map(t => typeof t === 'string' ? t : t.name).filter(Boolean);
+        setTags(tagNames);
         setContent(a.content ?? "");
         setMedia(a.media ?? []);
         setStatus(a.status ?? "draft");
@@ -121,51 +129,29 @@ export default function ArticleEditorPage() {
     }
   };
 
-  const buildPayload = (nextStatus) => ({
-    title,
-    slug: slug || generateSlug(title),
-    category: categoryId,
-    tags,
-    content,
-    status: nextStatus,
-  });
-
-  const validate = () => {
-    if (!title.trim()) return "Please give the article a title.";
-    if (!slug.trim()) return "Slug is required.";
-    if (!categoryId) return "Please choose a category.";
-    if (!content?.trim()) return "Article content is required.";
-    return "";
-  };
-
-  // ---- Modal helpers ----
-  const openConfirmModal = (title, message, confirmLabel, onConfirm, confirmColor = "#00A368") => {
-    setConfirmModal({
-      isOpen: true,
-      title,
-      message,
-      confirmLabel,
-      confirmColor,
-      onConfirm,
-    });
-  };
-
-  const closeConfirmModal = () => {
-    setConfirmModal({ ...confirmModal, isOpen: false });
-  };
-
-  const openResultModal = (type, title, message) => {
-    setResultModal({
-      isOpen: true,
-      type,
-      title,
-      message,
-    });
-    setTimeout(() => closeResultModal(), 6000);
-  };
-
-  const closeResultModal = () => {
-    setResultModal({ ...resultModal, isOpen: false });
+  // ---- Helper: resolve tag names to IDs (creates missing tags) ----
+  const resolveTagIds = async (tagNames) => {
+    const ids = [];
+    for (const name of tagNames) {
+      let existing = allTags.find(t => t.name.toLowerCase() === name.toLowerCase());
+      if (!existing) {
+        try {
+          const newTag = await createTag({
+            name,
+            slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+          });
+          existing = newTag;
+          setAllTags(prev => [...prev, existing]);
+        } catch (err) {
+          console.error("Failed to create tag:", name, err);
+          continue;
+        }
+      }
+      if (existing && existing.id) {
+        ids.push(existing.id);
+      }
+    }
+    return ids.filter(id => id !== null && id !== undefined);
   };
 
   // ---- Core save logic ----
@@ -179,7 +165,15 @@ export default function ArticleEditorPage() {
     setSaving(true);
 
     try {
-      const payload = buildPayload(nextStatus);
+      // 1. Save article without tags
+      const payload = {
+        title,
+        slug: slug || generateSlug(title),
+        category: categoryId,
+        content,
+        status: nextStatus,
+      };
+
       let response;
       let finalSlug = slug;
 
@@ -198,7 +192,32 @@ export default function ArticleEditorPage() {
         }
       }
 
-      // Extra actions
+      const currentArticleId = articleId ?? response.id ?? response.article?.id;
+
+      // 2. Manage tags via bulk endpoints
+      if (currentArticleId) {
+        const tagIds = await resolveTagIds(tags);
+        const validTagIds = tagIds.filter(id => id !== null && id !== undefined);
+        if (validTagIds.length > 0) {
+          if (isEditMode) {
+            try {
+              const existingTags = await listArticleTags(currentArticleId);
+              const existingIds = (existingTags.results ?? existingTags ?? [])
+                .map(at => at.tag?.id)
+                .filter(id => id !== null && id !== undefined);
+              const toRemove = existingIds.filter(id => !validTagIds.includes(id));
+              if (toRemove.length > 0) {
+                await bulkRemoveTags(currentArticleId, toRemove);
+              }
+            } catch (err) {
+              console.error("Failed to remove old tags:", err);
+            }
+          }
+          await bulkAddTags(currentArticleId, validTagIds);
+        }
+      }
+
+      // 3. Extra actions (review, publish)
       if (nextStatus === "review") {
         await submitArticleForReview(finalSlug);
         openResultModal("success", "Submitted!", "Your article is now pending admin review.");
@@ -219,11 +238,34 @@ export default function ArticleEditorPage() {
     }
   };
 
-  // ---- Action handlers ----
-  const handleSaveDraft = () => {
-    performSave("draft");
+  const validate = () => {
+    if (!title.trim()) return "Please give the article a title.";
+    if (!slug.trim()) return "Slug is required.";
+    if (!categoryId) return "Please choose a category.";
+    if (!content?.trim()) return "Article content is required.";
+    return "";
   };
 
+  // ---- Modal helpers ----
+  const openConfirmModal = (title, message, confirmLabel, onConfirm, confirmColor = "#00A368") => {
+    setConfirmModal({ isOpen: true, title, message, confirmLabel, confirmColor, onConfirm });
+  };
+
+  const closeConfirmModal = () => {
+    setConfirmModal({ ...confirmModal, isOpen: false });
+  };
+
+  const openResultModal = (type, title, message) => {
+    setResultModal({ isOpen: true, type, title, message });
+    setTimeout(() => closeResultModal(), 6000);
+  };
+
+  const closeResultModal = () => {
+    setResultModal({ ...resultModal, isOpen: false });
+  };
+
+  // ---- Action handlers ----
+  const handleSaveDraft = () => performSave("draft");
   const handleSubmitForReview = () => {
     openConfirmModal(
       "Submit for Review",
@@ -236,7 +278,6 @@ export default function ArticleEditorPage() {
       "#00A368"
     );
   };
-
   const handlePublish = () => {
     openConfirmModal(
       "Publish Article",
@@ -261,9 +302,17 @@ export default function ArticleEditorPage() {
     let targetId = articleId;
     if (!targetId) {
       try {
-        const created = await createArticle(buildPayload("draft"));
+        const payload = {
+          title,
+          slug: slug || generateSlug(title),
+          category: categoryId,
+          content,
+          status: "draft",
+        };
+        const created = await createArticle(payload);
         targetId = created.id ?? created.article?.id;
         setArticleId(targetId);
+        if (created.slug) setSlug(created.slug);
       } catch (err) {
         setMedia((prev) =>
           prev.map((m) =>
@@ -304,9 +353,9 @@ export default function ArticleEditorPage() {
 
   if (loading) return <div className="flex justify-center py-24"><Spinner label="Loading article…" /></div>;
 
+  // ---- JSX ----
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
-      {/* Back button */}
       <button
         onClick={() => navigate(-1)}
         className="flex items-center gap-1.5 text-xs mb-5 hover:underline"
@@ -328,7 +377,6 @@ export default function ArticleEditorPage() {
         </div>
       </div>
 
-      {/* Template selection */}
       {step === 1 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {Object.entries(ARTICLE_TYPE_LABELS).map(([key, label]) => {
@@ -358,12 +406,10 @@ export default function ArticleEditorPage() {
         </div>
       )}
 
-      {/* Article editor */}
       {step === 2 && (
         <div className="space-y-6">
           <ErrorBanner message={error} />
 
-          {/* Basic info */}
           <div className="bg-white rounded-lg border p-6 space-y-5" style={{ borderColor: "#E1E3EA" }}>
             <div className="flex items-center gap-2">
               <span
@@ -383,7 +429,6 @@ export default function ArticleEditorPage() {
               )}
             </div>
 
-            {/* Title */}
             <div>
               <label className="block text-sm font-medium mb-1.5" style={{ color: "#243656" }}>
                 Title <span style={{ color: "#F22F46" }}>*</span>
@@ -397,7 +442,6 @@ export default function ArticleEditorPage() {
               />
             </div>
 
-            {/* Slug */}
             <div>
               <label className="block text-sm font-medium mb-1.5" style={{ color: "#243656" }}>
                 Slug <span style={{ color: "#F22F46" }}>*</span>
@@ -414,7 +458,6 @@ export default function ArticleEditorPage() {
               </p>
             </div>
 
-            {/* Category */}
             <div>
               <label className="block text-sm font-medium mb-1.5" style={{ color: "#243656" }}>
                 Category <span style={{ color: "#F22F46" }}>*</span>
@@ -434,7 +477,6 @@ export default function ArticleEditorPage() {
               </select>
             </div>
 
-            {/* Tags */}
             <div>
               <label className="block text-sm font-medium mb-1.5" style={{ color: "#243656" }}>
                 Tags
@@ -479,7 +521,6 @@ export default function ArticleEditorPage() {
             </div>
           </div>
 
-          {/* Content */}
           <div className="bg-white rounded-lg border p-6" style={{ borderColor: "#E1E3EA" }}>
             <label className="block text-sm font-medium mb-1.5" style={{ color: "#243656" }}>
               Content <span style={{ color: "#F22F46" }}>*</span>
@@ -491,7 +532,6 @@ export default function ArticleEditorPage() {
             />
           </div>
 
-          {/* Media uploader */}
           <div className="bg-white rounded-lg border p-6" style={{ borderColor: "#E1E3EA" }}>
             <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: "#9EA6B3" }}>
               Media (optional) — screenshots, PDFs, or training videos
@@ -503,7 +543,6 @@ export default function ArticleEditorPage() {
             />
           </div>
 
-          {/* Action buttons */}
           <div
             className="flex items-center justify-between sticky bottom-0 bg-white/95 backdrop-blur-sm rounded-lg border p-4"
             style={{ borderColor: "#E1E3EA" }}
@@ -548,7 +587,7 @@ export default function ArticleEditorPage() {
         </div>
       )}
 
-      {/* ---- Confirmation Modal ---- */}
+      {/* Modals */}
       {confirmModal.isOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -585,7 +624,6 @@ export default function ArticleEditorPage() {
         </div>
       )}
 
-      {/* ---- Result Modal ---- */}
       {resultModal.isOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"

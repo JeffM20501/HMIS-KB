@@ -20,7 +20,6 @@ export default function ResetPasswordPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email || "";
-  const otp = location.state?.otp||""
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");

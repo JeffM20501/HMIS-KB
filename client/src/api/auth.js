@@ -68,9 +68,9 @@ export const verifyOtp = (email, otp) =>
  * POST /api/v1/u/auth/reset-password/
  * This resets the password using email + OTP + new password.
  */
-export const resetPassword = (email, otp, newPassword) =>
+export const resetPassword = (email, newPassword) =>
   client
-    .post("/u/auth/reset-password/", { email, otp, new_password: newPassword })
+    .post("/u/auth/reset-password/", { email, new_password: newPassword })
     .then((res) => res.data);
 
 
