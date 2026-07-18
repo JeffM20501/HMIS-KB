@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getMyArticles } from "../api/articles";
-import { listCategories } from "../api/categories";
-import Spinner from "../components/common/Spinner.jsx";
-import ErrorBanner from "../components/common/ErrorBanner.jsx";
-import ArticleCard from "../components/articles/ArticleCard.jsx";
-import RoleGate from "../components/common/RoleGate.jsx";
-import { ROLES } from "../utils/constants";
+import { getMyArticles } from "../../api/articles.js";
+import { listCategories } from "../../api/categories.js";
+import Spinner from "../../components/common/Spinner.jsx";
+import ErrorBanner from "../../components/common/ErrorBanner.jsx";
+import ArticleCard from "../../components/articles/ArticleCard.jsx";
+import RoleGate from "../../components/common/RoleGate.jsx";
+import { ROLES } from "../../utils/constants.js";
 import { PlusCircle } from "lucide-react";
-import { useLookupMaps } from "../hooks/useLookupMaps";
+import { useLookupMaps } from "../../hooks/useLookupMaps.js";
 
 export default function EditorDraftsPage() {
     const [articles, setArticles] = useState([]);

@@ -75,4 +75,4 @@ export const ACCEPTED_MEDIA_TYPES = {
   video: ["video/mp4", "video/webm", "video/quicktime"],
 };
 
-export const MAX_MEDIA_SIZE_MB = 25;
+export const MAX_MEDIA_SIZE_MB = 50;

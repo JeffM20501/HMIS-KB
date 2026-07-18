@@ -27,7 +27,7 @@ export default function ArticleCard({ article, category, tagMap }) {
     : "";
 
   const categoryName = category?.name || "Uncategorized";
-  const typeLabel = ARTICLE_TYPE_LABELS[article.type] || article.type || "Article";
+  const typeLabel = ARTICLE_TYPE_LABELS[article.article_type] || article.type || "Article";
 
   // Resolve tag names
   const tagNames = tags.map(tag => {

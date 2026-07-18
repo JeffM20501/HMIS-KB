@@ -5,7 +5,7 @@ import {
   CheckCircle2, Star, Zap, BarChart3, Lock, Menu, X,
 } from "lucide-react";
 
-import client from "../api/client";
+import client from "../../api/client";
 
 const features = [
   { icon: Search, title: "Instant Full-Text Search", desc: "Find any SOP, guide, or procedure in under 500ms. Search by title, content, tags, or category — ranked by relevance.", color: "#0263E0" },

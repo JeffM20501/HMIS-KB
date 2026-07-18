@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import LandingPage from "./pages/LandingPage.jsx";
+import LandingPage from "./pages/Landing/LandingPage.jsx";
 import LoginPage from "./pages/auth/LoginPage.jsx";
 import RegisterPage from "./pages/auth/RegisterPage.jsx";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage.jsx";
@@ -9,7 +9,7 @@ import KnowledgeBasePage from "./pages/KnowledgeBasePage.jsx";
 import ArticlePage from "./pages/Article/ArticlePage/ArticlePage.jsx";
 import ArticleEditorPage from "./pages/Article/ArticleEditorPage/ArticleEditorPage.jsx";
 import AdminPage from "./pages/Admin/AdminPage.jsx";
-import SettingsPage from "./pages/SettingsPage.jsx";
+import SettingsPage from "./pages/Settings/SettingsPage.jsx";
 import NotFoundPage from "./pages/NotFoundPage.jsx";
 import AppLayout from "./components/layout/AppLayout.jsx";
 import ProtectedRoute from "./components/common/ProtectedRoute.jsx";
@@ -17,7 +17,7 @@ import VerifyOtpPage from "./pages/auth/VerifyOTPPage.jsx";
 import UserDetailPage from "./pages/UserDetailPage.jsx";
 import CategoryEditorPage from "./pages/CategoryEditorPage.jsx";
 import { ROLES } from "./utils/constants";
-import EditorDraftsPage from "./pages/EditorDraftsPage.jsx";
+import EditorDraftsPage from "./pages/Drafts/EditorDraftsPage.jsx";
 
 export default function App() {
   return (

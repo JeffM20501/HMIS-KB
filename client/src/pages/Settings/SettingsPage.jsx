@@ -3,12 +3,12 @@ import {
   User, Lock, Bell, Eye, EyeOff, Loader2,
   CheckCircle2, Check, BellOff, Clock,
 } from "lucide-react";
-import useAuth from "../hooks/useAuth";
-import { updateProfile, changePassword } from "../api/users";
-import { listNotifications, markNotificationRead } from "../api/analytics";
-import ErrorBanner from "../components/common/ErrorBanner.jsx";
-import Spinner from "../components/common/Spinner.jsx";
-import { DEPARTMENTS, ROLE_LABELS } from "../utils/constants";
+import useAuth from "../../hooks/useAuth.js";
+import { updateProfile, changePassword } from "../../api/users.js";
+import { listNotifications, markNotificationRead } from "../../api/analytics.js";
+import ErrorBanner from "../../components/common/ErrorBanner.jsx";
+import Spinner from "../../components/common/Spinner.jsx";
+import { DEPARTMENTS, ROLE_LABELS } from "../../utils/constants.js";
 
 const TABS = [
   { key: "profile", label: "Profile", icon: User },

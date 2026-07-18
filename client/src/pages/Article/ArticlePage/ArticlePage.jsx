@@ -1,20 +1,24 @@
-// src/pages/ArticlePage/ArticlePage.jsx
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getArticle, publishArticle, submitArticleForReview } from "../../api/articles";
-import { createFeedback, listFeedback, getMyFeedback } from "../../api/analytics";
-import { getRootCategories, listTags } from "../../api/categories";
-import { useLookupMaps } from "../../hooks/useLookupMaps";
-import Spinner from "../../components/common/Spinner.jsx";
-import ErrorBanner from "../../components/common/ErrorBanner.jsx";
-import useAuth from "../../hooks/useAuth";
-import { ROLES } from "../../utils/constants";
-import ArticleHeader from "./ArticleHeader.jsx";
-import ArticleMeta from "./ArticleMeta.jsx";
-import ArticleTags from "./ArticleTags.jsx";
-import ArticleFeedback from "./ArticleFeedback.jsx";
-import ArticleSidebar from "./ArticleSidebar.jsx";
-import ArticleModals from "./ArticleModals.jsx";
+import { 
+  getArticle, 
+  publishArticle, 
+  submitArticleForReview,
+  deleteArticle,
+} from "../../../api/articles.js";
+import { createFeedback, listFeedback, getMyFeedback } from "../../../api/analytics";
+import { getRootCategories, listTags } from "../../../api/categories";
+import { useLookupMaps } from "../../../hooks/useLookupMaps";
+import Spinner from "../../../components/common/Spinner.jsx";
+import ErrorBanner from "../../../components/common/ErrorBanner.jsx";
+import useAuth from "../../../hooks/useAuth";
+import { ROLES } from "../../../utils/constants";
+import ArticleHeader from "./components/ArticleHeader.jsx";
+import ArticleMeta from "./components/ArticleMeta.jsx";
+import ArticleTags from "./components/ArticleTags.jsx";
+import ArticleFeedback from "./components/ArticleFeedback.jsx";
+import ArticleSidebar from "./components/ArticleSidebar.jsx";
+import ArticleModals from "./components/ArticleModals.jsx";
 
 export default function ArticlePage() {
   const { slug } = useParams();
@@ -179,7 +183,7 @@ export default function ArticlePage() {
       setError(err.message);
     }
   };
-
+  
   const openConfirmModal = (title, message, confirmLabel, onConfirm, confirmColor = "#00A368") => {
     setConfirmModal({ isOpen: true, title, message, confirmLabel, confirmColor, onConfirm });
   };
@@ -246,6 +250,27 @@ export default function ArticlePage() {
     );
   };
 
+  //delete
+  const handleDeleteClick = () => {
+    openConfirmModal(
+      "Delete Article",
+      "Are you sure you want to delete this draft? This action is irreversible and cannot be undone.",
+      "Delete",
+      async () => {
+        closeConfirmModal();
+        try {
+          await deleteArticle(slug);
+          // Redirect to knowledge base
+          navigate("/app/knowledge-base");
+          openResultModal("success", "Deleted!", "The article has been permanently removed.");
+        } catch (err) {
+          openResultModal("error", "Delete Failed", err.message || "Could not delete the article.");
+        }
+      },
+      "#F22F46" 
+    );
+  };
+
   if (loading || mapsLoading) {
     return <div className="flex justify-center py-24"><Spinner label="Loading article…" /></div>;
   }
@@ -265,9 +290,18 @@ export default function ArticlePage() {
   const displayRating = isPublished ? ratingStats.average : 0;
   const displayRatingCount = isPublished ? ratingStats.count : 0;
 
+  // show only for drafts and if user can edit
+  const showDeleteButton = (user?.role === ROLES.EDITOR || user?.role === ROLES.ADMIN) && article.status === 'draft' && (article.author === user?.id || user?.role === ROLES.ADMIN);
+
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
-      <ArticleHeader article={article} categoryName={categoryMap[article.category]} canEdit={user?.role === ROLES.ADMIN || (user?.role === ROLES.EDITOR && article.author === user?.id)} />
+      <ArticleHeader 
+        article={article} 
+        categoryName={categoryMap[article.category]} 
+        canEdit={user?.role === ROLES.ADMIN || (user?.role === ROLES.EDITOR && article.author === user?.id)} 
+        onDelete={handleDeleteClick}
+        showDeleteButton={showDeleteButton}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-8">
         <div>
@@ -280,7 +314,9 @@ export default function ArticlePage() {
             ratingCount={displayRatingCount}
             isPublished={isPublished}
           />
+
           <div className="article-body" dangerouslySetInnerHTML={{ __html: article.content ?? article.body ?? "" }} />
+          
           <ArticleTags tags={article.tags} tagMap={tagMap} />
           <ArticleFeedback
             isPublished={isPublished}

@@ -7,7 +7,7 @@ from rest_framework.exceptions import PermissionDenied
 from articles.models.article import Article
 from articles.serializers.article_serializers import ArticleSerializer
 from articles.permissions.article_permissions import (
-    IsEditor, IsAdmin, IsViewer,
+    IsEditor, IsAdmin, IsViewer, CanDeleteArticle,
     CanCreateArticle, CanEditArticle, CanPublishArticle, CanListArticles
 )
 
@@ -44,7 +44,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
             permission_classes = [permissions.IsAuthenticated, CanEditArticle]
         elif self.action == 'destroy':
 
-            permission_classes = [permissions.IsAuthenticated, IsAdmin]
+            permission_classes = [permissions.IsAuthenticated, CanDeleteArticle]
         elif self.action in ['publish', 'submit_for_review']:
 
             if self.action == 'publish':

@@ -1,4 +1,3 @@
-// src/pages/ArticlePage/ArticleModals.jsx
 import { CheckCircle2, XCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
