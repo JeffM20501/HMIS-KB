@@ -4,17 +4,17 @@ import {
   Search, SlidersHorizontal, PlusCircle, X, LifeBuoy, BookOpen,
   Rocket, User, Stethoscope, DollarSign, Settings, Shield, Wrench, FileText,
 } from "lucide-react";
-import { listCategories } from "../api/categories";
-import { listArticles, searchArticles } from "../api/articles";
-import useDebounce from "../hooks/useDebounce";
-import useAuth from "../hooks/useAuth";
-import ArticleCard from "../components/articles/ArticleCard.jsx";
-import Spinner from "../components/common/Spinner.jsx";
-import EmptyState from "../components/common/EmptyState.jsx";
-import ErrorBanner from "../components/common/ErrorBanner.jsx";
-import RoleGate from "../components/common/RoleGate.jsx";
-import { ARTICLE_TYPE_LABELS, ROLES } from "../utils/constants";
-import { useLookupMaps } from "../hooks/useLookupMaps";
+import { listCategories } from "../../api/categories.js";
+import { listArticles, searchArticles } from "../../api/articles.js";
+import useDebounce from "../../hooks/useDebounce.js";
+import useAuth from "../../hooks/useAuth.js";
+import ArticleCard from "../../components/articles/ArticleCard.jsx";
+import Spinner from "../../components/common/Spinner.jsx";
+import EmptyState from "../../components/common/EmptyState.jsx";
+import ErrorBanner from "../../components/common/ErrorBanner.jsx";
+import RoleGate from "../../components/common/RoleGate.jsx";
+import { ARTICLE_TYPE_LABELS, ROLES } from "../../utils/constants.js";
+import { useLookupMaps } from "../../hooks/useLookupMaps.js";
 
 const CATEGORY_CONFIG = {
   "Getting Started": { icon: Rocket, color: "#0263E0", bg: "#E8F0FD" },

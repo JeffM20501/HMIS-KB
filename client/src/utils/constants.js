@@ -1,4 +1,4 @@
-// Central place for enums shared between components
+// src/utils/constants.js
 
 export const ROLES = {
   VIEWER: "viewer",
@@ -14,7 +14,7 @@ export const ROLE_LABELS = {
 
 export const ARTICLE_STATUS = {
   DRAFT: "draft",
-  REVIEW: "review",
+  REVIEW: "pending_review",
   PUBLISHED: "published",
   ARCHIVED: "archived",
 };
@@ -45,6 +45,39 @@ export const ARTICLE_TYPE_LABELS = {
   [ARTICLE_TYPES.RELEASE_NOTES]: 'Release Notes',
 };
 
+export const ARTICLE_TYPE_CONFIG = {
+  [ARTICLE_TYPES.HOW_TO]: {
+    label: ARTICLE_TYPE_LABELS[ARTICLE_TYPES.HOW_TO],
+    bg: "#E8F0FD",    
+    color: "#0263E0", 
+  },
+  [ARTICLE_TYPES.SOP]: {
+    label: ARTICLE_TYPE_LABELS[ARTICLE_TYPES.SOP],
+    bg: "#E6F7F1",    
+    color: "#00A368", 
+  },
+  [ARTICLE_TYPES.FAQ]: {
+    label: ARTICLE_TYPE_LABELS[ARTICLE_TYPES.FAQ],
+    bg: "#FEF3E7",    
+    color: "#E87722", 
+  },
+  [ARTICLE_TYPES.TROUBLESHOOTING]: {
+    label: ARTICLE_TYPE_LABELS[ARTICLE_TYPES.TROUBLESHOOTING],
+    bg: "#FDEEF0",    
+    color: "#F22F46",
+  },
+  [ARTICLE_TYPES.FEATURE_REF]: {
+    label: ARTICLE_TYPE_LABELS[ARTICLE_TYPES.FEATURE_REF],
+    bg: "#F0E6F7",    
+    color: "#7B2FBE", 
+  },
+  [ARTICLE_TYPES.RELEASE_NOTES]: {
+    label: ARTICLE_TYPE_LABELS[ARTICLE_TYPES.RELEASE_NOTES],
+    bg: "#E6F8F6",    
+    color: "#0D9488",
+  },
+};
+
 export const TEMPLATE_SECTIONS = {
   [ARTICLE_TYPES.HOW_TO]: ['Step-by-step', 'Procedures', 'Best practices'],
   [ARTICLE_TYPES.SOP]: ['Standard Operating Procedure', 'Checklist', 'Compliance'],
@@ -53,7 +86,6 @@ export const TEMPLATE_SECTIONS = {
   [ARTICLE_TYPES.FEATURE_REF]: ['Overview', 'Usage', 'Examples'],
   [ARTICLE_TYPES.RELEASE_NOTES]: ['New features', 'Bug fixes', 'Upgrade notes'],
 };
-
 
 export const DEPARTMENTS = [
   "Nursing",

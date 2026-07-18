@@ -5,7 +5,7 @@ import RegisterPage from "./pages/auth/RegisterPage.jsx";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage.jsx";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage.jsx";
 import DashboardPage from "./pages/DashboardPage.jsx";
-import KnowledgeBasePage from "./pages/KnowledgeBasePage.jsx";
+import KnowledgeBasePage from "./pages/Knowledge/KnowledgeBasePage.jsx";
 import ArticlePage from "./pages/Article/ArticlePage/ArticlePage.jsx";
 import ArticleEditorPage from "./pages/Article/ArticleEditorPage/ArticleEditorPage.jsx";
 import AdminPage from "./pages/Admin/AdminPage.jsx";

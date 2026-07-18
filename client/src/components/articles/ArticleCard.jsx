@@ -1,10 +1,8 @@
-// src/components/articles/ArticleCard.jsx
 import { useNavigate } from "react-router-dom";
 import { Eye, Star, Calendar } from "lucide-react";
 import StatusBadge from "../common/StatusBadge.jsx";
-import { ARTICLE_TYPE_LABELS } from "../../utils/constants";
+import { ARTICLE_TYPE_CONFIG } from "../../utils/constants.js";
 
-// Helper: strip HTML tags for preview
 function stripHtml(html) {
   if (!html) return "";
   const tmp = document.createElement("div");
@@ -15,7 +13,6 @@ function stripHtml(html) {
 export default function ArticleCard({ article, category, tagMap }) {
   const navigate = useNavigate();
 
-  // Preview: first 120 characters of plain text
   const preview = article.content ? stripHtml(article.content).slice(0, 120) : "";
   const tags = article.tags || [];
   const views = article.views || 0;
@@ -27,13 +24,7 @@ export default function ArticleCard({ article, category, tagMap }) {
     : "";
 
   const categoryName = category?.name || "Uncategorized";
-  const typeLabel = ARTICLE_TYPE_LABELS[article.article_type] || article.type || "Article";
-
-  // Resolve tag names
-  const tagNames = tags.map(tag => {
-    if (typeof tag === 'object') return tag.name;
-    return tagMap?.[tag] || `Tag ${tag}`;
-  });
+  const typeConfig = ARTICLE_TYPE_CONFIG[article.article_type] || ARTICLE_TYPE_CONFIG.how_to;
 
   return (
     <div
@@ -41,7 +32,6 @@ export default function ArticleCard({ article, category, tagMap }) {
       style={{ borderColor: "#E1E3EA" }}
       onClick={() => navigate(`/app/knowledge-base/${article.slug}`)}
     >
-      {/* Top row: Category, Type, Status */}
       <div className="flex flex-wrap items-center gap-2 mb-2">
         <span
           className="text-xs font-medium px-2.5 py-0.5 rounded-full"
@@ -49,48 +39,50 @@ export default function ArticleCard({ article, category, tagMap }) {
         >
           {categoryName}
         </span>
+        {/* ✅ Type badge with config colors */}
         <span
           className="text-xs font-medium px-2.5 py-0.5 rounded-full"
-          style={{ background: "#F4F4F6", color: "#696E7A" }}
+          style={{ background: typeConfig.bg, color: typeConfig.color }}
         >
-          {typeLabel}
+          {typeConfig.label}
         </span>
         <StatusBadge status={article.status} />
       </div>
 
-      {/* Title */}
       <h3 className="text-base font-semibold mb-2 leading-snug" style={{ color: "#121C2D" }}>
         {article.title}
       </h3>
 
-      {/* Content preview */}
       {preview && (
         <p className="text-sm mb-3" style={{ color: "#696E7A" }}>
           {preview}…
         </p>
       )}
 
-      {/* Tags */}
-      {tagNames.length > 0 && (
+      {tags.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5 mb-3">
-          {tagNames.slice(0, 3).map((name) => (
-            <span
-              key={name}
-              className="text-xs px-2 py-0.5 rounded-full"
-              style={{ background: "#F4F4F6", color: "#696E7A" }}
-            >
-              {name}
-            </span>
-          ))}
-          {tagNames.length > 3 && (
+          {tags.slice(0, 3).map((tag) => {
+            let name;
+            if (typeof tag === "object") name = tag.name;
+            else name = tagMap?.[tag] || `Tag ${tag}`;
+            return (
+              <span
+                key={tag.id ?? tag}
+                className="text-xs px-2 py-0.5 rounded-full"
+                style={{ background: "#F4F4F6", color: "#696E7A" }}
+              >
+                {name}
+              </span>
+            );
+          })}
+          {tags.length > 3 && (
             <span className="text-xs" style={{ color: "#9EA6B3" }}>
-              +{tagNames.length - 3}
+              +{tags.length - 3}
             </span>
           )}
         </div>
       )}
 
-      {/* Bottom row: views, rating, date */}
       <div className="flex items-center justify-between text-xs" style={{ color: "#9EA6B3" }}>
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1">

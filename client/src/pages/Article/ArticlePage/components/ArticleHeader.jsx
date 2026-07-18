@@ -1,8 +1,7 @@
-// src/pages/ArticlePage/components/ArticleHeader.jsx
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Edit3, Trash2 } from "lucide-react";
 import StatusBadge from "../../../../components/common/StatusBadge.jsx";
-import { ARTICLE_TYPE_LABELS } from "../../../../utils/constants.js";
+import { ARTICLE_TYPE_CONFIG } from "../../../../utils/constants.js";
 
 export default function ArticleHeader({
     article,
@@ -12,7 +11,7 @@ export default function ArticleHeader({
     showDeleteButton,
 }) {
     const navigate = useNavigate();
-    const typeLabel = ARTICLE_TYPE_LABELS[article.article_type] || "Article";
+    const typeConfig = ARTICLE_TYPE_CONFIG[article.article_type] || ARTICLE_TYPE_CONFIG.how_to;
 
     return (
     <>
@@ -31,11 +30,12 @@ export default function ArticleHeader({
         >
             {categoryName || "Uncategorized"}
         </span>
+        {/* ✅ Type badge with config colors */}
         <span
             className="text-xs font-medium px-2.5 py-0.5 rounded-full"
-            style={{ background: "#F4F4F6", color: "#696E7A" }}
+            style={{ background: typeConfig.bg, color: typeConfig.color }}
         >
-            {typeLabel}
+            {typeConfig.label}
         </span>
         <StatusBadge status={article.status} />
         <div className="ml-auto flex items-center gap-2">
