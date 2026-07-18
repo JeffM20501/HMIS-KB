@@ -5,17 +5,17 @@ import {
   ArrowRight, Clock, CheckCircle2, AlertCircle, BarChart3,
   BookMarked, Users, Stethoscope, DollarSign, Settings, Shield, Wrench, FileText as FileIcon,
 } from "lucide-react";
-import useAuth from "../hooks/useAuth";
-import { listArticles } from "../api/articles";
-import { getPublicStats, listSearchLogs } from "../api/analytics";
-import { listCategories } from "../api/categories";
-import StatCard from "../components/common/StatCard.jsx";
-import Spinner from "../components/common/Spinner.jsx";
-import EmptyState from "../components/common/EmptyState.jsx";
-import ErrorBanner from "../components/common/ErrorBanner.jsx";
-import RoleGate from "../components/common/RoleGate.jsx";
-import StatusBadge from "../components/common/StatusBadge.jsx";
-import { ROLES } from "../utils/constants";
+import useAuth from "../../hooks/useAuth.js";
+import { listArticles } from "../../api/articles.js";
+import { getPublicStats, listSearchLogs } from "../../api/analytics.js";
+import { listCategories } from "../../api/categories.js";
+import StatCard from "../../components/common/StatCard.jsx";
+import Spinner from "../../components/common/Spinner.jsx";
+import EmptyState from "../../components/common/EmptyState.jsx";
+import ErrorBanner from "../../components/common/ErrorBanner.jsx";
+import RoleGate from "../../components/common/RoleGate.jsx";
+import StatusBadge from "../../components/common/StatusBadge.jsx";
+import { ROLES } from "../../utils/constants.js";
 
 // Category icon mapping
 const CATEGORY_CONFIG = {
