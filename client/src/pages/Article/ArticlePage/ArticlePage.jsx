@@ -1,3 +1,4 @@
+// src/pages/ArticlePage/ArticlePage.jsx
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { 
@@ -6,7 +7,7 @@ import {
   submitArticleForReview,
   deleteArticle,
 } from "../../../api/articles.js";
-import { createFeedback, listFeedback, getMyFeedback } from "../../../api/analytics";
+import { createFeedback, listFeedback, getMyFeedback, getFeedbackStats } from "../../../api/analytics";
 import { getRootCategories, listTags } from "../../../api/categories";
 import { useLookupMaps } from "../../../hooks/useLookupMaps";
 import Spinner from "../../../components/common/Spinner.jsx";
@@ -64,24 +65,46 @@ export default function ArticlePage() {
     message: "",
   });
 
-  // Fetch rating stats
+  // ✅ Robust fetch rating stats
   const fetchArticleRating = async (articleId) => {
     try {
-      const data = await listFeedback({
-        content_type: 'article',
-        object_id: articleId,
-        page_size: 1000,
-      });
-      const feedbacks = data.results ?? data ?? [];
-      const ratings = feedbacks.filter(f => typeof f.rating === 'number' && f.rating !== null);
-      const count = ratings.length;
-      const average = count > 0 ? ratings.reduce((sum, f) => sum + f.rating, 0) / count : 0;
-      return { average, count };
+      // First, try to get stats from the dedicated endpoint
+      const stats = await getFeedbackStats('article', articleId);
+      const avg = stats.avg_rating ?? stats.average ?? 0;
+      const cnt = stats.total_ratings ?? stats.count ?? 0;
+      
+      // If stats say there are ratings but average is 0, compute manually
+      if (cnt > 0 && avg === 0) {
+        const feedbacks = await listFeedback({
+          content_type: 'article',
+          object_id: articleId,
+          page_size: 1000,
+        });
+        const ratings = (feedbacks.results ?? feedbacks ?? [])
+          .filter(f => typeof f.rating === 'number' && f.rating !== null);
+        const computedAvg = ratings.length > 0
+          ? ratings.reduce((sum, f) => sum + f.rating, 0) / ratings.length
+          : 0;
+        return { average: computedAvg, count: ratings.length };
+      }
+      return { average: avg, count: cnt };
     } catch {
-      return {
-        average: article?.rating ?? 0,
-        count: article?.ratingCount ?? 0,
-      };
+      // Ultimate fallback: compute from feedback list
+      try {
+        const feedbacks = await listFeedback({
+          content_type: 'article',
+          object_id: articleId,
+          page_size: 1000,
+        });
+        const ratings = (feedbacks.results ?? feedbacks ?? [])
+          .filter(f => typeof f.rating === 'number' && f.rating !== null);
+        const avg = ratings.length > 0
+          ? ratings.reduce((sum, f) => sum + f.rating, 0) / ratings.length
+          : 0;
+        return { average: avg, count: ratings.length };
+      } catch {
+        return { average: 0, count: 0 };
+      }
     }
   };
 
