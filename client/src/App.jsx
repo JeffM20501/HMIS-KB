@@ -14,7 +14,7 @@ import NotFoundPage from "./pages/NotFoundPage.jsx";
 import AppLayout from "./components/layout/AppLayout.jsx";
 import ProtectedRoute from "./components/common/ProtectedRoute.jsx";
 import VerifyOtpPage from "./pages/auth/VerifyOTPPage.jsx";
-import UserDetailPage from "./pages/UserDetailPage.jsx";
+import UserDetailPage from "./pages/Admin/components/UserDetailPage.jsx";
 import CategoryEditorPage from "./pages/CategoryEditorPage.jsx";
 import { ROLES } from "./utils/constants";
 import EditorDraftsPage from "./pages/Drafts/EditorDraftsPage.jsx";

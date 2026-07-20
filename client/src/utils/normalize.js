@@ -1,23 +1,51 @@
-// Your DRF UserSerializer almost certainly returns first_name/last_name
-// separately (Django's default User model shape), but the UI was built
-// around a single `name` + 2-letter `avatar` initials for display. Rather
-// than touch every component, normalize once here at the API boundary.
-//
-// ASSUMPTION: adjust the field names below (first_name/last_name/is_active)
-// if your UserSerializer names them differently.
-export function normalizeUser(raw) {
-  if (!raw) return raw;
-  const initials = (raw.email?.[0] );
+// src/utils/normalize.js
 
-  return {
-    ...raw,
-    name: raw.username,
-    avatar: initials.toUpperCase(),
-    role: raw.role ?? "viewer",
-    isActive: raw.is_active ?? raw.isActive ?? true,
-  };
+/**
+ * Check if a string is a valid Cloudinary URL
+ */
+export function isAvatarUrl(value) {
+    if (!value) return false;
+    return value.startsWith('https://res.cloudinary.com/');
+}
+
+/**
+ * Generate initials from a name string (max 2 characters)
+ */
+export function getInitials(name) {
+    if (!name) return "?";
+    const cleaned = name.trim();
+    // If there's a space, take first two letters of each part
+    if (cleaned.includes(' ')) {
+        const parts = cleaned.split(/\s+/).filter(Boolean);
+        if (parts.length === 0) return "?";
+        if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    // For email or single word, take first two characters
+    return cleaned.slice(0, 2).toUpperCase();
+}
+// return name.splice(0,2).toUpperCase()
+/**
+ * Normalize a user object from the API
+ */
+export function normalizeUser(raw) {
+    if (!raw) return raw;
+
+    const displayName =  raw.email || raw.username || "";
+
+    const avatar = isAvatarUrl(raw.avatar)
+        ? raw.avatar
+        : getInitials(displayName);
+
+    return {
+        ...raw,
+        name: raw.username || raw.email || "Unknown",
+        avatar: avatar,
+        role: raw.role ?? "viewer",
+        isActive: raw.is_active ?? raw.isActive ?? true,
+    };
 }
 
 export function normalizeUserList(list) {
-  return (list ?? []).map(normalizeUser);
+    return (list ?? []).map(normalizeUser);
 }

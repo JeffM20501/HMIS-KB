@@ -28,14 +28,11 @@ export const updateUserStatus = (id, isActive) =>
 export const deleteUser = (id) => client.delete(`/u/users/${id}/`).then((res) => res.data);
 
 /** PATCH /api/v1/u/users/:id/ — update own profile */
-export const updateProfile = (id, payload) =>
-  client
-    .patch(`/u/users/${id}/`, {
-      first_name: payload.firstName,
-      last_name: payload.lastName,
-      department: payload.department,
-    })
-    .then((res) => normalizeUser(res.data));
+export const updateProfile = (userId, payload) => {
+  
+  const headers = payload instanceof FormData ? {} : { 'Content-Type': 'application/json' };
+  return client.patch(`/u/users/${userId}/`, payload, { headers }).then((res) => res.data);
+};
 
 /** POST /api/v1/u/users/:id/change_role/ - if you added @action */
 export const changeUserRole = (id, newRole) =>
@@ -48,3 +45,14 @@ export const changePassword = (id, currentPassword, newPassword) =>
       new_password: newPassword,
     })
     .then((res) => res.data);
+
+export const uploadAvatar = (userId, file) => {
+  const formData = new FormData();
+  formData.append('avatar', file);
+  return client
+    .patch(`/u/users/${userId}/update_avatar/`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    .then((res) => res.data);
+};
+

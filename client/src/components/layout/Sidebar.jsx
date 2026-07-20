@@ -1,18 +1,19 @@
+// src/components/layout/Sidebar.jsx
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, BookOpen, Settings, Users, Shield, CreditCard,
   Stethoscope, Tag, LogOut, ChevronDown, X, Wrench, BookMarked,
-  SlidersHorizontal, PlusCircle, FileText, 
+  SlidersHorizontal, PlusCircle, FileText,
 } from "lucide-react";
 import useAuth from "../../hooks/useAuth";
 import { ROLES } from "../../utils/constants";
+import { isAvatarUrl } from "../../utils/normalize";
 import { useEffect, useState } from "react";
 import { listCategories } from "../../api/categories";
 
 const navItems = [
   { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/app/knowledge-base", label: "Knowledge Base", icon: BookOpen },
-  // NEW: My Drafts – visible to editors and admins
   { to: "/app/my-drafts", label: "My Drafts", icon: FileText, editorOnly: true },
   { to: "/app/admin", label: "Admin Panel", icon: Settings, adminOnly: true },
   { to: "/app/articles/new", label: "New Article", icon: PlusCircle, editorOnly: true },
@@ -38,6 +39,10 @@ export default function Sidebar({ open, onClose }) {
     await logout();
     navigate("/login");
   };
+
+  // ✅ Avatar: either URL or initials
+  const avatarDisplay = user?.avatar || "?";
+  const isUrl = isAvatarUrl(avatarDisplay);
 
   return (
     <>
@@ -66,9 +71,7 @@ export default function Sidebar({ open, onClose }) {
         <nav className="flex-1 overflow-y-auto py-4">
           <div className="px-3 space-y-0.5">
             {navItems.map((item) => {
-              // ✅ Handle admin-only items
               if (item.adminOnly && user?.role !== ROLES.ADMIN) return null;
-              // ✅ Handle editor-only items (visible to editors AND admins)
               if (item.editorOnly && user?.role !== ROLES.EDITOR && user?.role !== ROLES.ADMIN) return null;
               
               const Icon = item.icon;
@@ -139,12 +142,18 @@ export default function Sidebar({ open, onClose }) {
             onClick={handleLogout}
             className="flex items-center gap-2.5 w-full px-2 py-2 rounded-md hover:bg-white/5 cursor-pointer transition-colors text-left"
           >
-            <div className="flex items-center justify-center rounded-full text-xs font-bold flex-shrink-0" style={{ width: 28, height: 28, background: "#F22F46", color: "white" }}>
-              {user?.avatar ?? (user?.name ? user.name.slice(0, 2).toUpperCase() : "?")}
+            <div className="flex-shrink-0 flex items-center justify-center rounded-full text-xs font-bold overflow-hidden"
+              style={{ width: 28, height: 28, background: "#F22F46", color: "white" }}
+            >
+              {isUrl ? (
+                <img src={avatarDisplay} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                avatarDisplay
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-xs font-medium truncate" style={{ color: "rgba(255,255,255,0.85)" }}>
-                {user?.name}
+                {user?.username}
               </div>
               <div className="text-xs truncate capitalize" style={{ color: "rgba(255,255,255,0.35)" }}>
                 {user?.role}
