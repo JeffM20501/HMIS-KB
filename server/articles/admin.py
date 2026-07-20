@@ -90,9 +90,17 @@ class MediaAdmin(admin.ModelAdmin):
     readonly_fields = ['created_at', 'updated_at']
     
     def preview(self, obj):
+        if not obj.url:
+            return "No file"
         if obj.type == 'image':
-            return format_html(f'<img src="{obj.url}" width="50" height="50" style="object-fit:cover;"/>')
-        return format_html(f'<a href="{obj.url}" target="_blank">🔗 View</a>')
+            return format_html(
+                '<img src="{}" width="50" height="50" style="object-fit:cover;"/>',
+                obj.url
+            )
+        return format_html(
+            '<a href="{}" target="_blank">🔗 View</a>',
+            obj.url
+        )
     preview.short_description = 'Preview'
     
     fieldsets = (

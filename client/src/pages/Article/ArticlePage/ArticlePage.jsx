@@ -20,6 +20,7 @@ import ArticleTags from "./components/ArticleTags.jsx";
 import ArticleFeedback from "./components/ArticleFeedback.jsx";
 import ArticleSidebar from "./components/ArticleSidebar.jsx";
 import ArticleModals from "./components/ArticleModals.jsx";
+import ArticleMedia from "./components/ArticleMedia.jsx";
 
 export default function ArticlePage() {
   const { slug } = useParams();
@@ -341,6 +342,7 @@ export default function ArticlePage() {
           <div className="article-body" dangerouslySetInnerHTML={{ __html: article.content ?? article.body ?? "" }} />
           
           <ArticleTags tags={article.tags} tagMap={tagMap} />
+          <ArticleMedia media={article.media}/>
           <ArticleFeedback
             isPublished={isPublished}
             helpfulVote={helpfulVote}

@@ -1,11 +1,15 @@
 from rest_framework import serializers
 from articles.models import Article,Category,Tag
 from django.contrib.auth import get_user_model
+from articles.serializers.media_serializer import MediaSerializer
 
 
 class ArticleSerializer(serializers.ModelSerializer):
     author_username = serializers.ReadOnlyField(source='author.username')
     publisher_username = serializers.ReadOnlyField(source='published_by.username')
+    media = serializers.SerializerMethodField()
+    
+    
     
     class Meta:
         model = Article
@@ -13,7 +17,7 @@ class ArticleSerializer(serializers.ModelSerializer):
             'id', 'title', 'slug', 'content', 'category',
             'author', 'author_username', 'published_by', 'publisher_username',
             'status', 'views', 'created_at', 'updated_at', 'published_at', 'tags',
-            'article_type'
+            'article_type', 'media',
         ]
         read_only_fields = [
             'views', 'created_at', 'updated_at', 'published_at',
@@ -53,6 +57,10 @@ class ArticleSerializer(serializers.ModelSerializer):
             
         
         return super().create(validated_data)
+    
+    
+    def get_media(self, obj):
+        return MediaSerializer(obj.media_files.all(), many=True).data
     
     def validate_article_type(self, value):
         normalized = value.replace('-', '_')
