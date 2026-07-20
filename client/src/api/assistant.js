@@ -22,11 +22,12 @@ export const askAssistant = (question, conversationId = null) =>
       question,
       conversation_id: conversationId || `conv_${Date.now()}`,
     })
-    .then((res) => ({
-      id: res.data.chat_log_id,
-      content: res.data.answer,
-      sources: res.data.article_ref,
-      was_grounded: res.data.was_grounded,
+    
+      .then((res) => ({
+        id: res.data.chat_log_id,
+        content: res.data.answer,
+        sources: res.data.article_ref,
+        was_grounded: res.data.was_grounded,
     }));
 
 /**
@@ -34,7 +35,8 @@ export const askAssistant = (question, conversationId = null) =>
  * This updates the chat log with user feedback.
  */
 export const rateAssistantMessage = (chatLogId, helpful) =>
-  client.patch(`/analytics/chat-logs/${chatLogId}/`, { was_helpful: helpful }).then((res) => res.data);
+  client.patch(`/analytics/chat-logs/${chatLogId}/`, { was_helpful: helpful })
+  .then((res) => res.data);
 
 /**
  * POST /api/v1/analytics/feedbacks/ — alternative way to add feedback
@@ -48,7 +50,8 @@ export const provideChatFeedback = (chatLogId, helpful, comment = "") =>
       helpful,
       comment,
     })
-    .then((res) => res.data);
+    
+      .then((res) => res.data);
 
 /**
  * Escalation is not yet implemented (FR-5.11 is P2).

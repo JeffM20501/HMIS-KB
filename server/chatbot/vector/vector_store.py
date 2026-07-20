@@ -1,7 +1,8 @@
-from langchain_community.vectorstores import Chroma
+# from langchain_community.vectorstores import Chroma
 from django.conf import settings
 from chatbot.embedding.chatbot_embedding import EmbeddingManager
-
+from langchain_chroma import Chroma
+from langchain_postgres import PGVector
 
 class VectorStoreManager:
     """Manages vector database operations."""
@@ -24,13 +25,16 @@ class VectorStoreManager:
     
     def _init_pgvector(self):
         """Use PostgreSQL + pgvector (production-ready)."""
-        from langchain_postgres import PGVector
-        connection_string = settings.DATABASE_URL
-        
+        db = settings.DATABASES['default']
+        connection_string = (
+            f"postgresql://{db['USER']}:{db['PASSWORD']}@"
+            f"{db['HOST']}:{db['PORT']}/{db['NAME']}"
+        )
         self.vectorstore = PGVector(
             collection_name=self.collection_name,
             connection=connection_string,
-            embedding_function=self.embeddings,
+            embeddings=self.embeddings,
+            use_jsonb=True
         )
     
     def add_documents(self, texts, metadatas):

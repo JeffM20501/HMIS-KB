@@ -161,3 +161,44 @@ body {
   padding: 0.5rem 0.75rem;
   color: var(--color-ink);
 }
+
+.assistant-response {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: #121C2D;
+}
+
+.assistant-response p {
+  margin-bottom: 0.5rem;
+}
+
+.assistant-response ul,
+.assistant-response ol {
+  padding-left: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.assistant-response li {
+  margin-bottom: 0.2rem;
+}
+
+.assistant-response strong {
+  font-weight: 600;
+  color: #121C2D;
+}
+
+.assistant-response em {
+  font-style: italic;
+}
+
+.assistant-response a {
+  color: #0263E0;
+  text-decoration: underline;
+}
+
+.assistant-response blockquote {
+  border-left: 3px solid #E1E3EA;
+  padding-left: 0.75rem;
+  margin-left: 0.5rem;
+  color: #696E7A;
+}

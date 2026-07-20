@@ -39,7 +39,6 @@ export default function KBAssistant({ onClose }) {
     setIsTyping(true);
 
     try {
-      // Pass the current screen/module as context so the backend can narrow retrieval (FR-5.6)
       const data = await askAssistant(query, sessionId, { screen: location.pathname });
       setMessages((prev) =>
         prev.map((m) =>
@@ -157,7 +156,6 @@ export default function KBAssistant({ onClose }) {
                   color: msg.role === "user" ? "white" : msg.error ? "#C21B2E" : "#121C2D",
                   border: msg.role === "assistant" ? "1px solid #E1E3EA" : "none",
                   maxWidth: "100%",
-                  wordBreak: "break-word",
                 }}
               >
                 {msg.loading ? (
@@ -166,7 +164,15 @@ export default function KBAssistant({ onClose }) {
                     <span style={{ color: "#9EA6B3" }}>Searching knowledge base…</span>
                   </span>
                 ) : (
-                  <span style={{ whiteSpace: "pre-wrap" }}>{msg.content}</span>
+                  <div
+                    className="assistant-response"
+                    dangerouslySetInnerHTML={{ __html: msg.content }}
+                    style={{
+                      wordBreak: "break-word",
+                      fontSize: "0.875rem",
+                      lineHeight: "1.6",
+                    }}
+                  />
                 )}
               </div>
 
