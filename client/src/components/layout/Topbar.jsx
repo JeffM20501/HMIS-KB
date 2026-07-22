@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Search, Bell, ChevronRight, Menu, BellOff, Clock, Check, X } from "lucide-react";
 import useAuth from "../../hooks/useAuth";
 import { listNotifications, markNotificationRead } from "../../api/analytics";
-import { isAvatarUrl } from "../../utils/normalize"; // ✅ import
+import { isAvatarUrl } from "../../utils/normalize";
 
 const pageTitles = {
   dashboard: "Dashboard",
@@ -74,7 +74,6 @@ export default function Topbar({ onOpenSidebar }) {
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  // ✅ Avatar: either URL or initials (already normalized)
   const avatarDisplay = user?.avatar || "?";
   const isUrl = isAvatarUrl(avatarDisplay);
 
@@ -122,9 +121,8 @@ export default function Topbar({ onOpenSidebar }) {
       </form>
 
       <div className="flex items-center gap-2 ml-auto flex-shrink-0">
-        {/* Notifications dropdown (unchanged) */}
+        {/* Notifications dropdown */}
         <div className="relative" ref={dropdownRef}>
-          {/* ... notifications button and dropdown ... */}
           <button
             className="relative p-2 rounded-md hover:bg-gray-100 transition-colors"
             onClick={toggleNotifications}
@@ -138,7 +136,67 @@ export default function Topbar({ onOpenSidebar }) {
               />
             )}
           </button>
-          {/* ... dropdown content ... */}
+
+          {showNotifications && (
+            <div
+              className="absolute right-0 mt-2 w-80 bg-white rounded-lg border shadow-lg z-50 overflow-hidden"
+              style={{ borderColor: "#E1E3EA" }}
+            >
+              <div className="p-3 border-b" style={{ borderColor: "#F4F4F6" }}>
+                <p className="text-sm font-semibold" style={{ color: "#121C2D" }}>Notifications</p>
+              </div>
+              <div className="max-h-72 overflow-y-auto">
+                {notifLoading ? (
+                  <div className="py-6 text-center text-sm" style={{ color: "#9EA6B3" }}>
+                    Loading...
+                  </div>
+                ) : notifications.length === 0 ? (
+                  <div className="py-6 text-center text-sm" style={{ color: "#9EA6B3" }}>
+                    <BellOff size={18} className="mx-auto mb-2" style={{ color: "#D1D5DB" }} />
+                    No notifications
+                  </div>
+                ) : (
+                  notifications.map((n) => (
+                    <button
+                      key={n.id}
+                      onClick={() => !n.read && handleMarkRead(n.id)}
+                      className="flex items-start gap-2 w-full text-left px-3 py-2 hover:bg-gray-50 transition-colors border-b last:border-0"
+                      style={{
+                        borderColor: "#F4F4F6",
+                        background: n.read ? "white" : "#FDEEF0",
+                      }}
+                    >
+                      {!n.read && (
+                        <span className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: "#F22F46" }} />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs" style={{ color: "#121C2D" }}>
+                          {n.message ?? n.title}
+                        </p>
+                        <p className="text-xs mt-0.5" style={{ color: "#9EA6B3" }}>
+                          <Clock size={10} className="inline mr-1" />
+                          {n.created_at ? new Date(n.created_at).toLocaleDateString() : ""}
+                        </p>
+                      </div>
+                      {n.read && <Check size={12} style={{ color: "#00A368", flexShrink: 0 }} />}
+                    </button>
+                  ))
+                )}
+              </div>
+              <div className="p-2 border-t" style={{ borderColor: "#F4F4F6" }}>
+                <button
+                  onClick={() => {
+                    setShowNotifications(false);
+                    navigate("/app/settings?tab=notifications");
+                  }}
+                  className="w-full py-1.5 text-xs font-medium text-center hover:underline"
+                  style={{ color: "#F22F46" }}
+                >
+                  View all notifications
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* User avatar button */}

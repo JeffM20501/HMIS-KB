@@ -1,13 +1,14 @@
 import { Clock, Eye, Star } from "lucide-react";
 
 export default function ArticleMeta({
-    authorName,
-    updatedDate,
-    views,
-    rating,
-    ratingCount,
-    isPublished,
-}) {
+        authorName,
+        updatedDate,
+        views,
+        rating,
+        ratingCount,
+        isPublished,
+        showRatingDetails, 
+    }) {
     const renderRating = () => {
     if (!isPublished) return null;
     if (ratingCount === 0) {
@@ -18,12 +19,19 @@ export default function ArticleMeta({
         </span>
         );
     }
-    return (
+    // Show average rating always, but only show count if user is admin/author
+    const ratingDisplay = (
         <span className="flex items-center gap-1.5">
         <Star size={12} style={{ color: "#F7C948", fill: "#F7C948" }} />
-        {rating.toFixed(1)} ({ratingCount} {ratingCount === 1 ? "rating" : "ratings"})
+        {rating.toFixed(1)}
+        {showRatingDetails && (
+            <span style={{ color: "#9EA6B3" }}>
+            ({ratingCount} {ratingCount === 1 ? "rating" : "ratings"})
+            </span>
+        )}
         </span>
     );
+    return ratingDisplay;
     };
 
     return (

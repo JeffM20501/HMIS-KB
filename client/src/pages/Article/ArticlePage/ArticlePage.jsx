@@ -1,4 +1,3 @@
-// src/pages/ArticlePage/ArticlePage.jsx
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { 
@@ -66,15 +65,13 @@ export default function ArticlePage() {
     message: "",
   });
 
-  // ✅ Robust fetch rating stats
+  
   const fetchArticleRating = async (articleId) => {
     try {
-      // First, try to get stats from the dedicated endpoint
       const stats = await getFeedbackStats('article', articleId);
       const avg = stats.avg_rating ?? stats.average ?? 0;
       const cnt = stats.total_ratings ?? stats.count ?? 0;
       
-      // If stats say there are ratings but average is 0, compute manually
       if (cnt > 0 && avg === 0) {
         const feedbacks = await listFeedback({
           content_type: 'article',
@@ -90,7 +87,6 @@ export default function ArticlePage() {
       }
       return { average: avg, count: cnt };
     } catch {
-      // Ultimate fallback: compute from feedback list
       try {
         const feedbacks = await listFeedback({
           content_type: 'article',
@@ -284,7 +280,6 @@ export default function ArticlePage() {
         closeConfirmModal();
         try {
           await deleteArticle(slug);
-          // Redirect to knowledge base
           navigate("/app/knowledge-base");
           openResultModal("success", "Deleted!", "The article has been permanently removed.");
         } catch (err) {
@@ -314,6 +309,9 @@ export default function ArticlePage() {
   const displayRating = isPublished ? ratingStats.average : 0;
   const displayRatingCount = isPublished ? ratingStats.count : 0;
 
+  
+  const canViewDetails = user?.role === ROLES.ADMIN || (user?.role === ROLES.EDITOR && article.author === user?.id);
+
   // show only for drafts and if user can edit
   const showDeleteButton = (user?.role === ROLES.EDITOR || user?.role === ROLES.ADMIN) && article.status === 'draft' && (article.author === user?.id || user?.role === ROLES.ADMIN);
 
@@ -337,6 +335,7 @@ export default function ArticlePage() {
             rating={displayRating}
             ratingCount={displayRatingCount}
             isPublished={isPublished}
+            showRatingDetails={canViewDetails} 
           />
 
           <div className="article-body" dangerouslySetInnerHTML={{ __html: article.content ?? article.body ?? "" }} />
@@ -373,6 +372,7 @@ export default function ArticlePage() {
           onSubmitClick={handleSubmitClick}
           publishing={publishing}
           submitting={submitting}
+          showRatingDetails={canViewDetails} 
         />
       </div>
 

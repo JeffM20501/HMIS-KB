@@ -12,16 +12,22 @@ import RichTextEditor from "../../../components/editor/RichTextEditor.jsx";
 import MediaUploader from "../../../components/editor/MediaUploader.jsx";
 import ErrorBanner from "../../../components/common/ErrorBanner.jsx";
 import Spinner from "../../../components/common/Spinner.jsx";
+import Toast from "../../../components/common/Toast.jsx";
 import useAuth from "../../../hooks/useAuth";
 import { ROLES } from "../../../utils/constants";
 import TemplateSelector from "./components/TemplateSelector.jsx";
 import EditorForm from "./components/EditForm.jsx";
 import EditorActions from "./components/EditorActions.jsx";
 import EditorModals from "./components/EditorModals.jsx";
-import MediaModals from "./components/MediaModals.jsx";
+import MediaDeleteModal from "./components/MediaDeleteModal.jsx";
 
 function generateSlug(title) {
-  return title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 200);
 }
 
 export default function ArticleEditorPage() {
@@ -36,7 +42,9 @@ export default function ArticleEditorPage() {
   const [loading, setLoading] = useState(isEditMode);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [mediaMessage, setMediaMessage] = useState("");
+
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastType, setToastType] = useState("info");
 
   const [articleId, setArticleId] = useState(id ?? null);
   const [slug, setSlug] = useState("");
@@ -64,26 +72,26 @@ export default function ArticleEditorPage() {
     message: "",
   });
 
-  const [mediaConfirmModal, setMediaConfirmModal] = useState({
+  const [deleteModal, setDeleteModal] = useState({
     isOpen: false,
     mediaId: null,
+    mediaName: "",
+    isStaged: false,
     onConfirm: null,
   });
 
-  // Media result modal
-  const [mediaResultModal, setMediaResultModal] = useState({
-    isOpen: false,
-    type: "success",
-    title: "",
-    message: "",
-  });
+  const showToast = (message, type = "info") => {
+    setToastMessage(message);
+    setToastType(type);
+  };
 
-
+  // Load categories and tags
   useEffect(() => {
     listCategories().then(data => setCategories(data.results ?? data ?? [])).catch(() => setCategories([]));
     listTags().then(data => setAllTags(data.results ?? data ?? [])).catch(() => setAllTags([]));
   }, []);
 
+  // Load existing article
   useEffect(() => {
     if (!isEditMode) return;
     let cancelled = false;
@@ -91,7 +99,8 @@ export default function ArticleEditorPage() {
       if (cancelled) return;
       const a = data;
       setArticleId(a.id);
-      setSlug(a.slug ?? "");
+      const loadedSlug = (a.slug ?? "").slice(0, 200);
+      setSlug(loadedSlug);
       setTitle(a.title ?? "");
       setType(a.article_type ?? a.type ?? "");
       setCategoryId(a.category?.id ?? a.category ?? "");
@@ -99,16 +108,13 @@ export default function ArticleEditorPage() {
       const tagNames = tagList.map(t => typeof t === 'string' ? t : t.name).filter(Boolean);
       setTags(tagNames);
       setContent(a.content ?? "");
-      // Map media from API
-      const mediaData = (a.media || []).map(m => ({
-        id: m.id,
-        name: m.filename,
-        url: m.url,
-        type: m.type,
-        size: m.size || 0,
+      const existingMedia = (a.media || []).map(m => ({
+        ...m,
+        staged: false,
+        uploading: false,
         uploaded: true,
       }));
-      setMedia(mediaData);
+      setMedia(existingMedia);
       setStatus(a.status ?? "draft");
     }).catch(err => !cancelled && setError(err.message)).finally(() => !cancelled && setLoading(false));
     return () => { cancelled = true; };
@@ -117,12 +123,83 @@ export default function ArticleEditorPage() {
   const selectTemplate = (t) => { setType(t); setStep(2); };
   const addTag = () => { const t = tagInput.trim(); if (t && !tags.includes(t)) setTags([...tags, t]); setTagInput(""); };
   const removeTag = (t) => setTags(tags.filter(x => x !== t));
+
   const handleTitleChange = (e) => {
     const newTitle = e.target.value;
     setTitle(newTitle);
-    if (!isEditMode || !slug) setSlug(generateSlug(newTitle));
+    const generated = generateSlug(newTitle);
+    setSlug(generated);
   };
 
+  // ---- Media staging ----
+  const handleStageFile = (file) => {
+    const tempId = `temp_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const reader = new FileReader();
+    
+    setMedia(prev => [
+      ...prev,
+      {
+        id: tempId,
+        file: file,
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        staged: true,
+        uploading: false,
+        uploaded: false,
+        preview: null,
+        progress: 0,
+        error: null,
+      }
+    ]);
+    
+    if (file.type.startsWith('image/')) {
+      reader.onload = (e) => {
+        const preview = e.target.result;
+        setMedia(prev => prev.map(m => 
+          m.id === tempId ? { ...m, preview } : m
+        ));
+      };
+      reader.readAsDataURL(file);
+    }
+    
+    showToast("File staged – will be uploaded on save.", "info");
+  };
+
+  // ---- Media deletion ----
+  const handleRemoveMedia = (mediaId) => {
+    const item = media.find(m => m.id === mediaId);
+    if (!item) return;
+
+    setDeleteModal({
+      isOpen: true,
+      mediaId: item.id,
+      mediaName: item.name,
+      isStaged: item.staged,
+      onConfirm: async () => {
+        setDeleteModal({ ...deleteModal, isOpen: false });
+
+        if (item.staged) {
+          setMedia(prev => prev.filter(m => m.id !== mediaId));
+          showToast("File removed from draft.", "success");
+        } else {
+          try {
+            await deleteArticleMedia(mediaId);
+            setMedia(prev => prev.filter(m => m.id !== mediaId));
+            showToast("Media removed successfully.", "success");
+          } catch (err) {
+            showToast(err.message || "Failed to delete media.", "error");
+          }
+        }
+      },
+    });
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteModal({ ...deleteModal, isOpen: false });
+  };
+
+  // ---- Resolve tag IDs ----
   const resolveTagIds = async (tagNames) => {
     const ids = [];
     for (const name of tagNames) {
@@ -139,30 +216,67 @@ export default function ArticleEditorPage() {
     return ids.filter(id => id !== null && id !== undefined);
   };
 
+  // ---- Perform save ----
   const performSave = async (nextStatus) => {
     const validationError = validate();
-    if (validationError) { setError(validationError); return; }
-    setError(""); setSaving(true);
+    if (validationError) { 
+      setError(validationError); 
+      showToast(validationError, "error");
+      return; 
+    }
+    setError("");
+    setSaving(true);
+
     try {
+      // ✅ Always save as draft first; the action will change status if needed
       const payload = {
         title,
         slug: slug || generateSlug(title),
         category: categoryId,
         content,
-        status: nextStatus,
+        status: "draft", // always draft on save
         article_type: type,
       };
-      let response, finalSlug = slug;
+      let response, newSlug = slug;
       if (articleId) {
         response = await updateArticle(slug, payload);
       } else {
         response = await createArticle(payload);
         const newId = response.id ?? response.article?.id;
-        const newSlug = response.slug ?? response.article?.slug;
+        const newSlugVal = response.slug ?? response.article?.slug;
         if (newId) setArticleId(newId);
-        if (newSlug) { setSlug(newSlug); finalSlug = newSlug; } else finalSlug = slug;
+        if (newSlugVal) { setSlug(newSlugVal); newSlug = newSlugVal; }
       }
       const currentArticleId = articleId ?? response.id ?? response.article?.id;
+
+      // Upload staged media
+      const stagedItems = media.filter(m => m.staged);
+      let uploadErrors = [];
+      if (stagedItems.length > 0 && currentArticleId) {
+        for (const item of stagedItems) {
+          try {
+            const result = await uploadArticleMedia(currentArticleId, item.file, (evt) => {
+              const progress = Math.round((evt.loaded / evt.total) * 100);
+              setMedia(prev => prev.map(m => m.id === item.id ? { ...m, progress } : m));
+            });
+            setMedia(prev => prev.map(m => 
+              m.id === item.id ? { ...result, staged: false, uploading: false, uploaded: true, file: undefined, preview: undefined } : m
+            ));
+          } catch (err) {
+            uploadErrors.push({ name: item.name, error: err.message });
+            setMedia(prev => prev.map(m => 
+              m.id === item.id ? { ...m, staged: false, uploading: false, error: err.message } : m
+            ));
+          }
+        }
+        if (uploadErrors.length > 0) {
+          showToast(`Upload failed for: ${uploadErrors.map(e => e.name).join(', ')}`, "error");
+        } else {
+          showToast("All media uploaded successfully.", "success");
+        }
+      }
+
+      // Manage tags
       if (currentArticleId) {
         const tagIds = await resolveTagIds(tags);
         const validTagIds = tagIds.filter(id => id !== null && id !== undefined);
@@ -178,18 +292,25 @@ export default function ArticleEditorPage() {
           await bulkAddTags(currentArticleId, validTagIds);
         }
       }
+
+      // ✅ Now perform the extra action (review or publish)
       if (nextStatus === "review") {
-        await submitArticleForReview(finalSlug);
+        await submitArticleForReview(newSlug);
         openResultModal("success", "Submitted!", "Your article is now pending admin review.");
       } else if (nextStatus === "published" && user?.role === ROLES.ADMIN) {
-        await publishArticle(finalSlug);
+        await publishArticle(newSlug);
         openResultModal("success", "Published!", "The article is now visible to all users.");
       } else {
+        // draft saved
         openResultModal("success", "Saved!", "Your draft has been saved successfully.");
       }
-      setStatus(nextStatus);
+      // Update local status for the bottom bar
+      if (nextStatus === "review") setStatus("pending_review");
+      else if (nextStatus === "published") setStatus("published");
+      else setStatus("draft");
     } catch (err) {
       const msg = err.response?.data?.error || err.response?.data?.message || err.message;
+      showToast(msg || "Couldn't save the article. Please try again.", "error");
       openResultModal("error", "Operation Failed", msg || "Couldn't save the article. Please try again.");
     } finally { setSaving(false); }
   };
@@ -197,11 +318,13 @@ export default function ArticleEditorPage() {
   const validate = () => {
     if (!title.trim()) return "Please give the article a title.";
     if (!slug.trim()) return "Slug is required.";
+    if (slug.length > 200) return "Slug must be 200 characters or less.";
     if (!categoryId) return "Please choose a category.";
     if (!content?.trim()) return "Article content is required.";
     return "";
   };
 
+  // ---- Modals ----
   const openConfirmModal = (title, message, confirmLabel, onConfirm, confirmColor = "#00A368") => {
     setConfirmModal({ isOpen: true, title, message, confirmLabel, confirmColor, onConfirm });
   };
@@ -226,116 +349,6 @@ export default function ArticleEditorPage() {
     }, "#00A368");
   };
 
-  const handleUpload = async (file) => {
-    const tempId = `temp_${Date.now()}`;
-    setMedia((prev) => [
-      ...prev,
-      { id: tempId, name: file.name, type: file.type, size: file.size, uploading: true, progress: 0 },
-    ]);
-
-    let targetId = articleId;
-    if (!targetId) {
-      try {
-        const payload = {
-          title,
-          slug: slug || generateSlug(title),
-          category: categoryId,
-          content,
-          status: "draft",
-          article_type: type,
-        };
-        const created = await createArticle(payload);
-        targetId = created.id ?? created.article?.id;
-        setArticleId(targetId);
-        if (created.slug) setSlug(created.slug);
-      } catch (err) {
-        setMedia((prev) => prev.filter((m) => m.id !== tempId));
-        setError("Please save the article draft before uploading media.");
-        return;
-      }
-    }
-
-    try {
-      const result = await uploadArticleMedia(targetId, file, (evt) => {
-        const progress = Math.round((evt.loaded / evt.total) * 100);
-        setMedia((prev) =>
-          prev.map((m) => (m.id === tempId ? { ...m, progress } : m))
-        );
-      });
-      setMedia((prev) =>
-        prev.map((m) =>
-          m.id === tempId ? { ...result, uploading: false, uploaded: true } : m
-        )
-      );
-      setMediaMessage("✅ Media uploaded successfully");
-      setTimeout(() => setMediaMessage(""), 3000);
-    } catch (err) {
-      setMedia((prev) => prev.filter((m) => m.id !== tempId));
-      setError(err.message || "Upload failed");
-    }
-  };
-
-  // Modal helpers for media
-  const openMediaConfirmModal = (mediaId, onConfirm) => {
-    setMediaConfirmModal({
-      isOpen: true,
-      mediaId,
-      onConfirm,
-    });
-  };
-
-  const closeMediaConfirmModal = () => {
-    setMediaConfirmModal({ isOpen: false, mediaId: null, onConfirm: null });
-  };
-
-  const openMediaResultModal = (type, title, message) => {
-    setMediaResultModal({ isOpen: true, type, title, message });
-    setTimeout(() => closeMediaResultModal(), 5000);
-  };
-
-  const closeMediaResultModal = () => {
-    setMediaResultModal({ isOpen: false, type: "success", title: "", message: "" });
-  };
-
-  // Updated handleRemoveMedia – now triggers confirmation modal
-  const handleRemoveMedia = async (mediaId) => {
-    const item = media.find(m => m.id === mediaId);
-    if (!item) return;
-
-    openMediaConfirmModal(mediaId, async () => {
-      closeMediaConfirmModal();
-      
-      // Optimistically remove from UI
-      setMedia((prev) => prev.filter((m) => m.id !== mediaId));
-
-      if (articleId && !String(mediaId).startsWith("temp_")) {
-        try {
-          await deleteArticleMedia(mediaId);
-          openMediaResultModal(
-            "success",
-            "Media Deleted",
-            "The file was removed successfully."
-          );
-        } catch (err) {
-          // Re-add the item if deletion fails
-          setMedia((prev) => [...prev, { ...item, error: err.message || "Delete failed" }]);
-          openMediaResultModal(
-            "error",
-            "Delete Failed",
-            err.response?.data?.error || err.message || "Could not delete the media."
-          );
-        }
-      } else {
-        // Temporary item removed successfully
-        openMediaResultModal(
-          "success",
-          "Media Removed",
-          "The file was removed from the draft."
-        );
-      }
-    });
-  };
-
   if (loading) return <div className="flex justify-center py-24"><Spinner label="Loading article…" /></div>;
 
   return (
@@ -354,20 +367,19 @@ export default function ArticleEditorPage() {
         </div>
       </div>
 
+      {toastMessage && (
+        <Toast
+          message={toastMessage}
+          type={toastType}
+          onClose={() => setToastMessage("")}
+        />
+      )}
+
       {step === 1 && <TemplateSelector onSelect={selectTemplate} />}
 
       {step === 2 && (
         <div className="space-y-6">
           <ErrorBanner message={error} />
-          {mediaMessage && (
-            <div
-              className="p-3 rounded-lg text-sm border flex items-center gap-2"
-              style={{ background: "#E6F7F1", borderColor: "#00A368", color: "#00A368" }}
-            >
-              <CheckCircle2 size={16} />
-              {mediaMessage}
-            </div>
-          )}
           <EditorForm
             categories={categories}
             type={type}
@@ -376,14 +388,11 @@ export default function ArticleEditorPage() {
             categoryId={categoryId}
             tags={tags}
             tagInput={tagInput}
-            content={content}
             onTitleChange={handleTitleChange}
-            onSlugChange={setSlug}
             onCategoryChange={setCategoryId}
             onAddTag={addTag}
             onRemoveTag={removeTag}
             onTagInputChange={setTagInput}
-            onContentChange={setContent}
             isEditMode={isEditMode}
             onTemplateChange={() => setStep(1)}
           />
@@ -395,7 +404,7 @@ export default function ArticleEditorPage() {
             <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: "#9EA6B3" }}>
               Media (optional) — screenshots, PDFs, or training videos
             </p>
-            <MediaUploader items={media} onUpload={handleUpload} onRemove={handleRemoveMedia} />
+            <MediaUploader items={media} onUpload={handleStageFile} onRemove={handleRemoveMedia} showStaged={true} />
           </div>
           <EditorActions
             status={status}
@@ -408,18 +417,19 @@ export default function ArticleEditorPage() {
         </div>
       )}
 
+      <MediaDeleteModal
+        isOpen={deleteModal.isOpen}
+        onClose={closeDeleteModal}
+        onConfirm={deleteModal.onConfirm}
+        mediaName={deleteModal.mediaName}
+        isStaged={deleteModal.isStaged}
+      />
+
       <EditorModals
         confirmModal={confirmModal}
         closeConfirmModal={closeConfirmModal}
         resultModal={resultModal}
         closeResultModal={closeResultModal}
-      />
-
-      <MediaModals
-        confirmModal={mediaConfirmModal}
-        closeConfirmModal={closeMediaConfirmModal}
-        resultModal={mediaResultModal}
-        closeResultModal={closeMediaResultModal}
       />
     </div>
   );

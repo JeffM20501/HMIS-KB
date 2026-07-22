@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Save, Loader2, CheckCircle2 } from "lucide-react";
-import { listCategories, createCategory, updateCategory, deleteCategory } from "../api/categories";
-import ErrorBanner from "../components/common/ErrorBanner.jsx";
-import Spinner from "../components/common/Spinner.jsx";
+import { listCategories, createCategory, updateCategory, deleteCategory } from "../../../api/categories.js";
+import ErrorBanner from "../../../components/common/ErrorBanner.jsx";
+import Spinner from "../../../components/common/Spinner.jsx";
 
 export default function CategoryEditorPage() {
     const { id } = useParams();

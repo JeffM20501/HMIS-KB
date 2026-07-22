@@ -18,7 +18,8 @@ export default function ArticleSidebar({
     onPublishClick,
     onSubmitClick,
     publishing,
-submitting,
+    submitting,
+    showRatingDetails
 }) {
     const navigate = useNavigate();
 
@@ -31,49 +32,54 @@ submitting,
     <aside className="space-y-5">
         {/* Article Meta Card */}
         <div className="bg-white rounded-lg border p-4" style={{ borderColor: "#E1E3EA" }}>
-        <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: "#9EA6B3" }}>
+            <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: "#9EA6B3" }}>
             Article Information
-        </p>
-        <div className="space-y-2 text-sm">
+            </p>
+            <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-            <span style={{ color: "#696E7A" }}>Author</span>
-            <span style={{ color: "#121C2D" }}>{authorName || "Unknown"}</span>
+                <span style={{ color: "#696E7A" }}>Author</span>
+                <span style={{ color: "#121C2D" }}>{authorName || "Unknown"}</span>
             </div>
             <div className="flex justify-between">
-            <span style={{ color: "#696E7A" }}>Category</span>
-            <span style={{ color: "#121C2D" }}>{categoryName || "Uncategorized"}</span>
+                <span style={{ color: "#696E7A" }}>Category</span>
+                <span style={{ color: "#121C2D" }}>{categoryName || "Uncategorized"}</span>
             </div>
             <div className="flex justify-between">
-            <span style={{ color: "#696E7A" }}>Created</span>
-            <span style={{ color: "#121C2D" }}>{formatDate(createdDate)}</span>
+                <span style={{ color: "#696E7A" }}>Created</span>
+                <span style={{ color: "#121C2D" }}>{formatDate(createdDate)}</span>
             </div>
             <div className="flex justify-between">
-            <span style={{ color: "#696E7A" }}>Published</span>
-            <span style={{ color: "#121C2D" }}>{isPublished ? formatDate(publishedDate) : "Draft"}</span>
+                <span style={{ color: "#696E7A" }}>Published</span>
+                <span style={{ color: "#121C2D" }}>{isPublished ? formatDate(publishedDate) : "Draft"}</span>
             </div>
             <div className="flex justify-between">
-            <span style={{ color: "#696E7A" }}>Approved by</span>
-            <span style={{ color: "#121C2D" }}>{approvedBy || "Not approved"}</span>
+                <span style={{ color: "#696E7A" }}>Approved by</span>
+                <span style={{ color: "#121C2D" }}>{approvedBy || "Not approved"}</span>
             </div>
             {isPublished && (
-            <div className="flex justify-between">
+                <div className="flex justify-between">
                 <span style={{ color: "#696E7A" }}>Rating</span>
                 <span style={{ color: "#121C2D" }} className="flex items-center gap-1">
-                {ratingCount === 0 ? (
+                    {ratingCount === 0 ? (
                     <>
-                    <Star size={12} style={{ color: "#E1E3EA", fill: "#E1E3EA" }} />
-                    No ratings
+                        <Star size={12} style={{ color: "#E1E3EA", fill: "#E1E3EA" }} />
+                        No ratings
                     </>
-                ) : (
+                    ) : (
                     <>
-                    <Star size={12} style={{ color: "#F7C948", fill: "#F7C948" }} />
-                    {rating.toFixed(1)} ({ratingCount})
+                        <Star size={12} style={{ color: "#F7C948", fill: "#F7C948" }} />
+                        {rating.toFixed(1)}
+                        {showRatingDetails && (
+                        <span style={{ color: "#9EA6B3", fontSize: "0.75rem" }}>
+                            ({ratingCount})
+                        </span>
+                        )}
                     </>
-                )}
+                    )}
                 </span>
-            </div>
+                </div>
             )}
-        </div>
+            </div>
         </div>
 
         {/* Editor Actions: Submit for Review */}

@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     'articles.apps.ArticlesConfig',
     'analytics.apps.AnalyticsConfig',
     'chatbot.apps.ChatbotConfig',
+    'django_extensions',
     'rest_framework', #djangorestframework
     'rest_framework_simplejwt',
     'django.contrib.admin',
