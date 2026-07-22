@@ -69,7 +69,10 @@ class ArticleViewSet(viewsets.ModelViewSet):
         slug = kwargs.get('slug')
         print(f"Retrieving article with slug: {slug}")
         try:
-            return super().retrieve(request, *args, **kwargs)
+            instance = self.get_object()
+            instance.record_view(request)
+            serializer = self.get_serializer(instance)
+            return Response(serializer.data)
         except Exception as e:
             print(f"Error: {e}")
             raise
