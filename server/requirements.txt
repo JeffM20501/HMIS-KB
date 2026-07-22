@@ -23,6 +23,7 @@ djangorestframework==3.17.1
 djangorestframework_simplejwt==5.5.1
 dotenv==0.9.9
 durationpy==0.10
+elastic-transport==9.4.2
 filelock==3.29.7
 flatbuffers==25.12.19
 frozenlist==1.8.0
