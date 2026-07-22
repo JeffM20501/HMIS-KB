@@ -60,17 +60,16 @@ class NotificationTest(TestCase):
     
     
     @patch('users.signals.send_welcome_email')
-    def test_article_submitted_creates_notifications(self,mock_send):
+    def test_article_submitted_creates_notifications(self, mock_send):
         """Test that submitting an article creates notifications for admins."""
         self._login(self.editor)
-        admins = [self.admin]
-        url = reverse('articles:article-submit-for-review', kwargs={'pk': self.article.id})
+        # Use slug instead of pk
+        url = reverse('articles:article-submit-for-review', kwargs={'slug': self.article.slug})
         response = self.client.post(url, content_type='application/json')
         
         self.assertEqual(response.status_code, 200)
         
         submission_notifications = Notification.objects.filter(notification_type='article_submitted')
-        
         self.assertIsNotNone(submission_notifications)
         
         notification = submission_notifications.first()
