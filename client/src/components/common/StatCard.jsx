@@ -10,7 +10,6 @@ export default function StatCard({
   sparklineKey = "value",
   icon: Icon,
 }) {
-  // Build sparkline points and area fill
   const sparkData = useMemo(() => {
     if (!sparkline || sparkline.length < 2) return null;
     const values = sparkline.map((d) => d[sparklineKey] ?? 0);
@@ -18,7 +17,6 @@ export default function StatCard({
     const min = Math.min(...values, 0);
     const range = max - min || 1;
 
-    // Dimensions (matches Figma ~ 60px height, full width)
     const height = 56;
     const width = 120;
     const step = width / (values.length - 1);
@@ -28,13 +26,11 @@ export default function StatCard({
       y: height - 4 - ((v - min) / range) * height,
     }));
 
-    // Build polygon points for area fill: add bottom corners
-    const first = points[0];
     const last = points[points.length - 1];
     const polygonPoints = [
-      { x: 4, y: height - 4 }, // bottom-left
+      { x: 4, y: height - 4 },
       ...points,
-      { x: last.x, y: height - 4 }, // bottom-right (under last point)
+      { x: last.x, y: height - 4 },
     ];
 
     return { points, polygonPoints };
@@ -59,6 +55,7 @@ export default function StatCard({
             </p>
           )}
         </div>
+        {/* Render icon if provided – use Icon directly */}
         {Icon && (
           <div className="flex-shrink-0 ml-3 mt-1">
             <Icon size={20} style={{ color: color || "#9EA6B3" }} strokeWidth={1.5} />
@@ -86,13 +83,11 @@ export default function StatCard({
       {sparkData && sparkData.points.length > 1 && (
         <div className="mt-4 h-[60px] w-full">
           <svg viewBox="0 0 128 64" preserveAspectRatio="none" className="w-full h-full">
-            {/* Area fill (semi-transparent) */}
             <polygon
               points={sparkData.polygonPoints.map((p) => `${p.x},${p.y}`).join(" ")}
-              fill={color ? `${color}25` : "#0263E025"}  // ~15% opacity
+              fill={color ? `${color}25` : "#0263E025"}
               stroke="none"
             />
-            {/* Line */}
             <polyline
               points={sparkData.points.map((p) => `${p.x},${p.y}`).join(" ")}
               fill="none"
