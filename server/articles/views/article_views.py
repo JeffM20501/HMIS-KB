@@ -10,6 +10,10 @@ from articles.permissions.article_permissions import (
     IsEditor, IsAdmin, IsViewer, CanDeleteArticle,
     CanCreateArticle, CanEditArticle, CanPublishArticle, CanListArticles
 )
+from analytics.models import SearchLog
+
+from django.core.cache import cache
+import hashlib
 
 from utils.audit_log_helper import log_audit_action
 from analytics.models import Notification
@@ -88,6 +92,51 @@ class ArticleViewSet(viewsets.ModelViewSet):
             serializer.save(status='draft', published_by=None, published_at=None)
         else:
             serializer.save()
+            
+    # helper to create search logs and prebvent duplicates
+    def _log_search_if_not_duplicate(self, user, query, result_count, window_seconds=2):
+        """
+        Logs a search only if the same user+query hasn't been logged within
+        the specified time window. Uses cache to track recent logs.
+        """
+        # Build a unique cache key for this user and query
+        query_hash = hashlib.md5(query.encode('utf-8')).hexdigest()
+        cache_key = f"search_log_{user.id}_{query_hash}"
+
+        # Check if we've already logged this within the time window
+        if cache.get(cache_key):
+            return  # Duplicate - skip logging
+
+        # Mark that we've logged it (with expiration)
+        cache.set(cache_key, True, timeout=window_seconds)
+
+        # Perform the actual log creation
+        SearchLog.objects.create(
+            user=user,
+            query=query,
+            result_count=result_count
+        )
+    
+    def list(self, request, *args, **kwargs):        
+        # Log search if the 'search' parameter is present
+        search_query = request.query_params.get('search', '').strip()
+        
+        # Execute search
+        queryset = self.filter_queryset(self.get_queryset())
+        
+        if search_query and request.user.is_authenticated:
+            result_count = queryset.count()
+            # Use the deduplication helper instead of direct creation
+            self._log_search_if_not_duplicate(request.user, search_query, result_count)
+        
+        # Continue with pagination and response
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
     
     @action(detail=True, methods=['post'])
     def submit_for_review(self, request, slug=None):

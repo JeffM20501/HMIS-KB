@@ -114,17 +114,22 @@ class Article(models.Model):
         """Increment view count if article is published and user hasn't viewed it before."""
         if self.status != 'published':
             return
-        
+
+        # Use a per-user session key to avoid cross-user interference
+        if request.user.is_authenticated:
+            viewed_key = f'viewed_articles_user_{request.user.id}'
+        else:
+            viewed_key = 'viewed_articles_anonymous'
+
         session = request.session
-        viewed_key = 'viewed_articles'
         viewed = session.get(viewed_key, [])
-        
+
         if self.id not in viewed:
             self.views += 1
             self.save(update_fields=['views'])
             viewed.append(self.id)
             session[viewed_key] = viewed
             session.modified = True
-    
+            
     def __str__(self):
             return self.title

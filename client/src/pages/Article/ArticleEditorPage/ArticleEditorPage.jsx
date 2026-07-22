@@ -228,7 +228,7 @@ export default function ArticleEditorPage() {
     setSaving(true);
 
     try {
-      // ✅ Always save as draft first; the action will change status if needed
+      //  Always save as draft first; the action will change status if needed
       const payload = {
         title,
         slug: slug || generateSlug(title),
@@ -293,7 +293,7 @@ export default function ArticleEditorPage() {
         }
       }
 
-      // ✅ Now perform the extra action (review or publish)
+      //  Now perform the extra action (review or publish)
       if (nextStatus === "review") {
         await submitArticleForReview(newSlug);
         openResultModal("success", "Submitted!", "Your article is now pending admin review.");

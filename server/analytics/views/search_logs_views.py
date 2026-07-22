@@ -18,7 +18,6 @@ from analytics.permissions.search_log_permissions import (
 class SearchLogViewSet(viewsets.ModelViewSet):
     """
     API endpoint for search logs.
-    
     PRD FR-2.6: All searches are logged for analytics.
     """
     
