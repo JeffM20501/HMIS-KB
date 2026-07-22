@@ -5,6 +5,7 @@ from articles.models.tag import Tag
 from articles.models.article_tag import ArticleTag
 from users.models import User
 from articles.validators.article_validator import *
+from analytics.models import ArticleViewLog
 
 STATUS_CHOICES = [
     ('draft', 'Draft'),
@@ -111,11 +112,9 @@ class Article(models.Model):
         self.save()
     
     def record_view(self, request):
-        """Increment view count if article is published and user hasn't viewed it before."""
         if self.status != 'published':
             return
 
-        # Use a per-user session key to avoid cross-user interference
         if request.user.is_authenticated:
             viewed_key = f'viewed_articles_user_{request.user.id}'
         else:
@@ -127,6 +126,15 @@ class Article(models.Model):
         if self.id not in viewed:
             self.views += 1
             self.save(update_fields=['views'])
+
+            # Local import to avoid circular dependency
+            from analytics.models import ArticleViewLog
+            ArticleViewLog.objects.create(
+                article=self,
+                user=request.user if request.user.is_authenticated else None,
+                timestamp=timezone.now()
+            )
+
             viewed.append(self.id)
             session[viewed_key] = viewed
             session.modified = True

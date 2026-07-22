@@ -3,5 +3,5 @@ from .feedback import Feedback
 from .search_logs import SearchLog
 from analytics.models.audit_log import AuditLog
 from analytics.models.notification import Notification
-
-__all__=['ChatLog', 'Feedback', 'SearchLog', 'AuditLog','Notification']
+from analytics.models.article_view_log import ArticleViewLog
+__all__=['ChatLog', 'Feedback', 'SearchLog', 'AuditLog','Notification','ArticleViewLog']

@@ -70,6 +70,16 @@ export const getUnreadNotificationCount = () =>
 
 // DASHBOARD AGGREGATION
 
+export const getTimeSeries = async () => {
+  try {
+    const response = await client.get('/analytics/time-series/');
+    return response.data.timeSeries || [];
+  } catch (error) {
+    console.error('Failed to fetch time series:', error);
+    return [];
+  }
+};
+
 export const getPublicStats = () => client.get("/stats/").then((res) => res.data);
 
 export async function getDashboardAnalytics() {

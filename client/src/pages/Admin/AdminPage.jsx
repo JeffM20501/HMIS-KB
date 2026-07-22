@@ -4,23 +4,15 @@ import { BarChart3, FileText, Users, FolderTree } from "lucide-react";
 import { listArticles, publishArticle, rejectArticle, deleteArticle } from "../../api/articles";
 import { listUsers, deleteUser } from "../../api/users";
 import { listCategories, createCategory, deleteCategory } from "../../api/categories";
-import { getDashboardAnalytics } from "../../api/analytics";
+import { getDashboardAnalytics, getTimeSeries } from "../../api/analytics"; // <-- added getTimeSeries
 import Spinner from "../../components/common/Spinner.jsx";
 import ErrorBanner from "../../components/common/ErrorBanner.jsx";
 import OverviewTab from "./components/OverviewTab.jsx";
 import ArticlesTab from "./components/ArticleTab.jsx";
-
 import UsersTab from "./components/UsersTab.jsx";
 import CategoriesTab from "./components/./CategoriesTab.jsx";
 import CategoryModal from "./components/./CategoryModal.jsx";
 import { ROLE_LABELS } from "../../utils/constants";
-
-const TABS = [
-  { key: "overview", label: "Overview", icon: BarChart3 },
-  { key: "articles", label: "Articles", icon: FileText },
-  { key: "users", label: "Users", icon: Users },
-  { key: "categories", label: "Categories", icon: FolderTree },
-];
 
 import {
   Chart as ChartJS,
@@ -47,6 +39,13 @@ ChartJS.register(
   Filler
 );
 
+const TABS = [
+  { key: "overview", label: "Overview", icon: BarChart3 },
+  { key: "articles", label: "Articles", icon: FileText },
+  { key: "users", label: "Users", icon: Users },
+  { key: "categories", label: "Categories", icon: FolderTree },
+];
+
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [loading, setLoading] = useState(true);
@@ -57,6 +56,7 @@ export default function AdminPage() {
   const [users, setUsers] = useState([]);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [busyId, setBusyId] = useState(null);
+  const [timeSeries, setTimeSeries] = useState([]);
 
   const loadAll = () => {
     setLoading(true);
@@ -73,8 +73,12 @@ export default function AdminPage() {
         setArticles(articlesData);
         setUsers(u.users ?? u.results ?? u ?? []);
         const totalViews = articlesData.reduce((sum, a) => sum + (a.views ?? 0), 0);
-        const a = await getDashboardAnalytics(totalViews).catch(() => null);
+        // get dashboard analytics (ratings, etc.) – this does not include time series
+        const a = await getDashboardAnalytics().catch(() => null);
         setAnalytics(a);
+        // fetch time series separately
+        const ts = await getTimeSeries().catch(() => []);
+        setTimeSeries(ts);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -201,13 +205,15 @@ export default function AdminPage() {
               articles={articles}
               categories={categories}
               analytics={analytics}
-              totalViews={totalViews}
+              totalViews={totalViews} 
               publishedArticles={publishedArticles}
               pendingReview={pendingReview}
               draftCount={draftCount}
               staleArticles={staleArticles}
               totalNonDraft={totalNonDraft}
               setActiveTab={setActiveTab}
+              users={users}
+              timeSeries={timeSeries} 
             />
           )}
           {activeTab === "articles" && (
