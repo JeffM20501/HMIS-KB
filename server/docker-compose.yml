@@ -1,7 +1,6 @@
-
 services:
   db:
-    image: postgres:15
+    image: pgvector/pgvector:pg18  
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
@@ -9,7 +8,13 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5434:5434"
+      - "5434:5432"  # Host:5434 → Container:5432
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d hmis_kb_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   web:
     build:
@@ -20,10 +25,11 @@ services:
     env_file:
       - .env
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     volumes:
       - .:/app
-    
+    restart: unless-stopped
 
 volumes:
   postgres_data:
