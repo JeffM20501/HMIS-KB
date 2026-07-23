@@ -19,7 +19,7 @@ class Media(models.Model):
     ]
     
     article = models.ForeignKey(
-        Article,
+        'articles.Article',
         on_delete=models.CASCADE,
         related_name='media_files'
     )

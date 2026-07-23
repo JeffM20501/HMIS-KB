@@ -27,11 +27,12 @@ from rest_framework_simplejwt.views import (
 urlpatterns = [
     path('admin/', admin.site.urls), 
     path('api/v1/', include([
+        path('chat/', include('chatbot.urls')),
         path('u/',include('users.urls')),
         path('', include("articles.urls")),
         path('analytics/', include("analytics.urls")),
         path('rest-api-auth/', include('rest_framework.urls', namespace="rest_framework")),
-        path('auth',include([
+        path('auth/',include([
             path('token/',TokenObtainPairView.as_view(), name='token_obtain_pair'),
             path('token/refresh/', TokenRefreshView.as_view(),name='token_refresh'),
             path('token/verify', TokenVerifyView.as_view(), name='token_verify')

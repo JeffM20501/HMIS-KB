@@ -1,17 +1,23 @@
 from rest_framework import serializers
-from articles.models import Article
+from articles.models import Article,Category,Tag
+from django.contrib.auth import get_user_model
+from articles.serializers.media_serializer import MediaSerializer
 
 
 class ArticleSerializer(serializers.ModelSerializer):
     author_username = serializers.ReadOnlyField(source='author.username')
     publisher_username = serializers.ReadOnlyField(source='published_by.username')
+    media = serializers.SerializerMethodField()
+    
+    
     
     class Meta:
         model = Article
         fields = [
             'id', 'title', 'slug', 'content', 'category',
             'author', 'author_username', 'published_by', 'publisher_username',
-            'status', 'views', 'created_at', 'updated_at', 'published_at', 'tags'
+            'status', 'views', 'created_at', 'updated_at', 'published_at', 'tags',
+            'article_type', 'media',
         ]
         read_only_fields = [
             'views', 'created_at', 'updated_at', 'published_at',
@@ -46,4 +52,22 @@ class ArticleSerializer(serializers.ModelSerializer):
         if 'status' not in validated_data:
             validated_data['status'] = 'draft'
         
+        if 'article_type' not in validated_data or not validated_data['article_type']:
+            validated_data['article_type']='article'
+            
+        
         return super().create(validated_data)
+    
+    
+    def get_media(self, obj):
+        return MediaSerializer(obj.media_files.all(), many=True).data
+    
+    def validate_article_type(self, value):
+        normalized = value.replace('-', '_')
+        allowed = ['how_to', 'sop', 'faq', 'troubleshooting', 'feature_ref', 'release_notes', 'article']
+        
+        if normalized not in allowed:
+            raise serializers.ValidationError(f"Invalid article type. Allowed: {', '.join(allowed)}")
+        
+        return normalized 
+    

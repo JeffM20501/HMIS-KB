@@ -16,7 +16,7 @@ jobs:
     
     services:
       postgres:
-        image: postgres:15
+        image: pgvector/pgvector:pg18 
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -50,7 +50,6 @@ jobs:
           python -m pip install --upgrade pip
           cd server
           pip install -r requirements.txt
-      
       - name: Run DB migrations
         env:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
@@ -67,11 +66,12 @@ jobs:
           CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
           CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
-          EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
-          EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
+          EMAIL_HOST_USER: ${{ secrets.BREVO_SMTP_USER }}
+          EMAIL_HOST_PASSWORD: ${{ secrets.BREVO_SMTP_PASSWORD }}
           EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
           DEFAULT_FROM_EMAIL: ${{ secrets.DEFAULT_FROM_EMAIL }}
           HUGGINGFACE_API_KEY: ${{secrets.HUGGINGFACE_API_KEY}}
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
         run: |
           cd server
           pytest -v --tb=short 
@@ -99,11 +99,12 @@ jobs:
           CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
           CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
-          EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
-          EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
+          EMAIL_HOST_USER: ${{ secrets.BREVO_SMTP_USER }}
+          EMAIL_HOST_PASSWORD: ${{ secrets.BREVO_SMTP_PASSWORD }}
           EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
           DEFAULT_FROM_EMAIL: ${{ secrets.DEFAULT_FROM_EMAIL }}
           HUGGINGFACE_API_KEY: ${{secrets.HUGGINGFACE_API_KEY}}
+          SIGNING_KEY: ${{secrets.SIGNING_KEY}}
         run: |
           docker run -d --name hmis-kb-backend -p 8000:8080 --restart=unless-stopped --env-file .env kimmuna/hmis-kb-backend:v2.0.0
 

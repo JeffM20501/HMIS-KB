@@ -14,7 +14,7 @@ from rest_framework.decorators import action
 from ..serializers.user_serializers import UserSerializer
 from ..serializers.password_reset_serializer import PasswordResetConfirmSerializer,PasswordResetRequestSerializer
 
-
+import cloudinary.uploader
 
 User=get_user_model()
 class UserViewSet(viewsets.ModelViewSet):
@@ -56,6 +56,12 @@ class UserViewSet(viewsets.ModelViewSet):
         """GET /api/v1/users/dashboard/ → Current user's profile"""
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def me(self, request):
+        """GET /api/v1/u/users/me/ → Current user's profile"""
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data)
 
     @action(detail=False, methods=['get'], permission_classes=[IsAdmin])
     def admin_dashboard(self, request):
@@ -96,4 +102,85 @@ class UserViewSet(viewsets.ModelViewSet):
         user.role=new_role
         user.save()
         return Response({'message':f'User role Updated to {new_role}'},status=status.HTTP_200_OK)
+    
+    @action(detail=True, methods=['post'])
+    def set_password(self, request, pk=None):
+        """
+        POST /api/v1/u/users/{id}/set-password/
+        Change password for a logged-in user.
+        """
+        user = self.get_object()
+        current_password = request.data.get('current_password')
+        new_password = request.data.get('new_password')
+
+        if not current_password or not new_password:
+            return Response(
+                {'error': 'Current password and new password are required.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not user.check_password(current_password):
+            return Response(
+                {'error': 'Current password is incorrect.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if len(new_password) < 8:
+            return Response(
+                {'error': 'New password must be at least 8 characters.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user.set_password(new_password)
+        user.save()
+
+        return Response(
+            {'message': 'Password updated successfully.'},
+            status=status.HTTP_200_OK
+        )
+    
+    @action(detail=True, methods=['patch'], url_path='update_avatar')
+    def update_avatar(self, request, pk=None):
+        user = self.get_object()
+        avatar_file = request.FILES.get('avatar')
+        
+        if not avatar_file:
+            return Response(
+                {"error": "No avatar file provided."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if not avatar_file.content_type.startswith('image/'):
+            return Response(
+                {"error": "File must be an image."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if avatar_file.size > 3 * 1024 * 1024:  
+            return Response(
+                {"error": "Image must be less than 3MB."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            # Upload to Cloudinary
+            result = cloudinary.uploader.upload(
+                avatar_file,
+                folder="avatars",
+            )
+            avatar_url = result.get('secure_url')
+            
+            # Update user
+            user.avatar = avatar_url
+            user.save()
+            
+            serializer = UserSerializer(user)
+            return Response(serializer.data)
+            
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
 

@@ -5,7 +5,7 @@ from articles.models.media import Media
 from articles.serializers.media_serializer import MediaSerializer, MediaUploadSerializer
 from articles.permissions.media_permissions import CanUploadMedia, CanViewMedia
 from utils.cloudinary_utils import delete_from_cloudinary
-
+from django.db import models
 
 class MediaViewSet(viewsets.ModelViewSet):
     """
@@ -37,8 +37,18 @@ class MediaViewSet(viewsets.ModelViewSet):
         user = self.request.user
         
         # If not admin, only show media from published articles
-        if user.role != 'admin':
+        if user.role == 'admin':
+            pass
+            
+        elif user.role == 'editor':
+            queryset = queryset.filter(
+                models.Q(article__status='draft') |
+                models.Q(article__author=user)
+            )
+        # Viewer only sees published
+        else:
             queryset = queryset.filter(article__status='published')
+
         
         # Filter by article
         article_id = self.request.query_params.get('article_id')

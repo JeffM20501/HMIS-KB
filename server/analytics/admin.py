@@ -1,6 +1,5 @@
 from django.contrib import admin
-from .models import Feedback,ChatLog,SearchLog,Notification
-
+from .models import Feedback,ChatLog,SearchLog,Notification,ArticleViewLog
 
 @admin.register(Feedback)
 class FeedbackAdmin(admin.ModelAdmin):
@@ -71,3 +70,8 @@ class NotificationAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+    
+@admin.register(ArticleViewLog)
+class ArticleViewLog(admin.ModelAdmin):
+    list_display=['id','timestamp', 'user', 'article']
+    

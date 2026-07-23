@@ -1,122 +1,63 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { Routes, Route, Navigate } from "react-router-dom";
+import LandingPage from "./pages/Landing/LandingPage.jsx";
+import LoginPage from "./pages/auth/LoginPage.jsx";
+import RegisterPage from "./pages/auth/RegisterPage.jsx";
+import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage.jsx";
+import ResetPasswordPage from "./pages/auth/ResetPasswordPage.jsx";
+import DashboardPage from "./pages/Dashboard/DashboardPage.jsx";
+import KnowledgeBasePage from "./pages/Knowledge/KnowledgeBasePage.jsx";
+import ArticlePage from "./pages/Article/ArticlePage/ArticlePage.jsx";
+import ArticleEditorPage from "./pages/Article/ArticleEditorPage/ArticleEditorPage.jsx";
+import AdminPage from "./pages/Admin/AdminPage.jsx";
+import SettingsPage from "./pages/Settings/SettingsPage.jsx";
+import NotFoundPage from "./pages/NotFoundPage.jsx";
+import AppLayout from "./components/layout/AppLayout.jsx";
+import ProtectedRoute from "./components/common/ProtectedRoute.jsx";
+import VerifyOtpPage from "./pages/auth/VerifyOTPPage.jsx";
+import UserDetailPage from "./pages/Admin/components/UserDetailPage.jsx";
+import CategoryEditorPage from "./pages/Admin/components/CategoryEditorPage.jsx";
+import { ROLES } from "./utils/constants";
+import EditorDraftsPage from "./pages/Drafts/EditorDraftsPage.jsx";
 
-function App() {
-  const [count, setCount] = useState(0)
-
+export default function App() {
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <Routes>
+      {/* Public marketing + auth routes */}
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path='/verify-otp' element={<VerifyOtpPage/>}/>
 
-      <div className="ticks"></div>
+      {/* Authenticated app shell */}
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AppLayout />}>
+          <Route path="/app/users/:id" element={<UserDetailPage/>}/>
+          <Route path="/app/dashboard" element={<DashboardPage />} />
+          <Route path="/app/knowledge-base" element={<KnowledgeBasePage />} />
+          <Route path="/app/knowledge-base/:slug" element={<ArticlePage />} />
+          <Route path="/app/settings" element={<SettingsPage />} />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+          {/* Editor/Admin only */}
+          <Route element={<ProtectedRoute roles={[ROLES.EDITOR, ROLES.ADMIN]} />}>
+            <Route path="/app/articles/new" element={<ArticleEditorPage />} />
+            <Route path="/app/articles/:id/edit" element={<ArticleEditorPage />} />
+            <Route path="/app/my-drafts" element={<EditorDraftsPage/>}/>
+          </Route>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+          {/* Admin only */}
+          <Route element={<ProtectedRoute roles={[ROLES.ADMIN]} />}>
+            <Route path="/app/admin" element={<AdminPage />} />
+            <Route path="/app/admin/categories/new" element={<CategoryEditorPage/>}/>
+            <Route path="/app/admin/categories/:id/edit" element={<CategoryEditorPage/>}/>
+          </Route>
+
+          <Route path="/app" element={<Navigate to="/app/dashboard" replace />} />
+        </Route>
+      </Route>
+
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
+  );
 }
-
-export default App

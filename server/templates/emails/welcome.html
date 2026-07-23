@@ -2,13 +2,80 @@
 <html>
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to HealthKB</title>
 </head>
-<body>
-    <h2>Welcome to HMIS Knowledge Base!</h2>
-    <p>Hello {{ username }} 👋🏽,</p>
-    <p>Your account has been successfully created. You can now log in at:</p>
-    <p><a href="{{ login_url }}">{{ login_url }}</a></p>
-    <p>Thank you for joining us.</p>
-    <p>Best regards,<br>HMIS Team</p>
+<body style="margin:0; padding:0; background-color:#F4F4F6; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F4F4F6;">
+        <tr>
+            <td align="center" style="padding: 40px 16px;">
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px; width:100%; background-color:#FFFFFF; border-radius:12px; overflow:hidden; border:1px solid #E1E3EA;">
+
+                    <!-- Header -->
+                    <tr>
+                        <td bgcolor="#06033A" style="background-color:#06033A; padding: 28px 40px;">
+                            <table role="presentation" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td bgcolor="#F22F46" style="background-color:#F22F46; width:32px; height:32px; border-radius:7px; text-align:center; vertical-align:middle; font-size:16px; font-weight:700; color:#FFFFFF;">
+                                        K
+                                    </td>
+                                    <td style="padding-left:10px; color:#FFFFFF; font-size:17px; font-weight:600; font-family: 'Inter', Arial, sans-serif;">
+                                        HealthKB
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px;">
+                            <h2 style="margin:0 0 16px 0; color:#121C2D; font-size:22px; font-weight:600; font-family: 'Inter', Arial, sans-serif;">
+                                Welcome to HMIS Knowledge Base! 👋🏽
+                            </h2>
+                            <p style="margin:0 0 16px 0; color:#455A77; font-size:15px; line-height:1.6;">
+                                Hello <strong style="color:#121C2D;">{{ username }}</strong>,
+                            </p>
+                            <p style="margin:0 0 28px 0; color:#455A77; font-size:15px; line-height:1.6;">
+                                Your account has been successfully created with <strong>Viewer</strong> access. You can search and read published articles right away — if you need to author content, an Admin can upgrade your role afterwards.
+                            </p>
+
+                            <!-- Bulletproof button -->
+                            {% comment %} <table role="presentation" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td bgcolor="#F22F46" style="background-color:#F22F46; border-radius:6px;">
+                                        <a href="{{ login_url }}" target="_blank" style="display:inline-block; padding: 12px 28px; color:#FFFFFF; font-size:14px; font-weight:600; text-decoration:none; font-family: 'Inter', Arial, sans-serif;">
+                                            Log in to HealthKB
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table> {% endcomment %}
+
+                            <p style="margin:28px 0 0 0; color:#9EA6B3; font-size:13px; line-height:1.6;">
+                                Or copy this link into your browser:<br>
+                                <a href="{{ login_url }}" style="color:#0263E0; text-decoration:none;">{{ login_url }}</a>
+                            </p>
+
+                            <p style="margin:28px 0 0 0; color:#455A77; font-size:15px; line-height:1.6;">
+                                Thank you for joining us.<br>
+                                Best regards,<br>
+                                <strong style="color:#121C2D;">HMIS Team</strong>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td bgcolor="#F9FAFB" style="background-color:#F9FAFB; border-top:1px solid #E8E8EC; padding: 20px 40px;">
+                            <p style="margin:0; color:#9EA6B3; font-size:12px; line-height:1.5; font-family: 'Inter', Arial, sans-serif;">
+                                HMIS Knowledge Base Team &middot; This is an automated message, please do not reply.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>

@@ -12,6 +12,8 @@
 - Docker
 - Cloud Providers (Render,AWS, DigitalOcean)
 - A Cloudinary account or any other media management platform
+- Hugging face account or any other LLM  provider
+- A Brevo email or any other email provider
 
 #### 1. Clone Repository
 
@@ -103,6 +105,8 @@ DATABASE_URL = postgresql://postgres:postgres@localhost:5432/hmis_kb_db
 CLOUDINARY_CLOUD_NAME=<your-cloud-name>
 CLOUDINARY_API_KEY=<your-api-key>
 CLOUDINARY_API_SECRET=<your-api-secret>
+HUGGINGFACE_API_KEY=<yout-api-key>
+BREVO_API_KEY=<your-api-key>
 ```
 
 **5. Run migrations**

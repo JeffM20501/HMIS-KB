@@ -2,7 +2,14 @@ from django.contrib import admin
 from django.utils.html import format_html
 from .models import Category
 from django.utils.html import format_html
-from .models import Tag,ArticleTag,Media
+from .models import Tag,ArticleTag,Media,Article
+
+
+@admin.register(Article)
+class ArticleAdmin(admin.ModelAdmin):
+    list_display = ('id', 'title', 'author', 'category', 'created_at', 'article_type')  # adjust field names
+    list_filter = ('category', 'author')
+    search_fields = ('title', 'content')
 
 
 @admin.register(Category)
@@ -18,7 +25,7 @@ class CategoryAdmin(admin.ModelAdmin):
     def article_count_display(self, obj):
         """Display article count in admin."""
         count = obj.get_article_count()
-        return format_html(f'<b>{count}</b>')
+        return format_html('<b>{}</b>', count)
     article_count_display.short_description = 'Articles'
     
     fieldsets = (
@@ -49,7 +56,7 @@ class TagAdmin(admin.ModelAdmin):
     def article_count_display(self, obj):
         """Display article count in admin."""
         count = obj.get_article_count()
-        return format_html(f'<b>{count}</b>')
+        return format_html('<b>{}</b>',count)
     article_count_display.short_description = 'Articles'
     
     fieldsets = (
@@ -83,9 +90,17 @@ class MediaAdmin(admin.ModelAdmin):
     readonly_fields = ['created_at', 'updated_at']
     
     def preview(self, obj):
+        if not obj.url:
+            return "No file"
         if obj.type == 'image':
-            return format_html(f'<img src="{obj.url}" width="50" height="50" style="object-fit:cover;"/>')
-        return format_html(f'<a href="{obj.url}" target="_blank">🔗 View</a>')
+            return format_html(
+                '<img src="{}" width="50" height="50" style="object-fit:cover;"/>',
+                obj.url
+            )
+        return format_html(
+            '<a href="{}" target="_blank">🔗 View</a>',
+            obj.url
+        )
     preview.short_description = 'Preview'
     
     fieldsets = (

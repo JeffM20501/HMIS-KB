@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from articles.views import CategoryViewSet,TagViewSet,ArticleTagViewSet,ArticleViewSet,MediaViewSet
+from articles.views import CategoryViewSet,TagViewSet,ArticleTagViewSet,ArticleViewSet,MediaViewSet,PublicStatsView
 
 router = DefaultRouter()
 router.register(r'categories', CategoryViewSet, basename='category')
@@ -13,4 +13,5 @@ app_name = 'articles'
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('stats/', PublicStatsView.as_view(), name='public-stats')
 ]

@@ -4,46 +4,48 @@ Provides reusable factories for creating test data.
 """
 from django.contrib.auth import get_user_model
 from articles.models import Article, Category, Tag
+import uuid
+import time
 
 User = get_user_model()
 
 _user_counter = 0
+_slug_counter = 0
 
 
 def _get_next_username():
-    """Generate a unique username for tests."""
     global _user_counter
     _user_counter += 1
     return f'testuser_{_user_counter}'
 
 
+def unique_slug(base="test-article"):
+    """Generate a unique slug with counter + timestamp + UUID."""
+    global _slug_counter
+    _slug_counter += 1
+    return f"{base}-{uuid.uuid4().hex[:8]}-{_slug_counter}-{int(time.time())}"
+
 
 def create_user(role='viewer', **kwargs):
-    """Create a user with unique username."""
     if 'username' not in kwargs:
         kwargs['username'] = _get_next_username()
     if 'email' not in kwargs:
         kwargs['email'] = f'{kwargs["username"]}@test.com'
-    
-    user = User.objects.create_user(
+    return User.objects.create_user(
         username=kwargs['username'],
         email=kwargs['email'],
         password=kwargs.get('password', '12345'),
         role=role,
         department=kwargs.get('department', 'IT')
     )
-    return user
 
 
 def create_admin():
-    """Create an admin user."""
     return create_user(role='admin', username='admin_test', email='admin@test.com')
 
 
-
 def create_category(name='Troubleshooting', **kwargs):
-    """Create a category."""
-    slug = kwargs.pop('slug', name.lower().replace(' ', '-'))
+    slug = kwargs.pop('slug', unique_slug(base=name.lower().replace(' ', '-')))
     return Category.objects.create(
         name=name,
         slug=slug,
@@ -52,10 +54,8 @@ def create_category(name='Troubleshooting', **kwargs):
     )
 
 
-
 def create_tag(name='Emergency', **kwargs):
-    """Create a tag."""
-    slug = kwargs.pop('slug', name.lower().replace(' ', '-'))
+    slug = kwargs.pop('slug', unique_slug(base=name.lower().replace(' ', '-')))
     return Tag.objects.create(
         name=name,
         slug=slug,
@@ -63,17 +63,18 @@ def create_tag(name='Emergency', **kwargs):
         **kwargs
     )
 
+
 def create_article(author, category=None, status='draft', **kwargs):
-    """Create an article."""
     if category is None:
         category = create_category()
-    
+    slug = kwargs.pop('slug', unique_slug(base='article'))
     return Article.objects.create(
         title=kwargs.get('title', 'Test Article'),
-        slug=kwargs.get('slug', 'test-article'),
-        content=kwargs.get('content', 'This is test content for the article.'),
+        slug=slug,
+        content=kwargs.get('content', 'This is test content for the article. It needs to be at least 50 characters long.'),
         category=category,
         author=author,
         status=status,
-        views=kwargs.get('views', 0)
+        views=kwargs.get('views', 0),
+        **kwargs
     )

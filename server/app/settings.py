@@ -55,12 +55,13 @@ REST_FRAMEWORK={
         'rest_framework.authentication.SessionAuthentication' # auth for test
     ),
     "DEFAULT_PAGINATION_CLASS":"rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE":20,
+    "PAGE_SIZE":100,
 }
 
 SIMPLE_JWT={
     'ACCESS_TOKEN_LIFETIME':timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME':timedelta(days=1),
+    'SIGNING_KEY':os.environ.get('SIGNING_KEY')
 }
 
 # Application definition
@@ -70,6 +71,7 @@ INSTALLED_APPS = [
     'articles.apps.ArticlesConfig',
     'analytics.apps.AnalyticsConfig',
     'chatbot.apps.ChatbotConfig',
+    'django_extensions',
     'rest_framework', #djangorestframework
     'rest_framework_simplejwt',
     'django.contrib.admin',
@@ -141,6 +143,11 @@ DATABASES = {
     )
 }
 
+if os.getenv('DATABASE_URL'):
+    DATABASE_URL = os.getenv('DATABASE_URL')
+else:
+    db = DATABASES['default']
+    DATABASE_URL = f"postgresql://{db['USER']}:{db['PASSWORD']}@{db['HOST']}:{db['PORT']}/{db['NAME']}"
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators

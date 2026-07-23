@@ -62,3 +62,14 @@ class CanPublishArticle(permissions.BasePermission):
     """PRD FR-3.4: Only admins can publish articles."""
     def has_permission(self, request, view):
         return request.user.is_authenticated and request.user.role == 'admin'
+    
+class CanDeleteArticle(permissions.BasePermission):
+    """
+    PRD-aligned: Admins can delete any article; Editors can delete only their own drafts.
+    """
+    def has_object_permission(self, request, view, obj):
+        if request.user.role == 'admin':
+            return True
+        if request.user.role == 'editor' and obj.author == request.user and obj.status == 'draft':
+            return True
+        return False
