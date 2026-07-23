@@ -36,7 +36,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 DEBUG = bool(os.environ.get("DEBUG", default=0))
 
 
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver').split(",")
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver').split(",")
 
 
 #users
