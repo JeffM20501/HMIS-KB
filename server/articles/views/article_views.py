@@ -1,53 +1,117 @@
-from django.shortcuts import render
 from rest_framework import viewsets, permissions, status
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework.decorators import action
+from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
+from django.db.models import Q
 from articles.models.article import Article
 from articles.serializers.article_serializers import ArticleSerializer
 from articles.permissions.article_permissions import (
-    IsEditor, IsAdmin, IsViewer, CanDeleteArticle,
-    CanCreateArticle, CanEditArticle, CanPublishArticle, CanListArticles
+    IsEditor, IsAdmin, CanDeleteArticle, CanEditArticle
 )
 from analytics.models import SearchLog
 from django.utils import timezone
-from django.utils.dateparse import parse_datetime  
-from datetime import timedelta                     
-
-from utils.audit_log_helper import log_audit_action
-from analytics.models import Notification
+from django.utils.dateparse import parse_datetime
+from datetime import timedelta
 
 class ArticleViewSet(viewsets.ModelViewSet):
-    
     queryset = Article.objects.all().order_by('-created_at')
     serializer_class = ArticleSerializer
-    lookup_field='slug'
-    
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context.update({"request": self.request})
-        return context
-    
-    def get_permissions(self):
-        if self.action == 'list':
-            permission_classes = [permissions.IsAuthenticated, CanListArticles]
-        elif self.action == 'retrieve':
-            permission_classes = [permissions.IsAuthenticated]
-        elif self.action == 'create':
-            permission_classes = [permissions.IsAuthenticated, IsEditor | IsAdmin]
-        elif self.action in ['update', 'partial_update']:
-            permission_classes = [permissions.IsAuthenticated, CanEditArticle]
-        elif self.action == 'destroy':
-            permission_classes = [permissions.IsAuthenticated, CanDeleteArticle]
-        elif self.action in ['publish', 'submit_for_review']:
-            if self.action == 'publish':
-                permission_classes = [permissions.IsAuthenticated, IsAdmin]
-            else:
-                permission_classes = [permissions.IsAuthenticated, IsEditor | IsAdmin]
+    lookup_field = 'slug'
+
+    def get_queryset(self):
+        """Filter articles based on user authentication and role."""
+        user = self.request.user
+        queryset = super().get_queryset()
+
+        # If user is not authenticated → only published articles
+        if not user.is_authenticated:
+            return queryset.filter(status='published')
+
+        # Authenticated users
+        if user.role in ['admin', 'editor']:
+            # Editors/Admins see all articles (they manage content)
+            return queryset
         else:
+            # Viewers see only published articles
+            return queryset.filter(status='published')
+
+    def get_permissions(self):
+        """
+        Permissions for actions that modify data.
+        """
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            permission_classes = [permissions.IsAuthenticated, IsEditor | IsAdmin]
+        elif self.action in ['publish', 'reject']:
+            permission_classes = [permissions.IsAuthenticated, IsAdmin]
+        elif self.action == 'submit_for_review':
+            permission_classes = [permissions.IsAuthenticated, IsEditor | IsAdmin]
+        elif self.action == 'my_articles':
             permission_classes = [permissions.IsAuthenticated]
+        elif self.action == 'pending_review':
+            permission_classes = [permissions.IsAuthenticated, IsAdmin]
+        else:
+            # list, retrieve → allow any (but queryset filters will restrict)
+            permission_classes = [permissions.AllowAny]
         return [permission() for permission in permission_classes]
+
+    def retrieve(self, request, *args, **kwargs):
+        """Allow any user to view a published article; restrict others."""
+        instance = self.get_object()
+
+        # If article is not published, only editors/admins can view
+        if instance.status != 'published':
+            if not request.user.is_authenticated or request.user.role not in ['admin', 'editor']:
+                raise PermissionDenied("You do not have permission to view this article.")
+
+        # Record view (both authenticated and anonymous)
+        instance.record_view(request)
+
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+    def list(self, request, *args, **kwargs):
+        search_query = request.query_params.get('search', '').strip()
+        queryset = self.filter_queryset(self.get_queryset())
+
+        # Log search only if query is provided
+        if search_query:
+            # Deduplicate using session (works for both authenticated and anonymous)
+            session = request.session
+            last_search = session.get('last_search', {})
+            now = timezone.now()
+
+            prev_timestamp_str = last_search.get('timestamp')
+            prev_timestamp = parse_datetime(prev_timestamp_str) if prev_timestamp_str else None
+
+            # Check duplicate (same query, same session, within 2 seconds)
+            is_duplicate = (
+                last_search.get('query') == search_query and
+                prev_timestamp is not None and
+                (now - prev_timestamp).total_seconds() < 2
+            )
+
+            if not is_duplicate:
+                result_count = queryset.count()
+                # Create log with user=None if not authenticated
+                SearchLog.objects.create(
+                    user=request.user if request.user.is_authenticated else None,
+                    query=search_query,
+                    result_count=result_count
+                )
+                session['last_search'] = {
+                    'query': search_query,
+                    'timestamp': now.isoformat(),
+                }
+                session.modified = True
+
+        # Paginate and return
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
     
     def perform_create(self, serializer):
         serializer.save(

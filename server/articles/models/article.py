@@ -127,7 +127,6 @@ class Article(models.Model):
             self.views += 1
             self.save(update_fields=['views'])
 
-            # Local import to avoid circular dependency
             from analytics.models import ArticleViewLog
             ArticleViewLog.objects.create(
                 article=self,
