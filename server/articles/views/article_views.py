@@ -41,7 +41,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         if self.action in ['list', 'retrieve']:
             permission_classes = [permissions.AllowAny]
         elif self.action in ['create', 'update', 'partial_update', 'destroy']:
-            permission_classes = [permissions.IsAuthenticated, IsEditor | IsAdmin]
+            permission_classes = [permissions.IsAuthenticated, IsEditor | IsAdmin, CanEditArticle]
         elif self.action in ['publish', 'reject']:
             permission_classes = [permissions.IsAuthenticated, IsAdmin]
         elif self.action == 'submit_for_review':
@@ -78,7 +78,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
             is_duplicate = (
                 last_search.get('query') == search_query and
                 prev_timestamp is not None and
-                (now - prev_timestamp).total_seconds() < 2
+                (now - prev_timestamp).total_seconds() < 5
             )
 
             if not is_duplicate:

@@ -20,32 +20,31 @@ class ArticleAPITest(BaseAPITestCase):
         self.admin = create_admin()
         self.viewer = create_user(role='viewer')
         self.category = create_category()
+        # Keep a published article for read tests
         self.article = create_article(self.author, self.category, status='published')
+        # Create a draft for edit tests
+        self.draft_article = create_article(self.author, self.category, status='draft')
 
     # ---------- PUBLIC ACCESS TESTS ----------
     def test_unauthenticated_can_list_published_articles(self):
-        """Anonymous users can list published articles."""
         url = reverse('articles:article-list')
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        # Only published articles appear
-        self.assertEqual(len(response.data['results']), 1)  # our published article
+        self.assertEqual(len(response.data['results']), 1)
 
     def test_unauthenticated_can_retrieve_published_article(self):
-        """Anonymous users can view a published article."""
         url = reverse('articles:article-detail', kwargs={'slug': self.article.slug})
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
     def test_unauthenticated_cannot_retrieve_draft(self):
-        """Anonymous users cannot view draft articles."""
+        """Anonymous users cannot view draft articles (returns 404)."""
         draft = create_article(self.author, self.category, status='draft')
         url = reverse('articles:article-detail', kwargs={'slug': draft.slug})
         response = self.client.get(url)
-        self.assertEqual(response.status_code, 403)  # PermissionDenied
+        self.assertEqual(response.status_code, 404)  # 404 because draft is hidden
 
     def test_unauthenticated_search_logged_with_user_null(self):
-        """Anonymous search creates SearchLog with user=None."""
         url = reverse('articles:article-list')
         response = self.client.get(url, {'search': 'test'})
         self.assertEqual(response.status_code, 200)
@@ -89,23 +88,25 @@ class ArticleAPITest(BaseAPITestCase):
             'status': 'draft'
         }, content_type='application/json')
         self.assertEqual(response.status_code, 201)
-        self.assertEqual(Article.objects.count(), 2)
+        self.assertEqual(Article.objects.count(), 3)  # now we have 3 articles: published + draft_article + new
 
     def test_editor_can_edit_own_draft(self):
+        """Editor can edit their own draft article."""
         self._login(self.author)
-        url = reverse('articles:article-detail', kwargs={'slug': self.article.slug})
+        url = reverse('articles:article-detail', kwargs={'slug': self.draft_article.slug})
         response = self.client.patch(url, {
             'title': 'Updated Title',
             'content': 'This is updated content for the article. It is definitely more than 50 characters long now.'
         }, content_type='application/json')
         self.assertEqual(response.status_code, 200)
-        self.article.refresh_from_db()
-        self.assertEqual(self.article.title, 'Updated Title')
+        self.draft_article.refresh_from_db()
+        self.assertEqual(self.draft_article.title, 'Updated Title')
 
     def test_editor_cannot_edit_others_article(self):
+        """Editor cannot edit another editor's draft."""
         other_editor = create_user(role='editor')
         self._login(other_editor)
-        url = reverse('articles:article-detail', kwargs={'slug': self.article.slug})
+        url = reverse('articles:article-detail', kwargs={'slug': self.draft_article.slug})
         response = self.client.patch(url, {'title': 'Hacked Title'}, content_type='application/json')
         self.assertEqual(response.status_code, 403)
 
@@ -116,28 +117,27 @@ class ArticleAPITest(BaseAPITestCase):
         self.assertEqual(response.status_code, 403)
 
     def test_admin_can_publish_article(self):
-        # Submit for review first
+        draft_article = create_article(self.author, self.category, status='draft')
         self._login(self.author)
-        url_submit = reverse('articles:article-submit-for-review', kwargs={'slug': self.article.slug})
+        url_submit = reverse('articles:article-submit-for-review', kwargs={'slug': draft_article.slug})
         response = self.client.post(url_submit, {}, content_type='application/json')
         self.assertEqual(response.status_code, 200)
 
-        # Then publish as admin
         self._login(self.admin)
-        url_publish = reverse('articles:article-publish', kwargs={'slug': self.article.slug})
+        url_publish = reverse('articles:article-publish', kwargs={'slug': draft_article.slug})
         response = self.client.post(url_publish, {}, content_type='application/json')
         self.assertEqual(response.status_code, 200)
-        self.article.refresh_from_db()
-        self.assertEqual(self.article.status, 'published')
-        self.assertEqual(self.article.published_by, self.admin)
-        self.assertIsNotNone(self.article.published_at)
+        draft_article.refresh_from_db()
+        self.assertEqual(draft_article.status, 'published')
+        self.assertEqual(draft_article.published_by, self.admin)
+        self.assertIsNotNone(draft_article.published_at)
 
     def test_admin_can_delete_article(self):
         self._login(self.admin)
         url = reverse('articles:article-detail', kwargs={'slug': self.article.slug})
         response = self.client.delete(url)
         self.assertEqual(response.status_code, 204)
-        self.assertEqual(Article.objects.count(), 0)
+        self.assertEqual(Article.objects.count(), 1)  # remaining: draft_article
 
     def test_authenticated_search_logs_user(self):
         self._login(self.viewer)
@@ -151,9 +151,7 @@ class ArticleAPITest(BaseAPITestCase):
     def test_duplicate_search_not_logged(self):
         self._login(self.viewer)
         url = reverse('articles:article-list')
-        # First search
         self.client.get(url, {'search': 'unique'})
-        # Second search within 2 seconds (same session)
         self.client.get(url, {'search': 'unique'})
         logs = SearchLog.objects.filter(query='unique')
-        self.assertEqual(logs.count(), 1)  # only one log
+        self.assertEqual(logs.count(), 1)
