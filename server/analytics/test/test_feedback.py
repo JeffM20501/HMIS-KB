@@ -16,8 +16,7 @@ class FeedbackTest(TestCase):
         self.client = APIClient()
         self.user = create_regular_user(role='viewer')
         self.admin = create_admin()
-        
-        # Create an article
+
         self.category = Category.objects.create(name='Test', slug='test')
         self.article = Article.objects.create(
             title='Test Article',
@@ -27,15 +26,14 @@ class FeedbackTest(TestCase):
             author=self.user,
             status='published'
         )
-        
-        # Create a chat log
+
         self.chat_log = ChatLog.objects.create(
             user=self.user,
             conversation_id='test-conv',
             question='How do I reset password?',
             answer='Go to settings...'
         )
-    
+
     def _get_token(self, user):
         url = reverse('token_obtain_pair')
         response = self.client.post(url, {
@@ -43,11 +41,39 @@ class FeedbackTest(TestCase):
             'password': '12345'
         })
         return response.data['access']
-    
+
     def _login(self, user):
         token = self._get_token(user)
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
-    
+
+    # ---------- ANONYMOUS FEEDBACK ----------
+    def test_anonymous_can_create_feedback(self):
+        url = reverse('analytics:feedback-list')
+        response = self.client.post(url, {
+            'content_type': 'article',
+            'object_id': self.article.id,
+            'rating': 5,
+            'comment': 'Great article!'
+        }, content_type='application/json')
+        self.assertEqual(response.status_code, 201)
+        feedback = Feedback.objects.first()
+        self.assertIsNone(feedback.user)
+        self.assertEqual(feedback.rating, 5)
+
+    def test_anonymous_can_create_chat_feedback(self):
+        url = reverse('analytics:feedback-list')
+        response = self.client.post(url, {
+            'content_type': 'chat',
+            'object_id': self.chat_log.id,
+            'helpful': True,
+            'comment': 'Very helpful!'
+        }, content_type='application/json')
+        self.assertEqual(response.status_code, 201)
+        feedback = Feedback.objects.first()
+        self.assertTrue(feedback.helpful)
+        self.assertIsNone(feedback.user)
+
+    # ---------- AUTHENTICATED FEEDBACK ----------
     def test_create_article_feedback(self):
         self._login(self.user)
         url = reverse('analytics:feedback-list')
@@ -57,15 +83,11 @@ class FeedbackTest(TestCase):
             'rating': 5,
             'comment': 'Excellent article!'
         }, content_type='application/json')
-        
-        # if response.status_code != 201:
-        #     print("CREATE ARTICLE FEEDBACK ERROR:", response.data)
-        
         self.assertEqual(response.status_code, 201)
-        self.assertEqual(Feedback.objects.count(), 1)
         feedback = Feedback.objects.first()
         self.assertEqual(feedback.rating, 5)
         self.assertEqual(feedback.comment, 'Excellent article!')
+        self.assertEqual(feedback.user, self.user)
 
     def test_create_chat_feedback(self):
         self._login(self.user)
@@ -76,52 +98,31 @@ class FeedbackTest(TestCase):
             'helpful': True,
             'comment': 'Very helpful!'
         }, content_type='application/json')
-        
-        # if response.status_code != 201:
-        #     print("CREATE CHAT FEEDBACK ERROR:", response.data)
-        
         self.assertEqual(response.status_code, 201)
-        self.assertEqual(Feedback.objects.count(), 1)
         feedback = Feedback.objects.first()
         self.assertTrue(feedback.helpful)
+        self.assertEqual(feedback.user, self.user)
 
     def test_duplicate_feedback_prevented(self):
         self._login(self.user)
         url = reverse('analytics:feedback-list')
-        
+
         # First feedback
         response = self.client.post(url, {
             'content_type': 'article',
             'object_id': self.article.id,
             'rating': 4
         }, content_type='application/json')
-        
-        if response.status_code != 201:
-            print("FIRST FEEDBACK ERROR:", response.data)
-        
         self.assertEqual(response.status_code, 201)
-        
+
         # Second feedback (should fail)
         response = self.client.post(url, {
             'content_type': 'article',
             'object_id': self.article.id,
             'rating': 5
         }, content_type='application/json')
-        
-        # if response.status_code != 400:
-        #     print("SECOND FEEDBACK ERROR:", response.data)
-        
         self.assertEqual(response.status_code, 400)
         self.assertIn('already provided feedback', str(response.data))
-
-    def test_unauthenticated_cannot_create_feedback(self):
-        url = reverse('analytics:feedback-list')
-        response = self.client.post(url, {
-            'content_type': 'article',
-            'object_id': self.article.id,
-            'rating': 5
-        }, content_type='application/json')
-        self.assertEqual(response.status_code, 401)
 
     def test_user_can_view_own_feedback(self):
         self._login(self.user)

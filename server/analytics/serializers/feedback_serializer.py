@@ -6,17 +6,16 @@ from analytics.models.chat_logs import ChatLog
 
 
 class FeedbackSerializer(serializers.ModelSerializer):
-    username = serializers.ReadOnlyField(source='user.username')
-    user_email = serializers.ReadOnlyField(source='user.email')
+    user = serializers.ReadOnlyField(source='user.id')
+    user_email = serializers.SerializerMethodField()
 
     class Meta:
         model = Feedback
-        fields = [
-            'id', 'user', 'username', 'user_email',
-            'content_type', 'object_id',
-            'rating', 'helpful', 'comment', 'created_at'
-        ]
-        read_only_fields = ['created_at', 'user']
+        fields = ['id', 'user', 'user_email', 'content_type', 'object_id', 'rating', 'helpful', 'comment', 'created_at']
+        
+    def get_user_email(self, obj):
+        """Return the user's email if the user exists."""
+        return obj.user.email if obj.user else None
 
     def validate_rating(self, value):
         return validate_rating(value)
@@ -64,9 +63,9 @@ class FeedbackSerializer(serializers.ModelSerializer):
                 {"helpful": "Helpful flag is required for chat feedback."}
             )
 
-        # Check for duplicate
+        # Check for duplicate only if user is authenticated
         request = self.context.get('request')
-        if request and request.user and object_id:
+        if request and request.user.is_authenticated and object_id:
             instance = getattr(self, 'instance', None)
             queryset = Feedback.objects.filter(
                 user=request.user,
@@ -83,7 +82,16 @@ class FeedbackSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
+        # Get user from request context
         request = self.context.get('request')
-        if request and request.user:
-            validated_data['user'] = request.user
-        return super().create(validated_data)
+        user = request.user if request.user.is_authenticated else None
+        # Create instance with user explicitly set
+        instance = Feedback.objects.create(
+            user=user,
+            content_type=validated_data.get('content_type'),
+            object_id=validated_data.get('object_id'),
+            rating=validated_data.get('rating'),
+            helpful=validated_data.get('helpful'),
+            comment=validated_data.get('comment', '')
+        )
+        return instance

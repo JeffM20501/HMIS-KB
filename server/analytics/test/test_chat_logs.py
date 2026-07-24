@@ -12,14 +12,11 @@ User = get_user_model()
 
 
 class ChatLogTest(TestCase):
-    """Test chat log functionality."""
-    
     def setUp(self):
         self.client = APIClient()
         self.user = create_regular_user(role='viewer')
         self.admin = create_admin()
-        
-        # Create an article
+
         self.category = Category.objects.create(name='Test', slug='test')
         self.article = Article.objects.create(
             title='Test Article',
@@ -29,7 +26,7 @@ class ChatLogTest(TestCase):
             author=self.user,
             status='published'
         )
-    
+
     def _get_token(self, user):
         url = reverse('token_obtain_pair')
         response = self.client.post(url, {
@@ -37,13 +34,33 @@ class ChatLogTest(TestCase):
             'password': '12345'
         })
         return response.data['access']
-    
+
     def _login(self, user):
         token = self._get_token(user)
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
-    
+
+    # ---------- ANONYMOUS CHAT (NEW) ----------
+    def test_anonymous_chat_creates_log_without_user(self):
+        """Anonymous chat creates ChatLog with user=None."""
+        # Mock the RAG pipeline answer to avoid real calls
+        from unittest.mock import patch
+        with patch('chatbot.rag.rag_pipline.RAGPipeline.answer') as mock_answer:
+            mock_answer.return_value = {
+                'answer': 'Test answer',
+                'article_ref': None,
+                'was_grounded': False,
+                'confidence_score': 0.5,
+                'response_time': 0.1
+            }
+            response = self.client.post('/api/v1/chat/', {'question': 'Hello'})
+            self.assertEqual(response.status_code, 200)
+            log = ChatLog.objects.first()
+            self.assertIsNotNone(log)
+            self.assertIsNone(log.user)
+            self.assertIsNotNone(log.conversation_id)
+
+    # ---------- EXISTING TESTS ----------
     def test_chat_log_creation(self):
-        """Test creating a chat log."""
         self._login(self.user)
         log = ChatLog.objects.create(
             user=self.user,
@@ -54,15 +71,13 @@ class ChatLogTest(TestCase):
             response_time=1.5,
             confidence_score=0.9
         )
-        
         self.assertEqual(log.user, self.user)
         self.assertEqual(log.conversation_id, 'test-conv-123')
         self.assertEqual(log.question, 'How do I reset my password?')
         self.assertEqual(log.article_ref, self.article)
         self.assertIsNotNone(log.created_at)
-    
+
     def test_admin_can_view_chat_logs(self):
-        """Test that admins can view all chat logs."""
         self._login(self.user)
         ChatLog.objects.create(
             user=self.user,
@@ -70,15 +85,14 @@ class ChatLogTest(TestCase):
             question='Test?',
             answer='Test answer'
         )
-        
+
         self._login(self.admin)
         url = reverse('analytics:chat-log-list')
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertGreaterEqual(response.data['count'], 1)
-    
+
     def test_user_can_view_own_chat_logs(self):
-        """Test that users can view their own chat logs."""
         self._login(self.user)
         ChatLog.objects.create(
             user=self.user,
@@ -86,15 +100,13 @@ class ChatLogTest(TestCase):
             question='Test?',
             answer='Test answer'
         )
-        
+
         url = reverse('analytics:chat-log-list')
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['count'], 1)
-    
+
     def test_user_cannot_view_others_chat_logs(self):
-        """Test that users cannot view others' chat logs."""
-        # Create log for another user
         other_user = create_regular_user(role='viewer', username='other')
         ChatLog.objects.create(
             user=other_user,
@@ -102,33 +114,29 @@ class ChatLogTest(TestCase):
             question='Other question?',
             answer='Other answer'
         )
-        
+
         self._login(self.user)
         url = reverse('analytics:chat-log-list')
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['count'], 0)
-    
+
     def test_unanswered_endpoint(self):
-        """Test unanswered questions endpoint (admin only)."""
-        # Create logs with no feedback
         ChatLog.objects.create(
             user=self.user,
             conversation_id='conv-1',
             question='Unanswered question?',
             answer='Some answer'
         )
-        
+
         self._login(self.admin)
         url = reverse('analytics:chat-log-unanswered')
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertGreaterEqual(len(response.data), 1)
-    
+
     def test_stats_endpoint(self):
-        """Test chat stats endpoint."""
         self._login(self.admin)
-        
         ChatLog.objects.create(
             user=self.user,
             conversation_id='conv-1',
@@ -143,18 +151,17 @@ class ChatLogTest(TestCase):
             answer='A2',
             was_helpful=False
         )
-        
+
         url = reverse('analytics:chat-log-stats')
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['total_chats'], 2)
         self.assertEqual(response.data['helpful_count'], 1)
         self.assertEqual(response.data['not_helpful_count'], 1)
-    
+
     def test_conversation_endpoint(self):
-        """Test conversation endpoint."""
         conv_id = 'multi-turn-conv'
-        
+
         self._login(self.user)
         ChatLog.objects.create(
             user=self.user,
@@ -168,14 +175,13 @@ class ChatLogTest(TestCase):
             question='Q2?',
             answer='A2'
         )
-        
+
         url = reverse('analytics:chat-log-conversation')
         response = self.client.get(url, {'conversation_id': conv_id})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
-    
+
     def test_chat_log_article_reference(self):
-        """Test that chat log can reference an article."""
         self._login(self.user)
         log = ChatLog.objects.create(
             user=self.user,

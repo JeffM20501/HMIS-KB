@@ -6,12 +6,12 @@ from analytics.models.feedback import Feedback
 from analytics.serializers.feedback_serializer import FeedbackSerializer
 from analytics.permissions.feedback_permissions import CanViewFeedback, CanCreateFeedback
 
+
 class FeedbackViewSet(viewsets.ModelViewSet):
     queryset = Feedback.objects.all()
     serializer_class = FeedbackSerializer
 
     def get_permissions(self):
-        # Allow any user to create feedback (including anonymous)
         if self.action == 'create':
             permission_classes = [permissions.AllowAny]
         elif self.action in ['list', 'retrieve', 'stats', 'my_feedback', 'for_object']:
@@ -25,14 +25,11 @@ class FeedbackViewSet(viewsets.ModelViewSet):
         queryset = Feedback.objects.all()
 
         if not user.is_authenticated:
-            # Anonymous users can only see their own feedback? Not possible.
-            # They can't list anyway, so return empty.
             return Feedback.objects.none()
 
         if user.role != 'admin':
             queryset = queryset.filter(user=user)
 
-        # Additional filters
         content_type = self.request.query_params.get('content_type')
         if content_type:
             queryset = queryset.filter(content_type=content_type)
@@ -44,7 +41,7 @@ class FeedbackViewSet(viewsets.ModelViewSet):
         return queryset
 
     def perform_create(self, serializer):
-        # Save user if authenticated, else null
+        # Set user to None for anonymous, else the authenticated user
         user = self.request.user if self.request.user.is_authenticated else None
         serializer.save(user=user)
 
