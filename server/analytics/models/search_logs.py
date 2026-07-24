@@ -1,32 +1,15 @@
 from django.db import models
-
-# Create your models here.
-from django.db import models
-from django.contrib.auth import get_user_model
-from analytics.validators.search_log_validator import validate_query
-
-User = get_user_model()
-
+from django.conf import settings
 
 class SearchLog(models.Model):
-    """
-    PRD FR-2.6: All searches are logged for analytics (query, result count, timestamp).
-    """
     user = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='search_logs'
+        null=True,          
+        blank=True
     )
-    query = models.CharField(
-        max_length=500,
-        validators=[validate_query],
-        help_text="The search query entered by the user"
-    )
-    result_count = models.PositiveIntegerField(
-        null=True,
-        blank=True,
-        help_text="Number of results returned for the query"
-    )
+    query = models.CharField(max_length=500)
+    result_count = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -38,5 +21,4 @@ class SearchLog(models.Model):
         ]
 
     def __str__(self):
-        preview = self.query[:30] + '...' if len(self.query) > 30 else self.query
-        return f"{self.user.username} searched '{preview}' at {self.created_at}"
+        return f"{self.user or 'Anonymous'} searched '{self.query}'"
