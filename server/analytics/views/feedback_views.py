@@ -10,20 +10,23 @@ from analytics.permissions.feedback_permissions import CanViewFeedback, CanCreat
 class FeedbackViewSet(viewsets.ModelViewSet):
     queryset = Feedback.objects.all()
     serializer_class = FeedbackSerializer
-    permission_classes = [permissions.IsAuthenticated, CanCreateFeedback]
 
     def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            permission_classes = [permissions.IsAuthenticated, CanViewFeedback]
-        elif self.action in ['update', 'partial_update', 'destroy']:
+        if self.action == 'create':
+            permission_classes = [permissions.AllowAny]
+        elif self.action in ['list', 'retrieve', 'stats', 'my_feedback', 'for_object']:
             permission_classes = [permissions.IsAuthenticated, CanViewFeedback]
         else:
-            permission_classes = [permissions.IsAuthenticated, CanCreateFeedback]
+            permission_classes = [permissions.IsAuthenticated]
         return [permission() for permission in permission_classes]
 
     def get_queryset(self):
-        queryset = super().get_queryset()
         user = self.request.user
+        queryset = Feedback.objects.all()
+
+        if not user.is_authenticated:
+            return Feedback.objects.none()
+
         if user.role != 'admin':
             queryset = queryset.filter(user=user)
 
@@ -36,6 +39,11 @@ class FeedbackViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(object_id=object_id)
 
         return queryset
+
+    def perform_create(self, serializer):
+        # Set user to None for anonymous, else the authenticated user
+        user = self.request.user if self.request.user.is_authenticated else None
+        serializer.save(user=user)
 
     @action(detail=False, methods=['get'])
     def stats(self, request):
@@ -79,12 +87,16 @@ class FeedbackViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def my_feedback(self, request):
+        if not request.user.is_authenticated:
+            return Response(
+                {"error": "Authentication required."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
         feedbacks = Feedback.objects.filter(user=request.user)
-
         content_type = request.query_params.get('content_type')
         if content_type:
             feedbacks = feedbacks.filter(content_type=content_type)
-        
+
         page = self.paginate_queryset(feedbacks)
         if page is not None:
             serializer = self.get_serializer(page, many=True)

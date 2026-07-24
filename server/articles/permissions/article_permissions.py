@@ -1,7 +1,4 @@
 from rest_framework import permissions
-from articles.models.article import Article
-
-
 class IsEditor(permissions.BasePermission):
     """PRD: Editor role permission."""
     def has_permission(self, request, view):
@@ -46,6 +43,9 @@ class CanCreateArticle(permissions.BasePermission):
 
 class CanEditArticle(permissions.BasePermission):
     """PRD FR-3.3: Editors can edit their own drafts."""
+    def has_permission(self, request, view):
+        return request.user.is_authenticated
+    
     def has_object_permission(self, request, view, obj):
         # Admin can edit any article
         if request.user.role == 'admin':
@@ -53,8 +53,7 @@ class CanEditArticle(permissions.BasePermission):
         
         # Editor can only edit their own drafts
         if request.user.role == 'editor':
-            return obj.author == request.user and obj.status in ['draft', 'pending_review']
-        
+            return request.user.id == obj.author.id and obj.status=='draft'
         return False
 
 
