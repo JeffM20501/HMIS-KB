@@ -8,60 +8,28 @@ from analytics.validators.feedback_validator import (
     validate_comment,
     validate_content_type
 )
+from django.conf import settings
 
 User = get_user_model()
 
 
 class Feedback(models.Model):
-    """
-    PRD FR-4.1: Users can rate articles (1-5 stars) and leave comments.
-    PRD FR-5.10: Users can provide 'was this helpful' feedback on chat responses.
-    """
-    
-    CONTENT_TYPES = [
+    CONTENT_TYPES = (
         ('article', 'Article'),
         ('chat', 'Chat'),
-    ]
-    
-    # Who gave the feedback
+    )
+
     user = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='feedbacks'
-    )
-    
-    # What type of object
-    content_type = models.CharField(
-        max_length=10,
-        choices=CONTENT_TYPES,
-        validators=[validate_content_type]
-    )
-    
-    # Which specific object (ID)
-    object_id = models.PositiveIntegerField()
-    
-    # Rating (1-5 for articles)
-    rating = models.PositiveSmallIntegerField(
         null=True,
-        blank=True,
-        validators=[validate_rating],
-        help_text="Article rating (1-5 stars)"
+        blank=True
     )
-    
-    # Helpful flag (for chat feedback)
-    helpful = models.BooleanField(
-        null=True,
-        blank=True,
-        help_text="Was the chat response helpful?"
-    )
-    
-    # Optional comment
-    comment = models.TextField(
-        blank=True,
-        validators=[validate_comment]
-    )
-    
-    # When it was created
+    content_type = models.CharField(max_length=20, choices=CONTENT_TYPES)
+    object_id = models.CharField(max_length=255)  # article slug or chat_log id
+    rating = models.PositiveSmallIntegerField(null=True, blank=True)  # 1-5 for articles
+    helpful = models.BooleanField(null=True, blank=True)  # for chat
+    comment = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
