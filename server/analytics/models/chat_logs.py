@@ -1,82 +1,21 @@
 from django.db import models
-
-from django.db import models
-from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.core.exceptions import ValidationError
-from analytics.validators.chat_log_validator import (
-    validate_question,
-    validate_answer,
-    validate_conversation_id
-)
-
-User = get_user_model()
-
 
 class ChatLog(models.Model):
-    """
-    PRD FR-5.8: All assistant queries and responses are logged.
-    PRD FR-5.7: Conversation history within a session is retained for context.
-    PRD FR-5.10: Support 'was this helpful' feedback control.
-    PRD FR-5.2: Answer generated only from published KB articles.
-    """
-    
-    # Who asked the question
     user = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='chat_logs'
+        null=True,          # ← allow anonymous
+        blank=True
     )
-    
-    # Conversation grouping (for multi-turn chats)
-    conversation_id = models.CharField(
-        max_length=100,
-        validators=[validate_conversation_id],
-        help_text="Unique identifier for the conversation session"
-    )
-    
-    # The question asked
-    question = models.TextField(
-        validators=[validate_question],
-        help_text="The user's question"
-    )
-    
-    # The answer provided
-    answer = models.TextField(
-        validators=[validate_answer],
-        help_text="The bot's response"
-    )
-    
-    # Reference to the article used (grounding)
-    article_ref = models.ForeignKey(
-        'articles.Article',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='chat_logs',
-        help_text="Article used to ground the answer"
-    )
-    
-    # Was the answer helpful? (FR-5.10)
-    was_helpful = models.BooleanField(
-        null=True,
-        blank=True,
-        help_text="User feedback on whether the answer was helpful"
-    )
-    
-    # Additional metadata
-    response_time = models.FloatField(
-        null=True,
-        blank=True,
-        help_text="Time taken to generate response (in seconds)"
-    )
-    
-    confidence_score = models.FloatField(
-        null=True,
-        blank=True,
-        help_text="Confidence score of the answer (0-1)"
-    )
-    
-    # Timestamp
+    conversation_id = models.CharField(max_length=255)
+    question = models.TextField()
+    answer = models.TextField()
+    article_ref = models.ForeignKey('articles.Article', null=True, blank=True, on_delete=models.SET_NULL)
+    was_helpful = models.BooleanField(null=True, blank=True)
+    response_time = models.FloatField(null=True, blank=True)
+    confidence_score = models.FloatField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
