@@ -9,7 +9,12 @@ class ArticleSerializer(serializers.ModelSerializer):
     publisher_username = serializers.ReadOnlyField(source='published_by.username')
     media = serializers.SerializerMethodField()
     author_full_name = serializers.SerializerMethodField()
-    
+    category = serializers.SlugRelatedField(
+        slug_field='slug',
+        queryset=Category.objects.all(),
+        allow_null=True,
+        required=False
+    )
     
     
     class Meta:

@@ -141,7 +141,7 @@ class UserViewSet(viewsets.ModelViewSet):
         #article related counts / editor
         total_articles=Article.objects.count()
         published_count=Article.objects.filter(status='published').count()
-        pending_review_count=Article.objects.filter(status='pending_review')
+        pending_review_count=Article.objects.filter(status='pending_review').count()
         draft_count=Article.objects.filter(status='draft').count()
         archived_count=Article.objects.filter(status='archived').count()
         editor_count=User.objects.filter(role='editor').count()
@@ -160,8 +160,8 @@ class UserViewSet(viewsets.ModelViewSet):
         views_by_category=[]
         for cat in category_views:
             views_by_category.append({
-                'name':cat['name'],
-                'percentage':round((cat['total_views']/total_all_views)*10)
+                'name': cat['name'],
+                'percentage': round((cat['total_views'] / total_all_views) * 100, 1)  # ✅ * 100
             })
         
         #article creation trend
