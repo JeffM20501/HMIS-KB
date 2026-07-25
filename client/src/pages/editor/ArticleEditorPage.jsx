@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import ReactMarkdown from 'react-markdown';
+import MarkdownRenderer from '../../components/article/MarkdownRenderer.jsx';
 import { Check, Save, Send } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as articlesApi from '../../api/articles.api';
@@ -14,7 +14,7 @@ import Input from '../../components/ui/Input.jsx';
 import Label from '../../components/ui/Label.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Tabs from '../../components/ui/Tabs.jsx';
-import RichTextEditor from '../../components/forms/RichTextEditor.jsx';
+import RichTextEditor from '../../components/editor/RichTextEditor.jsx';
 import TagInput from '../../components/forms/TagInput.jsx';
 import PageLoader from '../../components/common/PageLoader.jsx';
 import { extractErrorMessage } from '../../api/axios';
@@ -197,8 +197,8 @@ export default function ArticleEditorPage() {
               placeholder="Start writing your article… use the toolbar for headings, lists, tables, images, and callouts."
             />
           ) : (
-            <div className="p-8 kb-prose max-w-article">
-              <ReactMarkdown>{content || '*Nothing to preview yet.*'}</ReactMarkdown>
+            <div className="p-8 max-w-article mx-auto">
+              <MarkdownRenderer content={content || '*Nothing to preview yet.*'} />
             </div>
           )}
         </div>

@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import ReactMarkdown from 'react-markdown';
 import { ChevronRight, Clock, Calendar, Tag as TagIcon } from 'lucide-react';
 import * as articlesApi from '../../api/articles.api';
 import * as analyticsApi from '../../api/analytics.api';
 import ArticleCard from '../../components/article/ArticleCard.jsx';
 import TableOfContents from '../../components/article/TableOfContents.jsx';
 import FeedbackWidget from '../../components/article/FeedbackWidget.jsx';
+import MarkdownRenderer from '../../components/article/MarkdownRenderer.jsx';
 import Badge from '../../components/ui/Badge.jsx';
 import Avatar from '../../components/ui/Avatar.jsx';
 import { Skeleton } from '../../components/common/Skeleton.jsx';
@@ -15,17 +15,7 @@ import ErrorState from '../../components/common/ErrorState.jsx';
 import EmptyState from '../../components/common/EmptyState.jsx';
 import { FileQuestion } from 'lucide-react';
 import { formatDate, estimateReadingTime } from '../../utils/formatters';
-
-function extractHeadings(markdown = '') {
-  const lines = markdown.split('\n');
-  return lines
-    .filter((l) => /^##\s+/.test(l))
-    .map((l) => {
-      const text = l.replace(/^##\s+/, '').trim();
-      const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-      return { id, text };
-    });
-}
+import { extractHeadings } from '../../utils/headings';
 
 export default function ArticlePage() {
   const { slug } = useParams();
@@ -50,6 +40,8 @@ export default function ArticlePage() {
     enabled: !!article?.category?.slug,
   });
 
+  // Same slug algorithm rehype-slug uses in MarkdownRenderer, so these
+  // TOC ids always match the ids actually rendered on the headings below.
   const headings = useMemo(() => extractHeadings(article?.content || ''), [article?.content]);
 
   if (articleQuery.isLoading) {
@@ -117,9 +109,7 @@ export default function ArticlePage() {
             </span>
           </div>
 
-          <div className="kb-prose max-w-article">
-            <ReactMarkdown>{article.content || ''}</ReactMarkdown>
-          </div>
+          <MarkdownRenderer content={article.content || ''} className="max-w-article" />
 
           {!!article.tags?.length && (
             <div className="flex flex-wrap items-center gap-2 mt-8 pt-6 border-t border-border">

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import ReactMarkdown from 'react-markdown';
+import MarkdownRenderer from '../../components/article/MarkdownRenderer.jsx';
 import { Check, X, MessageSquare } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as articlesApi from '../../api/articles.api';
@@ -121,8 +121,8 @@ export default function ReviewQueuePage() {
 
               <div className="bg-gray-50 border border-border rounded-lg p-5 mb-6">
                 <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary mb-2">Article preview</p>
-                <div className="kb-prose text-sm max-h-80 overflow-y-auto">
-                  <ReactMarkdown>{active.content || active.summary || 'No preview available.'}</ReactMarkdown>
+                <div className="text-sm max-h-80 overflow-y-auto">
+                  <MarkdownRenderer content={active.content || active.summary || 'No preview available.'} />
                 </div>
               </div>
 

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import ReactMarkdown from 'react-markdown';
+import MarkdownRenderer from '../../components/article/MarkdownRenderer.jsx';
 import { Tag } from 'lucide-react';
 import * as articlesApi from '../../api/articles.api';
 import { Skeleton } from '../../components/common/Skeleton.jsx';
@@ -49,8 +49,8 @@ export default function ReleaseNotesPage() {
               <span className="text-xs text-text-secondary">{formatDate(note.updated_at)}</span>
             </div>
             <h2 className="text-xl font-bold text-text-primary mb-2">{note.title}</h2>
-            <div className="kb-prose text-sm [&_p]:mb-2">
-              <ReactMarkdown>{note.summary || note.content?.slice(0, 400) || ''}</ReactMarkdown>
+            <div className="text-sm [&_p]:mb-2">
+              <MarkdownRenderer content={note.summary || note.content?.slice(0, 400) || ''} />
             </div>
             <a href={`/articles/${note.slug}`} className="text-sm font-medium text-primary hover:underline">
               Read full notes →

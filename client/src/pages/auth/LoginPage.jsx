@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Lock, Eye, EyeOff, UserCircle2 } from 'lucide-react';
+import { Lock, Eye, EyeOff, UserCircle2, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../hooks/useAuth';
 import { extractErrorMessage } from '../../api/axios';
@@ -9,7 +9,6 @@ import Input from '../../components/ui/Input.jsx';
 import Label from '../../components/ui/Label.jsx';
 import FieldError from '../../components/ui/FieldError.jsx';
 import Button from '../../components/ui/Button.jsx';
-import { ArrowLeft } from 'lucide-react';
 
 export default function LoginPage() {
   const {
@@ -29,18 +28,19 @@ export default function LoginPage() {
       if (next) navigate(next);
       else navigate(user.role === 'admin' ? '/admin' : '/editor');
     } catch (err) {
-      toast.error(extractErrorMessage(err) || 'Invalid email or password.');
+      toast.error(extractErrorMessage(err) || 'Invalid username or password.');
     }
   };
 
   return (
     <div>
       <Link
-      to='/'
-        className='inline-flex items-center gap-2 text-lg text-text-secondary hover:text-primary mb-6'
+        to="/"
+        className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-primary mb-6"
       >
-        <ArrowLeft className='w-4 h-4'/>Back to Home
+        <ArrowLeft className="w-4 h-4" /> Back to home
       </Link>
+
       <h1 className="text-2xl font-bold text-text-primary mb-1">Staff sign in</h1>
       <p className="text-text-secondary text-sm mb-8">Sign in to manage and publish knowledge base content.</p>
 
@@ -51,6 +51,7 @@ export default function LoginPage() {
             type="text"
             icon={UserCircle2}
             placeholder="Username"
+            autoComplete="username"
             error={!!errors.username}
             {...register('username', { required: 'Username is required' })}
           />
@@ -72,7 +73,10 @@ export default function LoginPage() {
               icon={Lock}
               placeholder="••••••••"
               error={!!errors.password}
-              {...register('password', { required: 'Password is required', minLength:{value:8, message:'Password should be at least 8 characters long'}})}
+              {...register('password', {
+                required: 'Password is required',
+                minLength: { value: 8, message: 'Password should be at least 8 characters long' },
+              })}
             />
             <button
               type="button"

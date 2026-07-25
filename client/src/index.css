@@ -75,6 +75,39 @@ body {
   @apply bg-gray-50 font-semibold;
 }
 
+/* GFM task list items rendered by react-markdown (remark-gfm) — distinct
+   from Tiptap's editor-side taskList markup below, since ReactMarkdown
+   renders plain <li><input type="checkbox"> with no wrapping data-type. */
+.kb-prose li:has(> input[type='checkbox']) {
+  @apply list-none -ml-6 flex items-start gap-2;
+}
+.kb-prose li > input[type='checkbox'] {
+  @apply mt-1.5;
+}
+
+/* Anchor link appended after each heading by rehype-autolink-headings —
+   hidden until the heading is hovered, matching the Stripe/Docusaurus
+   "hover to reveal a linkable #" pattern. */
+.kb-prose h2:hover .heading-anchor,
+.kb-prose h3:hover .heading-anchor,
+.kb-prose h4:hover .heading-anchor {
+  @apply opacity-100;
+}
+.heading-anchor {
+  @apply opacity-0 ml-2 text-primary/60 no-underline text-base transition-opacity;
+}
+.heading-anchor::before {
+  content: '#';
+}
+
+/* Scroll offset so a jump-to-heading via TOC/anchor doesn't land under the
+   sticky site header. */
+.kb-prose h2,
+.kb-prose h3,
+.kb-prose h4 {
+  scroll-margin-top: 96px;
+}
+
 /* Tiptap / ProseMirror editing surface (shares .kb-prose for visual parity with the reader) */
 .ProseMirror {
   outline: none;
