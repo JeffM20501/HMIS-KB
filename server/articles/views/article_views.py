@@ -26,12 +26,17 @@ class ArticleViewSet(viewsets.ModelViewSet):
         Authenticated admins/editors: all articles.
         """
         user = self.request.user
-        if not user.is_authenticated:
-            return Article.objects.filter(status='published').order_by('-created_at')
-        if user.role in ['admin', 'editor']:
-            return Article.objects.all().order_by('-created_at')
+        queryset=Article.objects.all().order_by('-created_at')
+        status_filter=self.request.query_params.get('status')
         
-        return Article.objects.filter(status='published').order_by('-created_at')
+        if not user.is_authenticated:
+            return queryset.filter(status='published').order_by('-created_at')
+        if user.role in ['admin', 'editor']:
+            if status_filter:
+                queryset=queryset.filter(status=status_filter)
+            return queryset
+        
+        return queryset.filter(status='published')
 
     def get_permissions(self):
         """
