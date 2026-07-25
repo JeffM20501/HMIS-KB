@@ -1,26 +1,36 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Article Rejected</title>
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
+    <title>Article Sent Back for Changes</title>
 </head>
-<body style="margin:0; padding:0; background-color:#F4F4F6; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F4F4F6;">
+<body style="margin:0; padding:0; background-color:#F8FAFC; font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <div style="display:none; max-height:0px; overflow:hidden; mso-hide:all; font-size:1px; line-height:1px; color:#F8FAFC;">
+        “{{ article_title }}” needs a few changes before it can go live.&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+    </div>
+
+    <!--[if mso]>
+    <table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0"><tr><td>
+    <![endif]-->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F8FAFC;">
         <tr>
-            <td align="center" style="padding: 40px 16px;">
-                <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px; width:100%; background-color:#FFFFFF; border-radius:12px; overflow:hidden; border:1px solid #E1E3EA;">
+            <td align="center" style="padding:40px 16px;">
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px; width:100%; background-color:#FFFFFF; border-radius:12px; overflow:hidden; border:1px solid #E5E7EB;">
 
                     <!-- Header -->
                     <tr>
-                        <td bgcolor="#06033A" style="background-color:#06033A; padding: 28px 40px;">
+                        <td style="background-color:#FFFFFF; border-bottom:1px solid #E5E7EB; padding:24px 40px;">
                             <table role="presentation" cellpadding="0" cellspacing="0">
                                 <tr>
-                                    <td bgcolor="#F22F46" style="background-color:#F22F46; width:32px; height:32px; border-radius:7px; text-align:center; vertical-align:middle; font-size:16px; font-weight:700; color:#FFFFFF;">
-                                        K
+                                    <td bgcolor="#2563EB" style="background-color:#2563EB; width:36px; height:36px; border-radius:8px; text-align:center; vertical-align:middle; font-size:14px; font-weight:700; color:#FFFFFF; font-family:'Inter',Arial,sans-serif;">
+                                        TC
                                     </td>
-                                    <td style="padding-left:10px; color:#FFFFFF; font-size:17px; font-weight:600; font-family: 'Inter', Arial, sans-serif;">
-                                        HealthKB
+                                    <td style="padding-left:12px;">
+                                        <span style="display:block; color:#111827; font-size:16px; font-weight:700; font-family:'Inter',Arial,sans-serif; line-height:1.2;">TaifaCare</span>
+                                        <span style="display:block; color:#6B7280; font-size:11px; font-family:'Inter',Arial,sans-serif; line-height:1.2;">Knowledge Base</span>
                                     </td>
                                 </tr>
                             </table>
@@ -29,25 +39,25 @@
 
                     <!-- Content -->
                     <tr>
-                        <td style="padding: 40px;">
-                            <span style="display:inline-block; background-color:#FDEEF0; color:#F22F46; font-size:11px; font-weight:600; padding:4px 10px; border-radius:20px; margin-bottom:16px; font-family: 'Inter', Arial, sans-serif;">
+                        <td style="padding:40px;">
+                            <span style="display:inline-block; background-color:#FEF2F2; color:#EF4444; font-size:11px; font-weight:600; letter-spacing:0.4px; padding:4px 10px; border-radius:20px; margin-bottom:16px; font-family:'Inter',Arial,sans-serif;">
                                 CHANGES REQUESTED
                             </span>
-                            <h2 style="margin:12px 0 16px 0; color:#121C2D; font-size:22px; font-weight:600; font-family: 'Inter', Arial, sans-serif;">
+                            <h2 style="margin:12px 0 16px 0; color:#111827; font-size:22px; font-weight:700; font-family:'Inter',Arial,sans-serif;">
                                 Article sent back for changes
                             </h2>
                             <p style="margin:0 0 20px 0; color:#455A77; font-size:15px; line-height:1.6;">
-                                Dear <strong style="color:#121C2D;">{{ editor_username }}</strong>,
+                                Dear <strong style="color:#111827;">{{ editor_username }}</strong>,
                             </p>
                             <p style="margin:0 0 20px 0; color:#455A77; font-size:15px; line-height:1.6;">
-                                Your article <strong style="color:#121C2D;">&ldquo;{{ article_title }}&rdquo;</strong> was reviewed by <strong style="color:#121C2D;">{{ admin_username }}</strong> and needs some changes before it can be published.
+                                Your article <strong style="color:#111827;">&ldquo;{{ article_title }}&rdquo;</strong> was reviewed by <strong style="color:#111827;">{{ admin_username }}</strong> and needs some changes before it can be published.
                             </p>
 
                             <!-- Reason card -->
                             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                                 <tr>
-                                    <td bgcolor="#FDEEF0" style="background-color:#FDEEF0; border-left:4px solid #F22F46; border-radius:6px; padding: 18px 20px;">
-                                        <p style="margin:0 0 6px 0; color:#C21B2E; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.4px; font-family: 'Inter', Arial, sans-serif;">
+                                    <td bgcolor="#FEF2F2" style="background-color:#FEF2F2; border-left:4px solid #EF4444; border-radius:6px; padding:18px 20px;">
+                                        <p style="margin:0 0 6px 0; color:#B91C1C; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.4px; font-family:'Inter',Arial,sans-serif;">
                                             Reason for rejection
                                         </p>
                                         <p style="margin:0; color:#455A77; font-size:14px; line-height:1.6;">
@@ -57,28 +67,33 @@
                                 </tr>
                             </table>
 
-                            <p style="margin:24px 0 20px 0; color:#455A77; font-size:15px; line-height:1.6;">
+                            <p style="margin:24px 0 24px 0; color:#455A77; font-size:15px; line-height:1.6;">
                                 Please review the feedback, make the necessary changes, and resubmit for another review.
                             </p>
 
                             <!-- Bulletproof button -->
-                            {% comment %} <table role="presentation" cellpadding="0" cellspacing="0">
+                            <table role="presentation" cellpadding="0" cellspacing="0">
                                 <tr>
-                                    <td bgcolor="#0263E0" style="background-color:#0263E0; border-radius:6px;">
-                                        <a href="{{ edit_url }}" target="_blank" style="display:inline-block; padding: 12px 28px; color:#FFFFFF; font-size:14px; font-weight:600; text-decoration:none; font-family: 'Inter', Arial, sans-serif;">
+                                    <td bgcolor="#2563EB" style="background-color:#2563EB; border-radius:8px;">
+                                        <a href="{{ edit_url }}" target="_blank" style="display:inline-block; padding:12px 28px; color:#FFFFFF; font-size:14px; font-weight:600; text-decoration:none; font-family:'Inter',Arial,sans-serif;">
                                             Edit Article
                                         </a>
                                     </td>
                                 </tr>
-                            </table> {% endcomment %}
+                            </table>
+
+                            <p style="margin:28px 0 0 0; color:#9CA3AF; font-size:13px; line-height:1.6;">
+                                Or copy this link into your browser:<br>
+                                <a href="{{ edit_url }}" style="color:#2563EB; text-decoration:none;">{{ edit_url }}</a>
+                            </p>
                         </td>
                     </tr>
 
                     <!-- Footer -->
                     <tr>
-                        <td bgcolor="#F9FAFB" style="background-color:#F9FAFB; border-top:1px solid #E8E8EC; padding: 20px 40px;">
-                            <p style="margin:0; color:#9EA6B3; font-size:12px; line-height:1.5; font-family: 'Inter', Arial, sans-serif;">
-                                HMIS Knowledge Base Team &middot; This is an automated message, please do not reply.
+                        <td bgcolor="#F9FAFB" style="background-color:#F9FAFB; border-top:1px solid #E5E7EB; padding:20px 40px;">
+                            <p style="margin:0; color:#9CA3AF; font-size:12px; line-height:1.5; font-family:'Inter',Arial,sans-serif;">
+                                TaifaCare Knowledge Base &middot; This is an automated message, please do not reply.
                             </p>
                         </td>
                     </tr>
@@ -87,5 +102,8 @@
             </td>
         </tr>
     </table>
+    <!--[if mso]>
+    </td></tr></table>
+    <![endif]-->
 </body>
 </html>

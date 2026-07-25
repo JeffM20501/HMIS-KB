@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="light">
     <meta name="supported-color-schemes" content="light">
-    <title>New Article Submitted for Review</title>
+    <title>You've Been Invited to TaifaCare</title>
 </head>
 <body style="margin:0; padding:0; background-color:#F8FAFC; font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
     <div style="display:none; max-height:0px; overflow:hidden; mso-hide:all; font-size:1px; line-height:1px; color:#F8FAFC;">
-        {{ editor_username }} submitted “{{ article_title }}” for your review.&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+        {{ admin_username }} invited you to join TaifaCare Knowledge Base as an {{ role|default:"Editor" }}.&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
     </div>
 
     <!--[if mso]>
@@ -40,43 +40,51 @@
                     <!-- Content -->
                     <tr>
                         <td style="padding:40px;">
-                            <span style="display:inline-block; background-color:#FFFBEB; color:#F59E0B; font-size:11px; font-weight:600; letter-spacing:0.4px; padding:4px 10px; border-radius:20px; margin-bottom:16px; font-family:'Inter',Arial,sans-serif;">
-                                AWAITING REVIEW
+                            <span style="display:inline-block; background-color:#FAF5FF; color:#9333EA; font-size:11px; font-weight:600; letter-spacing:0.4px; padding:4px 10px; border-radius:20px; margin-bottom:16px; font-family:'Inter',Arial,sans-serif;">
+                                {{ role|default:"EDITOR"|upper }} INVITATION
                             </span>
                             <h2 style="margin:12px 0 16px 0; color:#111827; font-size:22px; font-weight:700; font-family:'Inter',Arial,sans-serif;">
-                                New article submitted for review
+                                You've been invited to join TaifaCare
                             </h2>
                             <p style="margin:0 0 20px 0; color:#455A77; font-size:15px; line-height:1.6;">
-                                Dear <strong style="color:#111827;">{{ admin_username }}</strong>,
+                                Hello <strong style="color:#111827;">{{ invitee_username }}</strong>,
                             </p>
                             <p style="margin:0 0 20px 0; color:#455A77; font-size:15px; line-height:1.6;">
-                                <strong style="color:#111827;">{{ editor_username }}</strong> has submitted a new article for your review:
+                                <strong style="color:#111827;">{{ admin_username }}</strong> has invited you to join the TaifaCare Knowledge Base as an <strong style="color:#111827;">{{ role|default:"Editor" }}</strong>. As an Editor, you'll be able to create, edit, and submit documentation for review.
                             </p>
 
-                            <!-- Article info card -->
+                            <!-- Invite details card -->
                             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                                 <tr>
-                                    <td bgcolor="#F9FAFB" style="background-color:#F9FAFB; border:1px solid #E5E7EB; border-radius:8px; padding:20px;">
-                                        <p style="margin:0 0 8px 0; color:#111827; font-size:16px; font-weight:600; font-family:'Inter',Arial,sans-serif;">
-                                            {{ article_title }}
+                                    <td bgcolor="#FAF5FF" style="background-color:#FAF5FF; border-left:4px solid #9333EA; border-radius:6px; padding:18px 20px;">
+                                        <p style="margin:0 0 6px 0; color:#455A77; font-size:14px; line-height:1.6;">
+                                            <strong style="color:#111827;">Role:</strong> {{ role|default:"Editor" }}
                                         </p>
-                                        <p style="margin:0; color:#9CA3AF; font-size:13px;">
-                                            Submitted: {{ submitted_at }}
+                                        {% if department %}
+                                        <p style="margin:0 0 6px 0; color:#455A77; font-size:14px; line-height:1.6;">
+                                            <strong style="color:#111827;">Department:</strong> {{ department }}
                                         </p>
+                                        {% endif %}
+                                        {% if facility %}
+                                        <p style="margin:0; color:#455A77; font-size:14px; line-height:1.6;">
+                                            <strong style="color:#111827;">Facility:</strong> {{ facility }}
+                                        </p>
+                                        {% endif %}
                                     </td>
                                 </tr>
                             </table>
 
                             <p style="margin:24px 0 24px 0; color:#455A77; font-size:15px; line-height:1.6;">
-                                Please review the article and either publish it or send it back with feedback.
+                                Click below to set your password and activate your account.
+                                {% if expiry_days %}This invite link expires in <strong style="color:#111827;">{{ expiry_days }} day{{ expiry_days|pluralize }}</strong>.{% endif %}
                             </p>
 
                             <!-- Bulletproof button -->
                             <table role="presentation" cellpadding="0" cellspacing="0">
                                 <tr>
                                     <td bgcolor="#2563EB" style="background-color:#2563EB; border-radius:8px;">
-                                        <a href="{{ review_url }}" target="_blank" style="display:inline-block; padding:12px 28px; color:#FFFFFF; font-size:14px; font-weight:600; text-decoration:none; font-family:'Inter',Arial,sans-serif;">
-                                            Review Article
+                                        <a href="{{ setup_url }}" target="_blank" style="display:inline-block; padding:12px 28px; color:#FFFFFF; font-size:14px; font-weight:600; text-decoration:none; font-family:'Inter',Arial,sans-serif;">
+                                            Accept Invitation
                                         </a>
                                     </td>
                                 </tr>
@@ -84,7 +92,11 @@
 
                             <p style="margin:28px 0 0 0; color:#9CA3AF; font-size:13px; line-height:1.6;">
                                 Or copy this link into your browser:<br>
-                                <a href="{{ review_url }}" style="color:#2563EB; text-decoration:none;">{{ review_url }}</a>
+                                <a href="{{ setup_url }}" style="color:#2563EB; text-decoration:none;">{{ setup_url }}</a>
+                            </p>
+
+                            <p style="margin:20px 0 0 0; color:#9CA3AF; font-size:13px; line-height:1.6;">
+                                If you weren't expecting this invitation, you can safely ignore this email.
                             </p>
                         </td>
                     </tr>
