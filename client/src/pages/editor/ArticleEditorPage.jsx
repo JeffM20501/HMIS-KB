@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import MarkdownRenderer from '../../components/article/MarkdownRenderer.jsx';
-import { Check, Save, Send } from 'lucide-react';
+import { Check, Save, Send, EyeIcon, PenTool, CheckCircle, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as articlesApi from '../../api/articles.api';
 import * as categoriesApi from '../../api/categories.api';
@@ -26,7 +26,8 @@ export default function ArticleEditorPage() {
   const queryClient = useQueryClient();
   const [view, setView] = useState('write');
   const [tags, setTags] = useState([]);
-  const [content, setContent] = useState(''); // Markdown, kept outside RHF since the editor is uncontrolled
+  const [content, setContent] = useState('');
+  const [successModal, setSuccessModal] = useState({ open: false, message: '', action: null });
 
   const { register, handleSubmit, watch, reset } = useForm({
     defaultValues: { title: '', template: 'how_to', category: '', module: '', product_version: '' },
@@ -40,8 +41,6 @@ export default function ArticleEditorPage() {
     enabled: isEditing,
   });
 
-  // Wait for the article to load before mounting the editor so RichTextEditor's
-  // initialContent seeds correctly (it's uncontrolled — see component comment).
   const ready = !isEditing || articleQuery.isSuccess;
 
   useEffect(() => {
@@ -68,7 +67,14 @@ export default function ArticleEditorPage() {
     onSuccess: (data) => {
       toast.success('Draft saved.');
       queryClient.invalidateQueries({ queryKey: ['articles'] });
-      if (!isEditing && data?.slug) navigate(`/editor/articles/${data.slug}/edit`, { replace: true });
+      setSuccessModal({
+        open: true,
+        message: 'Your article has been saved as a draft.',
+        action: () => {
+          if (!isEditing && data?.slug) navigate(`/editor/articles/${data.slug}/edit`, { replace: true });
+          setSuccessModal({ open: false, message: '', action: null });
+        }
+      });
     },
     onError: (err) => toast.error(extractErrorMessage(err)),
   });
@@ -83,7 +89,14 @@ export default function ArticleEditorPage() {
     onSuccess: () => {
       toast.success('Submitted for review.');
       queryClient.invalidateQueries({ queryKey: ['articles'] });
-      navigate('/editor/submitted');
+      setSuccessModal({
+        open: true,
+        message: 'Your article has been submitted for review. An admin will review it shortly.',
+        action: () => {
+          navigate('/editor/submitted');
+          setSuccessModal({ open: false, message: '', action: null });
+        }
+      });
     },
     onError: (err) => toast.error(extractErrorMessage(err)),
   });
@@ -100,6 +113,11 @@ export default function ArticleEditorPage() {
 
   const onSaveDraft = handleSubmit((values) => saveMutation.mutate(buildPayload(values)));
   const onSubmitForReview = handleSubmit((values) => submitMutation.mutate(buildPayload(values)));
+
+  const closeSuccessModal = () => {
+    if (successModal.action) successModal.action();
+    else setSuccessModal({ open: false, message: '', action: null });
+  };
 
   if (!ready) return <PageLoader label="Loading article…" />;
 
@@ -184,8 +202,8 @@ export default function ArticleEditorPage() {
             active={view}
             onChange={setView}
             tabs={[
-              { value: 'write', label: '✏️ Write' },
-              { value: 'preview', label: '👁️ Preview' },
+              { value: 'write', label: <><PenTool className="w-4 h-4" /> Write</> },
+              { value: 'preview', label: <><EyeIcon className="w-4 h-4" /> Preview</> },
             ]}
           />
 
@@ -203,6 +221,35 @@ export default function ArticleEditorPage() {
           )}
         </div>
       </div>
+
+      {successModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 p-6 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-success" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary">Success!</h3>
+                  <p className="text-sm text-text-secondary">{successModal.message}</p>
+                </div>
+              </div>
+              <button
+                onClick={closeSuccessModal}
+                className="text-text-secondary hover:text-text-primary transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="mt-6 flex justify-end">
+              <Button onClick={closeSuccessModal} variant="primary">
+                {successModal.action ? 'Continue' : 'Close'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -8,6 +8,7 @@ class ArticleSerializer(serializers.ModelSerializer):
     author_username = serializers.ReadOnlyField(source='author.username')
     publisher_username = serializers.ReadOnlyField(source='published_by.username')
     media = serializers.SerializerMethodField()
+    author_full_name = serializers.SerializerMethodField()
     
     
     
@@ -15,14 +16,21 @@ class ArticleSerializer(serializers.ModelSerializer):
         model = Article
         fields = [
             'id', 'title', 'slug', 'content', 'category',
-            'author', 'author_username', 'published_by', 'publisher_username',
+            'author', 'author_username', 'author_full_name', 'published_by', 'publisher_username',
             'status', 'views', 'created_at', 'updated_at', 'published_at', 'tags',
             'article_type', 'media',
         ]
         read_only_fields = [
             'views', 'created_at', 'updated_at', 'published_at',
-            'author', 'published_by'
+            'author', 'published_by','slug'
         ]
+    
+    def get_author_full_name(self,obj):
+        if not obj.author:
+            return None
+        if hasattr(obj.author, 'full_name'):
+            return obj.author.full_name
+        return obj.author.username
     
     def validate(self, data):
         """Cross-field validation."""

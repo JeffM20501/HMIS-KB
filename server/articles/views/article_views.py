@@ -177,6 +177,9 @@ class ArticleViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def my_articles(self, request):
         articles = Article.objects.filter(author=request.user).order_by('-created_at')
+        status = request.query_params.get('status')
+        if status:
+            articles = articles.filter(status=status)
         serializer = self.get_serializer(articles, many=True)
         return Response(serializer.data)
 
