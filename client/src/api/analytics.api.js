@@ -19,11 +19,17 @@ export const getFeedbackStats = (params) => api.get('/analytics/feedbacks/stats/
 
 // --- Notifications ---
 export const listNotifications = (params) => api.get('/analytics/notification/', { params }).then((r) => r.data);
-export const markNotificationRead = (id) => api.post(`/analytics/notification/${id}/mark_read/`).then((r) => r.data);
-export const markNotificationUnread = (id) => api.post(`/analytics/notification/${id}/mark_unread/`).then((r) => r.data);
-export const markAllNotificationsRead = () => api.post('/analytics/notification/mark_all_read/').then((r) => r.data);
-export const getUnreadNotificationCount = () => api.get('/analytics/notification/unread_count/').then((r) => r.data);
+export const markNotificationRead = (id) =>
+  api.post(`/analytics/notification/${id}/mark_read/`).then((r) => r.data);
 
+export const markNotificationUnread = (id) =>
+  api.post(`/analytics/notification/${id}/mark_unread/`).then((r) => r.data);
+
+export const markAllNotificationsRead = () =>
+  api.post('/analytics/notification/mark_all_read/').then((r) => r.data);
+
+export const getUnreadNotificationCount = () =>
+  api.get('/analytics/notification/unread_count/').then((r) => r.data);
 // --- Audit logs ---
 export const listAuditLogs = (params) => api.get('/analytics/audit-logs/', { params }).then((r) => r.data);
 export const getAuditLogStats = (params) => api.get('/analytics/audit-logs/stats/', { params }).then((r) => r.data);

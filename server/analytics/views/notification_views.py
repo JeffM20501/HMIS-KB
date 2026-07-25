@@ -16,7 +16,7 @@ from analytics.permissions.notification_permissions import (
 from django.utils import timezone
 
 
-class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
+class NotificationViewSet(viewsets.ModelViewSet):
     """
     API endpoint for user notifications.
     """
@@ -31,34 +31,10 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
         return NotificationSerializer
     
     def get_queryset(self):
-        """Filter to only the current user's notifications."""
-        queryset = super().get_queryset()
-        queryset = queryset.filter(recipient=self.request.user)
-        
-        # Filter by read status
-        read_filter = self.request.query_params.get('read')
-        if read_filter is not None:
-            if read_filter.lower() == 'true':
-                queryset = queryset.filter(read=True)
-            elif read_filter.lower() == 'false':
-                queryset = queryset.filter(read=False)
-        
-        # Filter by notification type
-        notification_type = self.request.query_params.get('type')
-        if notification_type:
-            queryset = queryset.filter(notification_type=notification_type)
-        
-        # Search in title and message
-        search = self.request.query_params.get('search')
-        if search:
-            queryset = queryset.filter(
-                Q(title__icontains=search) |
-                Q(message__icontains=search)
-            )
-        
-        return queryset
+        """Filter notifications for the current user."""
+        return Notification.objects.filter(recipient=self.request.user)
     
-    @action(detail=True, methods=['patch'])
+    @action(detail=True, methods=['post'])
     def mark_read(self, request, pk=None):
         """Mark a single notification as read."""
         notification = self.get_object()
@@ -66,7 +42,7 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = self.get_serializer(notification)
         return Response(serializer.data)
     
-    @action(detail=True, methods=['patch'])
+    @action(detail=True, methods=['post'])
     def mark_unread(self, request, pk=None):
         """Mark a single notification as unread."""
         notification = self.get_object()
@@ -74,7 +50,7 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = self.get_serializer(notification)
         return Response(serializer.data)
     
-    @action(detail=False, methods=['patch'])
+    @action(detail=False, methods=['post'])
     def mark_all_read(self, request):
         """Mark all notifications as read for the current user."""
         count = Notification.objects.filter(recipient=request.user, read=False).count()
