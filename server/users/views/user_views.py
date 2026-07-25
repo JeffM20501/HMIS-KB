@@ -10,12 +10,13 @@ from rest_framework.response import Response
 from rest_framework import status,serializers
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.decorators import action
-from articles.models import Article
-from django.db.models import Count, Sum, Q
+from articles.models import Article, Category
+from django.db.models import Count, Sum, Q, Avg
 from django.db.models.functions import TruncMonth
 from django.utils import timezone
 from analytics.models import ArticleViewLog
 from datetime import timedelta
+from analytics.models import Feedback
 
 from ..serializers.user_serializers import UserSerializer
 from ..serializers.password_reset_serializer import PasswordResetConfirmSerializer,PasswordResetRequestSerializer
@@ -60,7 +61,7 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def dashboard(self, request):
         """
-        GET /api/v1/users/dashboard/ → Dashboard stats for the current user.
+        GET /api/v1/users/dashboard/  Dashboard stats for the current user.
         """
         user = request.user
         articles = Article.objects.filter(author=user)
@@ -130,25 +131,100 @@ class UserViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def me(self, request):
-        """GET /api/v1/u/users/me/ → Current user's profile"""
+        """GET /api/v1/u/users/me/  Current user's profile"""
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
     @action(detail=False, methods=['get'], permission_classes=[IsAdmin])
     def admin_dashboard(self, request):
-        """GET /api/v1/users/admin_dashboard/ → Admin stats"""
-        total_users=User.objects.count()
-        admins = User.objects.filter(role='admin').count()
-        editors = User.objects.filter(role='editor').count()
-        viewers = User.objects.filter(role='viewer').count()
+        """GET /api/v1/users/admin_dashboard/  Admin stats"""
+        #article related counts / editor
+        total_articles=Article.objects.count()
+        published_count=Article.objects.filter(status='published').count()
+        pending_review_count=Article.objects.filter(status='pending_review')
+        draft_count=Article.objects.filter(status='draft').count()
+        archived_count=Article.objects.filter(status='archived').count()
+        editor_count=User.objects.filter(role='editor').count()
         
-        data={
-            'total_users': total_users,
-            'admins': admins,
-            'editors': editors,
-            'viewers': viewers,
-        }
-        return Response(data)
+        #views category
+        category_views=Category.objects.annotate(
+            total_views=Sum('articles__views')
+        ).values(
+            'name','total_views'
+        ).filter(
+            total_views__gt=0
+        ).order_by(
+            '-total_views'
+        )
+        total_all_views=sum(item['total_views'] for item in category_views) or 1
+        views_by_category=[]
+        for cat in category_views:
+            views_by_category.append({
+                'name':cat['name'],
+                'percentage':round((cat['total_views']/total_all_views)*10)
+            })
+        
+        #article creation trend
+        now=timezone.now()
+        start_date=now-timedelta(days=365)
+        creation_qs=Article.objects.filter(
+            created_at__gte=start_date
+        ).annotate(
+            month=TruncMonth('created_at')
+        ).values(
+            'month'
+        ).annotate(
+            count=Count('id')
+        ).order_by('month')
+        
+        #pad moths with zero
+        creation_trend=[]
+        current=start_date.replace(day=1)
+        while current <= now:
+            month_str=current.strftime('%b %Y')
+            mathched=next((v for v in creation_qs if v['month'].date()==current.date()),None)
+            creation_trend.append({
+                'month':month_str,
+                'count':mathched['count'] if mathched else 0
+            })
+            
+            if current.month==12:
+                current=current.replace(year=current.year+1, month=1)
+            else:
+                current=current.replace(month=current.month+1)
+        
+        #most viewed articles
+        most_viewed=Article.objects.filter(status='published').order_by('-views')[:10]
+        most_viewed_data=[]
+        for a in most_viewed:
+            rating_avg = Feedback.objects.filter(
+                content_type='article',
+                object_id=str(a.id),
+                rating__isnull=False
+            ).aggregate(
+                Avg('rating')
+            )['rating__avg']
+            
+            most_viewed_data.append({
+                'id': a.id,
+                'slug': a.slug,
+                'title': a.title,
+                'views': a.views,
+                'category': {'name': a.category.name} if a.category else None,
+                'rating': round(rating_avg, 1) if rating_avg else None
+            })
+            
+            return Response({
+                'total_articles': total_articles,
+                'published_count': published_count,
+                'pending_review_count': pending_review_count,
+                'draft_count': draft_count,
+                'archived_count': archived_count,
+                'editor_count': editor_count,
+                'views_by_category': views_by_category,
+                'article_creation_trend': creation_trend,
+                'most_viewed_articles': most_viewed_data,
+            })
 
     @action(detail=False, methods=['get'], permission_classes=[IsAdmin])
     def admin_users(self, request):
@@ -159,7 +235,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['patch'], permission_classes=[IsAdmin])
     def change_role(self, request,user_id):
-        """PATCH /api/v1/users/{id}/change_role/ → Change user role"""
+        """PATCH /api/v1/users/{id}/change_role/  Change user role"""
         try:
             user=User.objects.get(pk=user_id)
         except User.DoesNotExist:
