@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { UserPlus, MoreVertical, Shield, Ban, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 import * as usersApi from '../../api/users.api';
 import PageHeader from '../../components/common/PageHeader.jsx';
 import Button from '../../components/ui/Button.jsx';
@@ -34,6 +35,8 @@ export default function UserManagementPage() {
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebounce(search, 350);
   const inviteModal = useDisclosure();
+
+  const navigate=useNavigate();
 
   const usersQuery = useQuery({
     queryKey: ['users', 'admin', debouncedSearch, role, status, page],
@@ -170,6 +173,7 @@ export default function UserManagementPage() {
         keyField="id"
         emptyTitle="No users found"
         emptyDescription="Try adjusting your filters, or invite a new team member."
+        onRowClick={(row) => navigate(`/admin/users/${row.id}`)}   // <-- add this
       />
 
       <div className="mt-4">

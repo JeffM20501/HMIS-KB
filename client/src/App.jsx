@@ -30,6 +30,7 @@ const ReviewQueuePage = lazy(() => import('./pages/admin/ReviewQueuePage.jsx'));
 const PublishedArticlesPage = lazy(() => import('./pages/admin/PublishedArticlesPage.jsx'));
 const ArchivedArticlesPage = lazy(() => import('./pages/admin/ArchivedArticlesPage.jsx'));
 const UserManagementPage = lazy(() => import('./pages/admin/UserManagementPage.jsx'));
+const UserDetailPage = lazy(()=>import('./pages/admin/UserDetailPage.jsx'));
 const AdminCategoriesPage = lazy(() => import('./pages/admin/AdminCategoriesPage.jsx'));
 const TemplatesPage = lazy(() => import('./pages/admin/TemplatesPage.jsx'));
 const AdminAnalyticsPage = lazy(() => import('./pages/admin/AdminAnalyticsPage.jsx'));
@@ -75,6 +76,7 @@ export default function App() {
               <Route path="published" element={<PublishedArticlesPage />} />
               <Route path="archived" element={<ArchivedArticlesPage />} />
               <Route path="users" element={<UserManagementPage />} />
+              <Route path="users/:id" element={<UserDetailPage/>}/>
               <Route path="categories" element={<AdminCategoriesPage />} />
               <Route path="templates" element={<TemplatesPage />} />
               <Route path="analytics" element={<AdminAnalyticsPage />} />
