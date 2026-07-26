@@ -98,8 +98,8 @@ export default function ArticlePage() {
 
           <div className="flex items-center gap-4 text-sm text-text-secondary mb-8 pb-6 border-b border-border">
             <div className="flex items-center gap-2">
-              <Avatar name={article.author?.full_name || 'Author'} size="sm" />
-              <span>by {article.author?.full_name || 'TaifaCare Team'}</span>
+              <Avatar name={article?.author_full_name || 'Author'} src={article?.author_avatar} size="sm" />
+              <span>by {article?.author_full_name || article?.author_username ||'TaifaCare Team'}</span>
             </div>
             <span className="flex items-center gap-1">
               <Clock className="w-3.5 h-3.5" /> {article.reading_time || estimateReadingTime(article.content)} min read

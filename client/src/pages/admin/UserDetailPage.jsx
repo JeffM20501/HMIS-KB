@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Shield, Ban, Trash2, Mail, UserCog } from 'lucide-react';
 import toast from 'react-hot-toast';
-import * as usersApi from '../../api/users.api';
+import * as usersApi from '../../api/users.api.js';
 import PageHeader from '../../components/common/PageHeader.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Card from '../../components/ui/Card.jsx';
@@ -15,8 +15,8 @@ import ErrorState from '../../components/common/ErrorState.jsx';
 import Modal from '../../components/ui/Modal.jsx';
 import Select from '../../components/ui/Select.jsx';
 import Label from '../../components/ui/Label.jsx';
-import { extractErrorMessage } from '../../api/axios';
-import { formatDate } from '../../utils/formatters';
+import { extractErrorMessage } from '../../api/axios.js';
+import { formatDate } from '../../utils/formatters.js';
 
 const ROLE_TONE = { admin: 'blue', editor: 'purple', viewer: 'gray' };
 

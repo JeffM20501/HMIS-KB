@@ -35,7 +35,6 @@ export default function UserManagementPage() {
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebounce(search, 350);
   const inviteModal = useDisclosure();
-
   const navigate=useNavigate();
 
   const usersQuery = useQuery({
@@ -173,7 +172,7 @@ export default function UserManagementPage() {
         keyField="id"
         emptyTitle="No users found"
         emptyDescription="Try adjusting your filters, or invite a new team member."
-        onRowClick={(row) => navigate(`/admin/users/${row.id}`)}   // <-- add this
+        onRowClick={(row) => navigate(`/admin/users/${row.id}`)}
       />
 
       <div className="mt-4">

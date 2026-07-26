@@ -24,7 +24,7 @@ export default function FeedbackWidget({ articleId }) {
 
   const submit = () => {
     mutation.mutate({
-      object_type: 'article',
+      content_type:'article',
       object_id: articleId,
       rating: choice === 'up' ? 5 : 1,
       comment: comment || undefined,

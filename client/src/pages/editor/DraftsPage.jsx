@@ -22,7 +22,6 @@ export default function DraftsPage() {
   const [search, setSearch] = useState('');
   const [layout, setLayout] = useState('cards');
   const debouncedSearch = useDebounce(search, 300);
-  const [submittingSlug, setSubmittingSlug] = useState(null);
 
   const query = useQuery({
     queryKey: ['articles', 'my-articles', 'draft', debouncedSearch],
@@ -31,23 +30,14 @@ export default function DraftsPage() {
 
   const submitMutation = useMutation({
     mutationFn: articlesApi.submitForReview,
-    onMutate: (slug) => setSubmittingSlug(slug),
     onSuccess: () => {
       toast.success('Submitted for review.');
-      // Invalidate all my-articles queries to refresh the list
       queryClient.invalidateQueries({ queryKey: ['articles', 'my-articles'] });
-      // Refetch the current query explicitly
-      query.refetch();
     },
     onError: (err) => toast.error(extractErrorMessage(err)),
-    onSettled: () => setSubmittingSlug(null),
   });
 
   const drafts = query.data?.results || query.data || [];
-
-  const handleSubmit = (slug) => {
-    submitMutation.mutate(slug);
-  };
 
   return (
     <div>
@@ -95,47 +85,28 @@ export default function DraftsPage() {
       {!query.isLoading && drafts.length > 0 && layout === 'cards' && (
         <div className="grid sm:grid-cols-2 gap-4">
           {drafts.map((d) => (
-            <div
-              key={d.slug}
-              className="bg-white border border-border rounded-card p-5 hover:shadow-md transition-shadow"
-            >
+            <div key={d.slug} className="bg-white border border-border rounded-card p-5">
               {d.category && (
                 <Badge tone="blue" className="mb-2">
                   {d.category.name || d.category}
                 </Badge>
               )}
-              <Link
-                to={`/editor/articles/${d.slug}/edit`}
-                className="block font-semibold text-text-primary mb-1.5 hover:text-primary"
-              >
+              <Link to={`/editor/articles/${d.slug}/edit`} className="block font-semibold text-text-primary mb-1.5 hover:text-primary">
                 {d.title || 'Untitled article'}
               </Link>
-              <p className="text-sm text-text-secondary line-clamp-2 mb-3">
-                {d.summary || d.content?.slice(0, 120) + '…'}
-              </p>
-              {d.tags?.length > 0 && (
+              <p className="text-sm text-text-secondary line-clamp-2 mb-3">{d.summary}</p>
+              {!!d.tags?.length && (
                 <div className="flex flex-wrap gap-1.5 mb-3">
                   {d.tags.slice(0, 4).map((t) => (
-                    <span
-                      key={t.id || t}
-                      className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-text-secondary"
-                    >
+                    <span key={t.id || t} className="text-xs px-2 py-0.5 rounded bg-gray-100 text-text-secondary">
                       #{t.name || t}
                     </span>
                   ))}
                 </div>
               )}
-              <div className="flex items-center justify-between pt-3 border-t border-border">
-                <span className="text-xs text-text-secondary">
-                  Updated {formatDate(d.updated_at)}
-                </span>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => handleSubmit(d.slug)}
-                  isLoading={submittingSlug === d.slug}
-                  disabled={submittingSlug === d.slug}
-                >
+              <div className="flex items-center justify-between pt-2 border-t border-border">
+                <span className="text-xs text-text-secondary">{formatDate(d.updated_at)}</span>
+                <Button size="sm" variant="secondary" onClick={() => submitMutation.mutate(d.slug)} isLoading={submitMutation.isPending}>
                   <Send className="w-3.5 h-3.5" /> Submit
                 </Button>
               </div>
@@ -149,21 +120,12 @@ export default function DraftsPage() {
           {drafts.map((d) => (
             <div key={d.slug} className="flex items-center justify-between px-4 py-3">
               <div className="min-w-0">
-                <Link
-                  to={`/editor/articles/${d.slug}/edit`}
-                  className="font-medium text-text-primary hover:text-primary"
-                >
+                <Link to={`/editor/articles/${d.slug}/edit`} className="font-medium text-text-primary hover:text-primary">
                   {d.title || 'Untitled article'}
                 </Link>
                 <p className="text-xs text-text-secondary">{formatDate(d.updated_at)}</p>
               </div>
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => handleSubmit(d.slug)}
-                isLoading={submittingSlug === d.slug}
-                disabled={submittingSlug === d.slug}
-              >
+              <Button size="sm" variant="secondary" onClick={() => submitMutation.mutate(d.slug)}>
                 <Send className="w-3.5 h-3.5" /> Submit
               </Button>
             </div>

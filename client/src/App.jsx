@@ -20,6 +20,7 @@ const NotFoundPage = lazy(() => import('./pages/public/NotFoundPage.jsx'));
 
 // --- Auth ---
 const LoginPage = lazy(() => import('./pages/auth/LoginPage.jsx'));
+const SignUpPage = lazy(() => import('./pages/auth/SignUpPage.jsx'));
 const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage.jsx'));
 const VerifyOtpPage = lazy(() => import('./pages/auth/VerifyOtpPage.jsx'));
 const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage.jsx'));
@@ -59,9 +60,13 @@ export default function App() {
           <Route path="/release-notes" element={<ReleaseNotesPage />} />
         </Route>
 
-        {/* Auth */}
+        {/* Auth — Login and Sign Up render their own two-panel layout
+            (see AuthBrandPanel) since the new design differs per page.
+            Forgot Password / Verify OTP / Reset Password are unchanged
+            and keep the existing shared AuthLayout. */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignUpPage />} />
         <Route element={<AuthLayout />}>
-          <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/verify-otp" element={<VerifyOtpPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
