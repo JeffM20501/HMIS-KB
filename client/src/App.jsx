@@ -40,10 +40,10 @@ const AdminSettingsPage = lazy(() => import('./pages/admin/AdminSettingsPage.jsx
 
 // --- Editor ---
 const EditorDashboardPage = lazy(() => import('./pages/editor/EditorDashboardPage.jsx'));
+const EditorArticleViewPage = lazy(() => import('./pages/editor/EditorArticleViewPage.jsx'));
 const ArticleEditorPage = lazy(() => import('./pages/editor/ArticleEditorPage.jsx'));
 const DraftsPage = lazy(() => import('./pages/editor/DraftsPage.jsx'));
 const SubmittedPage = lazy(() => import('./pages/editor/SubmittedPage.jsx'));
-const EditorArticleViewPage = lazy(() => import('./pages/editor/EditorArticleViewPage.jsx'));
 const MyArticlesPage = lazy(() => import('./pages/editor/MyArticlesPage.jsx'));
 const EditorNotificationsPage = lazy(() => import('./pages/editor/EditorNotificationsPage.jsx'));
 const EditorSettingsPage = lazy(() => import('./pages/editor/EditorSettingsPage.jsx'));
@@ -97,10 +97,10 @@ export default function App() {
             <Route path="/editor" element={<EditorLayout />}>
               <Route index element={<EditorDashboardPage />} />
               <Route path="articles/new" element={<ArticleEditorPage />} />
+              <Route path="articles/:slug" element={<EditorArticleViewPage />} />
               <Route path="articles/:slug/edit" element={<ArticleEditorPage />} />
               <Route path="drafts" element={<DraftsPage />} />
               <Route path="submitted" element={<SubmittedPage />} />
-              <Route path="articles/:slug" element={<EditorArticleViewPage />} />
               <Route path="my-articles" element={<MyArticlesPage />} />
               <Route path="notifications" element={<EditorNotificationsPage />} />
               <Route path="settings" element={<EditorSettingsPage />} />

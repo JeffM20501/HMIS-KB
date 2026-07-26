@@ -69,7 +69,7 @@ export default function SubmittedPage() {
           {items.map((a) => (
             <Link
               key={a.slug}
-              to={`/articles/${a.slug}`}  // ✅ link to public article page
+              to={`/editor/articles/${a.slug}`} 
               className="flex items-center justify-between bg-white border border-border rounded-card p-4 hover:border-primary transition-colors"
             >
               <div className="min-w-0 flex-1">

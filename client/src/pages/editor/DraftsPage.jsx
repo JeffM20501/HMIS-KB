@@ -91,7 +91,7 @@ export default function DraftsPage() {
                   {d.category.name || d.category}
                 </Badge>
               )}
-              <Link to={`/editor/articles/${d.slug}/edit`} className="block font-semibold text-text-primary mb-1.5 hover:text-primary">
+              <Link to={`/editor/articles/${d.slug}`} className="block font-semibold text-text-primary mb-1.5 hover:text-primary">
                 {d.title || 'Untitled article'}
               </Link>
               <p className="text-sm text-text-secondary line-clamp-2 mb-3">{d.summary}</p>

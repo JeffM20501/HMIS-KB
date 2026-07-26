@@ -36,8 +36,7 @@ function isPublicUrl(url) {
 
   // List of patterns that are truly public (read-only, no auth needed)
   const publicPatterns = [
-    /^\/articles\/$/,                           
-    /^\/articles\/[^\/]+\/$/,                   
+    /^\/articles\/$/,               
     /^\/categories\/$/,                         
     /^\/categories\/[^\/]+\/$/,                 
     /^\/search\/$/,                             
