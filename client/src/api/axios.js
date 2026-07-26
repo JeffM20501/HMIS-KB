@@ -20,14 +20,46 @@ export const clearTokens = () => {
   localStorage.removeItem(TOKEN_KEYS.refresh);
 };
 
-// --- request interceptor: attach bearer token -----------------------------
+// --- Helper: accurately detect public endpoints ---------------------------
+function isPublicUrl(url) {
+  if (!url) return false;
+  const path = url.split('?')[0]; // strip query parameters
+
+  // Always treat these as protected (editor/admin only)
+  if (path.includes('my_articles') || 
+      path.includes('pending_review') || 
+      path.includes('my-articles') ||
+      path.includes('/admin/') ||
+      path.includes('/editor/')) {
+    return false;
+  }
+
+  // List of patterns that are truly public (read-only, no auth needed)
+  const publicPatterns = [
+    /^\/articles\/$/,                           
+    /^\/articles\/[^\/]+\/$/,                   
+    /^\/categories\/$/,                         
+    /^\/categories\/[^\/]+\/$/,                 
+    /^\/search\/$/,                             
+    /^\/analytics\/feedbacks\/for_object\/$/,   
+    /^\/analytics\/feedbacks\/stats\/$/,        
+    /^\/analytics\/time-series\/$/,             
+    /^\/stats\/$/,                              
+  ];
+
+  return publicPatterns.some(pattern => pattern.test(path));
+}
+
+// --- request interceptor: attach token only if NOT public ----------
 api.interceptors.request.use((config) => {
-  const token = getAccessToken();
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (!isPublicUrl(config.url)) {
+    const token = getAccessToken();
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 
-// --- response interceptor: auto-refresh on 401 ----------------------------
+// --- response interceptor: auto-refresh on 401, but skip for public ---
 let isRefreshing = false;
 let pendingQueue = [];
 
@@ -39,12 +71,18 @@ const processQueue = (error, token = null) => {
   pendingQueue = [];
 };
 
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
     const status = error.response?.status;
     const isAuthEndpoint = originalRequest?.url?.includes('/auth/token');
+
+    // If it's a public endpoint, never try to refresh or clear tokens
+    if (isPublicUrl(originalRequest?.url)) {
+      return Promise.reject(error);
+    }
 
     if (status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       const refreshToken = getRefreshToken();
@@ -94,7 +132,6 @@ function redirectToLogin() {
   }
 }
 
-// Normalizes DRF error payloads into a single readable string for toasts.
 export function extractErrorMessage(error) {
   const data = error?.response?.data;
   if (!data) return error?.message || 'Something went wrong. Please try again.';

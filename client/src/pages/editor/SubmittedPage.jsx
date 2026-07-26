@@ -24,11 +24,6 @@ export default function SubmittedPage() {
     queryFn: () => articlesApi.getMyArticles({ status: tab }),
   });
 
-  const countsQuery = useQuery({
-    queryKey: ['articles', 'my-articles', 'submitted-counts'],
-    queryFn: () => articlesApi.getMyArticles({ status__in: 'pending_review,published,rejected', page_size: 1 }),
-  });
-
   const items = query.data?.results || query.data || [];
 
   return (
@@ -74,7 +69,7 @@ export default function SubmittedPage() {
           {items.map((a) => (
             <Link
               key={a.slug}
-              to={`/editor/articles/${a.slug}/edit`}
+              to={`/articles/${a.slug}`}  // ✅ link to public article page
               className="flex items-center justify-between bg-white border border-border rounded-card p-4 hover:border-primary transition-colors"
             >
               <div className="min-w-0 flex-1">
