@@ -145,3 +145,7 @@ body {
 .ProseMirror .selectedCell {
   @apply bg-primary-50;
 }
+
+.dropdown-menu {
+  z-index: 9999;
+}

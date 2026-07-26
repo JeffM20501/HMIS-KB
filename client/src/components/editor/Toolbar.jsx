@@ -73,7 +73,7 @@ export default function EditorToolbar({ editor }) {
   };
 
   return (
-    <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-border flex-wrap bg-gray-50/60 overflow-x-auto">
+    <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-border flex-wrap bg-gray-50/60 overflow-visible">
       <ToolbarButton onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()} title="Undo (Ctrl+Z)">
         <Undo2 className="w-4 h-4" />
       </ToolbarButton>
