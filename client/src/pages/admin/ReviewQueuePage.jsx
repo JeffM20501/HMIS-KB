@@ -91,9 +91,9 @@ export default function ReviewQueuePage() {
                   <Badge tone={PRIORITY_TONE[item.priority] || 'blue'}>{item.priority || 'normal'}</Badge>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-text-secondary">
-                  <span>{item.author?.full_name}</span>
+                  <span>{item.author_full_name}</span>
                   <span>·</span>
-                  <span>{formatDate(item.submitted_at)}</span>
+                  <span>{formatDate(item.created_at)}</span>
                 </div>
                 {item.category && (
                   <Badge tone="gray" className="mt-2">
@@ -113,10 +113,10 @@ export default function ReviewQueuePage() {
               </div>
               <h2 className="text-xl font-bold text-text-primary mb-2">{active.title}</h2>
               <div className="flex items-center gap-2 text-sm text-text-secondary mb-6">
-                <Avatar name={active.author?.full_name} size="sm" />
-                <span>by {active.author?.full_name}</span>
+                <Avatar name={active.author_full_name} size="sm" src={active.author_avatar	} />
+                <span>by {active.author_full_name}</span>
                 <span>·</span>
-                <span>Submitted {formatDate(active.submitted_at)}</span>
+                <span>Submitted {formatDate(active.created_at)}</span>
               </div>
 
               <div className="bg-gray-50 border border-border rounded-lg p-5 mb-6">
@@ -142,10 +142,10 @@ export default function ReviewQueuePage() {
                 <div className="space-y-3 mb-4">
                   {(active.review_comments || []).map((c, i) => (
                     <div key={i} className="flex gap-2.5">
-                      <Avatar name={c.author?.full_name} size="sm" />
+                      <Avatar name={c.author_full_name} size="sm" />
                       <div className="flex-1 bg-gray-50 rounded-lg p-3">
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium text-text-primary">{c.author?.full_name}</span>
+                          <span className="text-sm font-medium text-text-primary">{c.author_full_name}</span>
                           <span className="text-xs text-text-secondary">{formatDate(c.created_at)}</span>
                         </div>
                         <p className="text-sm text-text-secondary">{c.comment}</p>

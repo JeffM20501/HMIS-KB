@@ -24,7 +24,7 @@ export default function AuthBrandPanel({ children }) {
         </div>
         <div>
           <div className="text-sm font-bold text-white">TaifaCare</div>
-          <div className="text-xs text-white/60">Knowledge Base Platform</div>
+          <div className="text-xs text-white/60">Help Center</div>
         </div>
       </div>
 

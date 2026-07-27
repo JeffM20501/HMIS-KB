@@ -9,7 +9,7 @@ export default function Logo({ to = '/', className = '' }) {
       </span>
       <span className="leading-tight">
         <span className="block font-bold text-text-primary text-[15px]">TaifaCare</span>
-        <span className="block text-[11px] text-text-secondary -mt-0.5">Knowledge Base</span>
+        <span className="block text-[11px] text-text-secondary -mt-0.5">Help Center</span>
       </span>
     </Link>
   );

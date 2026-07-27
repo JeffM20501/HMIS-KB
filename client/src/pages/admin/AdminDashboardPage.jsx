@@ -46,7 +46,11 @@ export default function AdminDashboardPage() {
     <div>
       <PageHeader
         title="Admin Dashboard"
-        description={`Welcome back, ${user?.full_name || 'Admin'} · TaifaCare HMIS Knowledge Base`}
+        description={`Welcome back, ${user?.full_name || 'Admin'} · TaifaCare Help Center. ${new Date().toLocaleDateString('en-GB', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+        })}`}
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
