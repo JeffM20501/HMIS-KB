@@ -10,6 +10,16 @@ class ChatLog(models.Model):
         blank=True
     )
     conversation_id = models.CharField(max_length=255)
+    # Added alongside conversation_id (kept for backward compatibility with
+    # any existing rows/log readers) — new code should prefer this FK, which
+    # is what powers rename/archive/delete/list-conversations support.
+    conversation = models.ForeignKey(
+        'chatbot.Conversation',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='messages',
+    )
     question = models.TextField()
     answer = models.TextField()
     article_ref = models.ForeignKey('articles.Article', null=True, blank=True, on_delete=models.SET_NULL)
@@ -23,6 +33,7 @@ class ChatLog(models.Model):
         indexes = [
             models.Index(fields=['user', 'conversation_id']),
             models.Index(fields=['conversation_id', 'created_at']),
+            models.Index(fields=['conversation', 'created_at']),
             models.Index(fields=['article_ref']),
             models.Index(fields=['was_helpful']),
         ]
@@ -39,8 +50,13 @@ class ChatLog(models.Model):
     
     def __str__(self):
         preview = self.question[:50] + '...' if len(self.question) > 50 else self.question
-        return f"{self.user.username} asked: '{preview}' at {self.created_at}"
+        who = self.user.username if self.user else 'Anonymous'
+        return f"{who} asked: '{preview}' at {self.created_at}"
     
+    def get_sources(self):
+        """All cited source articles for this answer, ranked."""
+        return self.sources.select_related('article').all()
+
     def get_feedback(self):
         """Get the feedback for this chat log."""
         from .feedback import Feedback

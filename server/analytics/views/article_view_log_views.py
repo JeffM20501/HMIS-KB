@@ -4,12 +4,11 @@ from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser
-from users.permissions import IsAdmin
 from analytics.models import  SearchLog,ArticleViewLog
 from datetime import timedelta
 
 class TimeSeriesStatsView(APIView):
-    permission_classes = [IsAdminUser | IsAdmin]
+    permission_classes = [IsAdminUser]
 
     def get(self, request):
         # Parse range (default 7d, supports 7d, 30d, 12m)

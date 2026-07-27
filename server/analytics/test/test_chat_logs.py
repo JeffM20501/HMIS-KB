@@ -42,17 +42,12 @@ class ChatLogTest(TestCase):
     # ---------- ANONYMOUS CHAT (NEW) ----------
     def test_anonymous_chat_creates_log_without_user(self):
         """Anonymous chat creates ChatLog with user=None."""
-        # Mock the RAG pipeline answer to avoid real calls
+        # Mock the RAG pipeline to avoid a real embedding/LLM call in tests.
         from unittest.mock import patch
-        with patch('chatbot.rag.rag_pipline.RAGPipeline.answer') as mock_answer:
-            mock_answer.return_value = {
-                'answer': 'Test answer',
-                'article_ref': None,
-                'was_grounded': False,
-                'confidence_score': 0.5,
-                'response_time': 0.1
-            }
-            response = self.client.post('/api/v1/chat/', {'question': 'Hello'})
+        from chatbot.services.rag_pipeline import RAGResult
+        with patch('chatbot.services.rag_pipeline.run_pipeline') as mock_run:
+            mock_run.return_value = RAGResult(answer='Test answer', sources=[], latency_seconds=0.1)
+            response = self.client.post('/api/v1/chat/', {'message': 'Hello'})
             self.assertEqual(response.status_code, 200)
             log = ChatLog.objects.first()
             self.assertIsNotNone(log)

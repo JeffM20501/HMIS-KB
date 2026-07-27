@@ -56,6 +56,15 @@ REST_FRAMEWORK={
     ),
     "DEFAULT_PAGINATION_CLASS":"rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE":100,
+    # Named rate scopes. Not added to DEFAULT_THROTTLE_CLASSES on purpose —
+    # that would throttle every DRF view project-wide, which is a much
+    # bigger change than this task's scope. Only views that explicitly set
+    # throttle_classes (currently just ChatbotView, see
+    # chatbot/security/throttles.py) use these.
+    "DEFAULT_THROTTLE_RATES": {
+        "chat_anon": "15/min",
+        "chat_user": "60/min",
+    },
 }
 
 SIMPLE_JWT={
@@ -72,6 +81,7 @@ INSTALLED_APPS = [
     'analytics.apps.AnalyticsConfig',
     'chatbot.apps.ChatbotConfig',
     'django_extensions',
+    'corsheaders',
     'rest_framework', #djangorestframework
     'rest_framework_simplejwt',
     'django.contrib.admin',
@@ -91,6 +101,11 @@ cloudinary.config(
 
 HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 
+# Chatbot LLM provider — see chatbot/services/llm_client.py. Embeddings
+# (chatbot/services/embedding_service.py) run locally via sentence-
+# transformers and need no API key at all.
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
 # Email Configuration -Brevo 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = os.getenv('EMAIL_HOST')
@@ -105,6 +120,7 @@ FRONTEND_URL=os.getenv('FRONTEND_URL', 'http://localhost:5173/')
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -192,3 +208,39 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+# Structured logging for the chatbot/RAG pipeline (requests, retrieval,
+# LLM latency, provider errors, security events — see
+# chatbot/services/rag_pipeline.py and chatbot/security/injection_detection.py).
+# No LOGGING config existed anywhere in the project before this — every
+# logger.info/warning/exception call in the codebase was going nowhere
+# without at least this much configured. Kept intentionally narrow (only
+# the chatbot loggers) rather than reconfiguring Django's/other apps'
+# logging, which is outside this task's scope.
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'structured': {
+            'format': '%(asctime)s %(levelname)s %(name)s %(message)s',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'structured',
+        },
+    },
+    'loggers': {
+        'chatbot': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'chatbot.security': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
