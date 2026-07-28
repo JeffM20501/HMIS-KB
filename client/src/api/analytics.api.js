@@ -1,7 +1,7 @@
 import api from './axios';
 
 // --- Search logs ---
-export const logSearch = (payload) => api.post('/analytics/search-logs/', payload).then((r) => r.data);
+// export const logSearch = (payload) => api.post('/analytics/search-logs/', payload).then((r) => r.data);
 export const getSearchLogStats = (params) => api.get('/analytics/search-logs/stats/', { params }).then((r) => r.data);
 export const getMySearches = (params) => api.get('/analytics/search-logs/my_searches/', { params }).then((r) => r.data);
 

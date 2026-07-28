@@ -50,16 +50,16 @@ export default function SearchResultsPage() {
   });
 
   // FR-2.6: log every search for analytics
-  useEffect(() => {
-    if (!debouncedQuery) return;
-    const t = setTimeout(() => {
-      analyticsApi
-        .logSearch({ query: debouncedQuery, result_count: results.length })
-        .catch(() => {});
-    }, 600);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedQuery, resultsQuery.data]);
+  // useEffect(() => {
+  //   if (!debouncedQuery) return;
+  //   const t = setTimeout(() => {
+  //     analyticsApi
+  //       .logSearch({ query: debouncedQuery, result_count: results.length })
+  //       .catch(() => {});
+  //   }, 600);
+  //   return () => clearTimeout(t);
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [debouncedQuery, resultsQuery.data]);
 
   const results = useMemo(() => resultsQuery.data?.results || resultsQuery.data || [], [resultsQuery.data]);
   const categories = categoriesQuery.data?.results || categoriesQuery.data || [];

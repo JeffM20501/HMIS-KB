@@ -14,6 +14,8 @@ from django.utils.dateparse import parse_datetime
 from datetime import timedelta
 from utils.audit_log_helper import log_audit_action
 from analytics.models import Notification
+from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
+from django.db.models import Q
 
 class ArticleViewSet(viewsets.ModelViewSet):
     queryset = Article.objects.all().order_by('-created_at')
@@ -21,22 +23,56 @@ class ArticleViewSet(viewsets.ModelViewSet):
     lookup_field = 'slug'
 
     def get_queryset(self):
-        """
-        Public: only published articles.
-        Authenticated admins/editors: all articles.
-        """
         user = self.request.user
-        queryset=Article.objects.all().order_by('-created_at')
-        status_filter=self.request.query_params.get('status')
-        
+        queryset = Article.objects.all()
+        status_filter = self.request.query_params.get('status')
+
+        # --- Role / status filtering ---
         if not user.is_authenticated:
-            return queryset.filter(status='published').order_by('-created_at')
-        if user.role in ['admin', 'editor']:
+            queryset = queryset.filter(status='published')
+        elif user.role in ['admin', 'editor']:
             if status_filter:
-                queryset=queryset.filter(status=status_filter)
-            return queryset
-        
-        return queryset.filter(status='published')
+                queryset = queryset.filter(status=status_filter)
+        else:  # viewer
+            queryset = queryset.filter(status='published')
+
+        # --- Search (full-text) ---
+        search = self.request.query_params.get('search', '').strip()
+        if search:
+            vector = SearchVector('title', weight='A') + \
+                    SearchVector('content', weight='B') + \
+                    SearchVector('category__name', weight='C') + \
+                    SearchVector('tags__name', weight='C') + \
+                    SearchVector('module', weight='B')
+            query = SearchQuery(search, config='english')
+            queryset = queryset.annotate(
+                rank=SearchRank(vector, query)
+            ).filter(rank__gte=0.1)
+
+        # --- Category filter ---
+        category_slug = self.request.query_params.get('category', '').strip()
+        if category_slug:
+            queryset = queryset.filter(category__slug=category_slug)
+
+        # --- Content type (article_type) filter ---
+        content_type = self.request.query_params.get('content_type', '').strip()
+        if content_type:
+            queryset = queryset.filter(article_type=content_type)
+
+        # --- Sorting ---
+        sort = self.request.query_params.get('sort', '').strip()
+        if search and sort == 'relevance':
+            # already ordered by -rank from the search annotation
+            queryset = queryset.order_by('-rank')
+        elif sort == 'recent':
+            queryset = queryset.order_by('-updated_at')
+        elif sort == 'views':
+            queryset = queryset.order_by('-views')
+        else:
+            # default: by most recent creation (or updated_at if you prefer)
+            queryset = queryset.order_by('-created_at')
+
+        return queryset
 
     def get_permissions(self):
         """
