@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { ThumbsUp, ThumbsDown, LifeBuoy } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, LifeBuoy, Check } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import clsx from 'clsx';
 import SourceCitationCard from './SourceCitationCard.jsx';
 import * as analyticsApi from '../../api/analytics.api';
 
-export default function ChatMessage({ message,chatLogId,onEscalate }) {
+export default function ChatMessage({ message, chatLogId, onEscalate }) {
   const isUser = message.role === 'user';
   const [feedback, setFeedback] = useState(null);
 
@@ -15,12 +15,12 @@ export default function ChatMessage({ message,chatLogId,onEscalate }) {
       analyticsApi.submitFeedback({
         content_type: 'chat',
         object_id: chatLogId,
-        helpful: helpful,   // true or false
+        helpful: helpful,
       }),
   });
 
   const giveFeedback = (rating) => {
-    const isHelpful=rating == 'up'
+    const isHelpful = rating === 'up';
     setFeedback(rating);
     feedbackMutation.mutate(isHelpful);
   };
@@ -63,19 +63,28 @@ export default function ChatMessage({ message,chatLogId,onEscalate }) {
 
       {message.id !== 'welcome' && chatLogId && (
         <div className="flex items-center gap-2 px-1">
-          <span className="text-[11px] text-text-secondary">Was this helpful?</span>
-          <button
-            onClick={() => giveFeedback('up')}
-            className={clsx('p-1 rounded hover:bg-gray-100', feedback === 'up' && 'text-success bg-success-bg')}
-          >
-            <ThumbsUp className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={() => giveFeedback('down')}
-            className={clsx('p-1 rounded hover:bg-gray-100', feedback === 'down' && 'text-danger bg-danger-bg')}
-          >
-            <ThumbsDown className="w-3.5 h-3.5" />
-          </button>
+          {!feedback ? (
+            <>
+              <span className="text-[11px] text-text-secondary">Was this helpful?</span>
+              <button
+                onClick={() => giveFeedback('up')}
+                className="p-1 rounded hover:bg-gray-100 transition-colors"
+              >
+                <ThumbsUp className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => giveFeedback('down')}
+                className="p-1 rounded hover:bg-gray-100 transition-colors"
+              >
+                <ThumbsDown className="w-3.5 h-3.5" />
+              </button>
+            </>
+          ) : (
+            <div className="flex items-center gap-2 text-xs text-success">
+              <Check className="w-4 h-4" />
+              <span>Thank you for your feedback!</span>
+            </div>
+          )}
         </div>
       )}
     </div>
