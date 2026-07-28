@@ -6,22 +6,23 @@ import clsx from 'clsx';
 import SourceCitationCard from './SourceCitationCard.jsx';
 import * as analyticsApi from '../../api/analytics.api';
 
-export default function ChatMessage({ message, onEscalate }) {
+export default function ChatMessage({ message,chatLogId,onEscalate }) {
   const isUser = message.role === 'user';
   const [feedback, setFeedback] = useState(null);
 
   const feedbackMutation = useMutation({
-    mutationFn: (rating) =>
+    mutationFn: (helpful) =>
       analyticsApi.submitFeedback({
-        object_type: 'chat_message',
-        object_id: message.id,
-        rating: rating === 'up' ? 5 : 1,
+        content_type: 'chat',
+        object_id: chatLogId,
+        helpful: helpful,   // true or false
       }),
   });
 
   const giveFeedback = (rating) => {
+    const isHelpful=rating == 'up'
     setFeedback(rating);
-    feedbackMutation.mutate(rating);
+    feedbackMutation.mutate(isHelpful);
   };
 
   if (isUser) {
@@ -60,7 +61,7 @@ export default function ChatMessage({ message, onEscalate }) {
         )}
       </div>
 
-      {message.id !== 'welcome' && (
+      {message.id !== 'welcome' && chatLogId && (
         <div className="flex items-center gap-2 px-1">
           <span className="text-[11px] text-text-secondary">Was this helpful?</span>
           <button

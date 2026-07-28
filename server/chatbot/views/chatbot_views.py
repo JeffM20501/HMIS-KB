@@ -59,6 +59,7 @@ class ChatbotView(APIView):
 
         payload = {
             'conversation_id': str(conversation.id) if conversation else str(chat_log.id),
+            'chat_log_id':chat_log.id,
             'answer': result.answer,
             'sources': [
                 {'article_slug': r['article'].slug, 'title': r['article'].title, 'confidence': round(r['similarity'], 3)}

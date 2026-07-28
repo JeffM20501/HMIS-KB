@@ -20,7 +20,7 @@ class ChatLogSerializer(serializers.ModelSerializer):
             'id', 'user', 'username', 'conversation_id',
             'question', 'answer', 'article_ref', 'article_title',
             'was_helpful', 'response_time', 'confidence_score',
-            'has_feedback', 'created_at'
+            'has_feedback', 'created_at', 'chat_log_id'
         ]
         read_only_fields = ['created_at']
     

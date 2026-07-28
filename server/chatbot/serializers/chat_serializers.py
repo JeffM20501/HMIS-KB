@@ -39,6 +39,7 @@ class ChatResponseSerializer(serializers.Serializer):
     """
 
     conversation_id = serializers.CharField()
+    chat_log_id=serializers.IntegerField()
     answer = serializers.CharField()
     sources = ChatSourceSerializer(many=True)
     escalate_suggested = serializers.BooleanField(default=False)

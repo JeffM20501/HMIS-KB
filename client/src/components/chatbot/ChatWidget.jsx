@@ -53,7 +53,8 @@ export default function ChatWidget({ context = {} }) {
       setMessages((prev) => [
         ...prev,
         {
-          id: data.id || crypto.randomUUID(),
+          id: data.chat_log_id || crypto.randomUUID(),
+          chatLogId: data.chat_log_id,
           role: 'assistant',
           content: data.answer,
           sources: data.sources || [],
@@ -145,7 +146,7 @@ export default function ChatWidget({ context = {} }) {
           {/* Conversation */}
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-surface">
             {messages.map((m) => (
-              <ChatMessage key={m.id} message={m} onEscalate={() => sendMessage('Please escalate this to support.')} />
+              <ChatMessage key={m.id} message={m} chatLogId={m.chatLogId} onEscalate={() => sendMessage('Please escalate this to support.')} />
             ))}
             {chatMutation.isPending && <TypingIndicator />}
           </div>
