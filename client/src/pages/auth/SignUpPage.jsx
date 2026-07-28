@@ -59,7 +59,7 @@ export default function SignUpPage() {
         username:values.username,
         // facility: values.facility,
         password: values.password,
-        status: 'pending',
+        // status: 'pending',
       }),
     onSuccess: () => setSubmitted(true),
     onError: (err) => toast.error(extractErrorMessage(err) || 'Could not create your account.'),

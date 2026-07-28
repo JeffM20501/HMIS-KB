@@ -41,7 +41,7 @@ function isPublicUrl(url) {
     /^\/search\/$/,                             
     /^\/analytics\/feedbacks\/for_object\/$/,   
     /^\/analytics\/feedbacks\/stats\/$/,        
-    /^\/analytics\/time-series\/$/,             
+    // /^\/analytics\/time-series\/$/,             
     /^\/stats\/$/,                              
   ];
 

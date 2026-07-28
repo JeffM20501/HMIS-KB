@@ -28,6 +28,7 @@ export default function FeedbackWidget({ articleId }) {
       object_id: articleId,
       rating: choice === 'up' ? 5 : 1,
       comment: comment || undefined,
+      helpful:true,
     });
   };
 

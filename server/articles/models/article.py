@@ -67,6 +67,10 @@ class Article(models.Model):
         default='article',
     )
     
+    module=models.CharField(max_length=100, blank=True, default='')
+    product_version=models.CharField(max_length=20,blank=True, default='')
+    
+    
     def save(self,*args,**kwargs):
         if not self.pk and not self.slug:
             base_slug=slugify(self.title)

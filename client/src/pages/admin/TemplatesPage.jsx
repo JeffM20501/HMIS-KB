@@ -48,7 +48,7 @@ export const ARTICLE_TEMPLATES = [
 export default function TemplatesPage() {
   return (
     <div>
-      <PageHeader title="Templates" description="Standardized article templates and their required sections (PRD §8.2)" />
+      <PageHeader title="Templates" description="Standardized article templates" />
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {ARTICLE_TEMPLATES.map((t) => (
           <Card key={t.key}>

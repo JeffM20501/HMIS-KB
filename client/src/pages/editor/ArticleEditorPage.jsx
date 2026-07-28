@@ -103,7 +103,7 @@ export default function ArticleEditorPage() {
 
   const buildPayload = (values) => ({
     title: values.title,
-    content_type: values.template,
+    article_type: values.template,
     category: values.category,
     module: values.module,
     product_version: values.product_version,

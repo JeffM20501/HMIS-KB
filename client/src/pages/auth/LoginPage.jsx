@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { ShieldCheck, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, User } from 'lucide-react';
+import { ShieldCheck, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, User2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../hooks/useAuth';
 import { extractErrorMessage } from '../../api/axios';
@@ -85,7 +85,7 @@ export default function LoginPage() {
                 <Label required>Username</Label>
                 <Input
                   type="text"
-                  icon={User}
+                  icon={User2}
                   placeholder="jsmith"
                   autoComplete="username"
                   error={!!errors.username}

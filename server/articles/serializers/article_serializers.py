@@ -24,7 +24,7 @@ class ArticleSerializer(serializers.ModelSerializer):
             'id', 'title', 'slug', 'content', 'category',
             'author', 'author_username', 'author_full_name','author_avatar', 'published_by', 'publisher_username',
             'status', 'views', 'created_at', 'updated_at', 'published_at', 'tags',
-            'article_type', 'media',
+            'article_type', 'media','product_version','module'
         ]
         read_only_fields = [
             'views', 'created_at', 'updated_at', 'published_at',
