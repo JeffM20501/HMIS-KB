@@ -214,17 +214,17 @@ class UserViewSet(viewsets.ModelViewSet):
                 'rating': round(rating_avg, 1) if rating_avg else None
             })
             
-            return Response({
-                'total_articles': total_articles,
-                'published_count': published_count,
-                'pending_review_count': pending_review_count,
-                'draft_count': draft_count,
-                'archived_count': archived_count,
-                'editor_count': editor_count,
-                'views_by_category': views_by_category,
-                'article_creation_trend': creation_trend,
-                'most_viewed_articles': most_viewed_data,
-            })
+        return Response({
+            'total_articles': total_articles,
+            'published_count': published_count,
+            'pending_review_count': pending_review_count,
+            'draft_count': draft_count,
+            'archived_count': archived_count,
+            'editor_count': editor_count,
+            'views_by_category': views_by_category,
+            'article_creation_trend': creation_trend,
+            'most_viewed_articles': most_viewed_data,
+        })
 
     @action(detail=False, methods=['get'], permission_classes=[IsAdmin])
     def admin_users(self, request):
@@ -233,11 +233,11 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = UserSerializer(users, many=True)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['patch'], permission_classes=[IsAdmin])
-    def change_role(self, request,user_id):
+    @action(detail=True, methods=['patch', 'post'], permission_classes=[IsAdmin])
+    def change_role(self, request,pk=None):
         """PATCH /api/v1/users/{id}/change_role/  Change user role"""
         try:
-            user=User.objects.get(pk=user_id)
+            user=User.objects.get(pk=pk)
         except User.DoesNotExist:
             return Response({'error':'User not found'},status=status.HTTP_404_NOT_FOUND)
         

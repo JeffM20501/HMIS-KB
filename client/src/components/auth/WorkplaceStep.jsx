@@ -44,7 +44,7 @@ export default function WorkplaceStep({ register, errors, watch, onBack, onNext 
         <FieldError>{errors.department?.message}</FieldError>
       </div>
 
-      <div>
+      {/* <div>
         <Label required>Facility</Label>
         <Select defaultValue="" error={!!errors.facility} {...register('facility', { required: 'Required' })}>
           <option value="" disabled>
@@ -57,13 +57,12 @@ export default function WorkplaceStep({ register, errors, watch, onBack, onNext 
           ))}
         </Select>
         <FieldError>{errors.facility?.message}</FieldError>
-      </div>
+      </div> */}
 
       <div className="flex gap-2.5 rounded-lg bg-primary-50 border border-primary/20 p-3.5">
         <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
         <p className="text-xs text-primary/90 leading-relaxed">
-          <span className="font-semibold">Account approval required.</span> New accounts require approval from your
-          facility's TaifaCare administrator before access is granted. Typical response time is 24–48 hours.
+          <span className="font-semibold">Account approval required.</span> New accounts are created.
         </p>
       </div>
 
@@ -75,6 +74,10 @@ export default function WorkplaceStep({ register, errors, watch, onBack, onNext 
             <dd className="text-text-primary font-medium">
               {values.first_name} {values.last_name}
             </dd>
+          </div>
+          <div className="flex justify-between">
+            <dt className="text-text-secondary">Username</dt>
+            <dd className="text-text-primary font-medium capitalize">{values.username}</dd>
           </div>
           <div className="flex justify-between">
             <dt className="text-text-secondary">Email</dt>

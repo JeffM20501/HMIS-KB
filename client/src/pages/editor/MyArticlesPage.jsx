@@ -63,7 +63,7 @@ export default function MyArticlesPage() {
           {items.map((a) => (
             <Link
               key={a.slug}
-              to={a.status === 'published' ? `/articles/${a.slug}` : `/editor/articles/${a.slug}/edit`}
+              to={`/editor/articles/${a.slug}`}
               className="block bg-white border border-border rounded-card p-5 hover:border-primary transition-colors"
             >
               <div className="flex items-start justify-between gap-4 mb-2">

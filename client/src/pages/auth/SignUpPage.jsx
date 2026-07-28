@@ -14,8 +14,8 @@ import WorkplaceStep from '../../components/auth/WorkplaceStep.jsx';
 import SecurityStep from '../../components/auth/SecurityStep.jsx';
 import { ROUTES } from '../../constants/routes';
 
-const STEP_1_FIELDS = ['first_name', 'last_name', 'email', 'phone', 'requested_role'];
-const STEP_2_FIELDS = ['department', 'facility'];
+const STEP_1_FIELDS = ['first_name', 'last_name', 'email', 'username', 'requested_role'];
+const STEP_2_FIELDS = ['department'];
 
 const FEATURES = [
   'SOPs and clinical documentation',
@@ -47,7 +47,7 @@ export default function SignUpPage() {
     watch,
     setValue,
     formState: { errors, isSubmitting },
-  } = useForm({ defaultValues: { requested_role: 'editor' } });
+  } = useForm();
 
   const submitMutation = useMutation({
     mutationFn: (values) =>
@@ -55,10 +55,9 @@ export default function SignUpPage() {
         first_name: values.first_name,
         last_name: values.last_name,
         email: values.email,
-        phone: values.phone,
-        role: values.requested_role,
         department: values.department,
-        facility: values.facility,
+        username:values.username,
+        // facility: values.facility,
         password: values.password,
         status: 'pending',
       }),

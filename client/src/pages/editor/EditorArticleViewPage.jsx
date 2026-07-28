@@ -51,10 +51,10 @@ export default function EditorArticleViewPage() {
     };
 
     useEffect(() => {
-    if (article?.id) {
+    if (article?.id && article.status === 'published') {
         analyticsApi.logArticleView(article.id).catch(() => {});
     }
-    }, [article?.id]);
+    }, [article?.id, article?.status]);
 
     const relatedQuery = useQuery({
     queryKey: ['articles', 'related', article?.category?.slug],
@@ -65,8 +65,12 @@ export default function EditorArticleViewPage() {
 
     const headings = useMemo(() => extractHeadings(article?.content || ''), [article?.content]);
 
-    const isAuthor = user?.id === article?.author?.id;
-    const canEdit = user && (user.role === 'admin' || user.role === 'editor') && isAuthor;
+    // Determine if user can edit/delete this article
+    const isAuthor = user?.id === article?.author;
+    const canEdit = user && (
+    user.role === 'admin' ||  // Admin can edit any article
+    (user.role === 'editor' && isAuthor&&article.status=='draft')  // Editor can edit only their own
+    );
 
     if (articleQuery.isLoading) {
     return (
@@ -90,6 +94,7 @@ export default function EditorArticleViewPage() {
     }
 
     const related = (relatedQuery.data?.results || relatedQuery.data || []).filter((a) => a.slug !== slug).slice(0, 3);
+    const isPublished = article.status === 'published';
 
     return (
     <div className="max-w-6xl mx-auto px-6 py-10">
@@ -137,7 +142,7 @@ export default function EditorArticleViewPage() {
             <div className="flex items-center gap-2 mb-3">
             {article.category && <Badge tone="blue">{article.category.name}</Badge>}
             {article.product_version && <span className="text-xs text-text-secondary">v{article.product_version}</span>}
-            {article.status !== 'published' && (
+            {!isPublished && (
                 <Badge tone="amber">{article.status.replace('_', ' ')}</Badge>
             )}
             </div>
@@ -157,7 +162,7 @@ export default function EditorArticleViewPage() {
             </span>
             </div>
 
-            {article.status !== 'published' && (
+            {!isPublished && (
             <div className="mb-6 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-sm">
                 This article is <strong>{article.status.replace('_', ' ')}</strong> and not yet publicly visible.
             </div>
@@ -176,9 +181,12 @@ export default function EditorArticleViewPage() {
             </div>
             )}
 
+            {/* FeedbackWidget only for published articles */}
+            {isPublished && (
             <div className="mt-8">
-            <FeedbackWidget articleId={article.id} />
+                <FeedbackWidget articleId={article.id} />
             </div>
+            )}
 
             {related.length > 0 && (
             <div className="mt-12">

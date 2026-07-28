@@ -1,4 +1,4 @@
-import { Mail, Phone } from 'lucide-react';
+import { Mail, Phone,User2 } from 'lucide-react';
 import Input from '../ui/Input.jsx';
 import Label from '../ui/Label.jsx';
 import FieldError from '../ui/FieldError.jsx';
@@ -39,15 +39,15 @@ export default function PersonalInfoStep({ register, errors, watch, setValue, on
       </div>
 
       <div>
-        <Label required>Phone Number</Label>
+        <Label required>Username</Label>
         <Input
           type="tel"
-          icon={Phone}
-          placeholder="+254 712 345 678"
-          error={!!errors.phone}
-          {...register('phone', { required: 'Required' })}
+          icon={User2}
+          placeholder="jsmith"
+          error={!!errors.username}
+          {...register('username', { required: 'Required' })}
         />
-        <FieldError>{errors.phone?.message}</FieldError>
+        <FieldError>{errors.username?.message}</FieldError>
       </div>
 
       <Button type="button" className="w-full mt-2" size="lg" onClick={onNext}>
