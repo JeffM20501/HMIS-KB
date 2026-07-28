@@ -11,21 +11,21 @@ Transitions handled:
   happens automatically via ArticleChunk's on_delete=CASCADE, but handled
   explicitly here too so the log line exists)
 
-The actual chunk/embed/store work lives in chatbot/services/indexing.py,
-shared with the manual `index_articles` management command — these
-receivers are intentionally thin.
+The actual chunk/embed/replace logic lives in chatbot/services/indexing.py,
+shared with the manual `index_articles` management command — this module
+only decides *when* to call it.
 
 Runs synchronously, in-request, right after save. This project has no
 Celery/RQ/task-queue infrastructure set up anywhere (no broker, no worker
 process, nothing in settings.py) — introducing one just for this would be
 a meaningfully bigger infra change than this task asked for. For a
-small-to-medium article corpus, (re)embedding a single article's ~5-20
-chunks with a local CPU model takes well under a couple of seconds.
-Flagging this explicitly: if the article corpus or edit frequency grows
-enough that this becomes a noticeable delay on save, move the call to
-`reindex_article` in `_sync_embeddings_on_save` into a background task —
-`chatbot/services/indexing.py` is already isolated enough to drop into a
-task queue without changes.
+small-to-medium article corpus (an HMIS knowledge base, not a firehose of
+content), (re)embedding a single article's ~5-20 chunks with a local CPU
+model takes well under a couple of seconds. Flagging this explicitly: if
+the article corpus or edit frequency grows enough that this becomes a
+noticeable delay on save, move the call to `reindex_article` into a
+background task — it's already isolated and side-effect-free enough to
+drop into a task queue without changes.
 """
 from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver

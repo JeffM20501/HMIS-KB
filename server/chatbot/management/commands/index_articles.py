@@ -1,70 +1,60 @@
 from django.core.management.base import BaseCommand
 
 from articles.models.article import Article
-from chatbot.models import ArticleChunk
 from chatbot.services.indexing import reindex_article, remove_article_chunks
 
 
 class Command(BaseCommand):
-    help = (
-        '(Re)index published articles into the vector store. Safe to re-run — '
-        'each article\'s chunks are replaced wholesale, not appended, so running '
-        'this twice does not duplicate chunks (the old LangChain-based version of '
-        'this command had no such guard). Also removes chunks for any article '
-        'that is no longer published, so a corpus with unpublished/archived '
-        'articles at the time this runs still ends up in a fully correct state.'
-    )
+    """
+    Bulk (re)index all published articles. Useful for:
+      - initial backfill on a fresh install
+      - recovering after an embedding-model change (bump
+        ArticleChunk.embedding_model and re-run to migrate everything)
+      - manual recovery if a signal-driven reindex failed and was only
+        logged (see chatbot/signals.py's exception handling)
+
+    Shares its actual chunk/embed logic with the automatic signal-driven
+    path via chatbot/services/indexing.py, rather than a separate one-off
+    implementation that could drift out of sync with it. Idempotent — safe
+    to run repeatedly (each article's chunks are replaced wholesale, never
+    appended), unlike the previous version, which called
+    `vector_store.add_documents()` unconditionally and duplicated every
+    chunk on a second run.
+    """
+
+    help = '(re)generate embeddings for all published articles.'
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--article',
-            type=str,
+            '--article-id',
+            type=int,
             default=None,
-            help='Slug of a single article to reindex, instead of the full published corpus.',
+            help='Only (re)index a single article by id, instead of all published articles.',
         )
 
     def handle(self, *args, **options):
-        slug = options.get('article')
+        queryset = Article.objects.filter(status='published')
+        if options['article_id']:
+            queryset = queryset.filter(id=options['article_id'])
 
-        if slug:
-            try:
-                article = Article.objects.get(slug=slug)
-            except Article.DoesNotExist:
-                self.stderr.write(self.style.ERROR(f'No article found with slug "{slug}".'))
-                return
-            self._index_one(article)
+        total = queryset.count()
+        if total == 0:
+            self.stdout.write(self.style.WARNING('No published articles found to index.'))
             return
 
-        published = Article.objects.filter(status='published')
-        self.stdout.write(f'Found {published.count()} published articles.')
+        indexed, skipped, failed = 0, 0, 0
 
-        indexed_article_ids = set(published.values_list('id', flat=True))
-        processed = 0
-        for article in published:
-            processed += self._index_one(article, quiet=True) and 1 or 0
-
-        # Clean up chunks for anything that used to be published and no
-        # longer is — otherwise a corpus that had unpublished/archived
-        # articles before this command's first run would leave stale,
-        # citeable chunks behind indefinitely.
-        stale = ArticleChunk.objects.exclude(article_id__in=indexed_article_ids).values_list(
-            'article_id', flat=True
-        ).distinct()
-        stale_count = 0
-        for article_id in stale:
-            article = Article.objects.filter(id=article_id).first()
-            if article:
-                stale_count += remove_article_chunks(article)
+        for article in queryset.iterator():
+            chunk_count = reindex_article(article)
+            if chunk_count > 0:
+                indexed += 1
+                self.stdout.write(f"  indexed: {article.title} ({chunk_count} chunks)")
+            elif chunk_count == 0 and not article.content.strip():
+                skipped += 1
+            else:
+                failed += 1
+                self.stderr.write(self.style.ERROR(f"  FAILED: {article.title}"))
 
         self.stdout.write(
-            self.style.SUCCESS(f'Done. Indexed {processed} articles, removed {stale_count} stale chunks.')
+            self.style.SUCCESS(f"Done. indexed={indexed} skipped_empty={skipped} failed={failed} total={total}")
         )
-
-    def _index_one(self, article, quiet=False):
-        chunk_count = reindex_article(article)
-        if not quiet:
-            if chunk_count:
-                self.stdout.write(self.style.SUCCESS(f'Indexed "{article.title}" — {chunk_count} chunks.'))
-            else:
-                self.stdout.write(self.style.WARNING(f'"{article.title}" produced no chunks (empty content?).'))
-        return bool(chunk_count)
