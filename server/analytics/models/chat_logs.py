@@ -9,7 +9,6 @@ class ChatLog(models.Model):
         null=True,          # ← allow anonymous
         blank=True
     )
-    conversation_id = models.CharField(max_length=255)
     # Added alongside conversation_id (kept for backward compatibility with
     # any existing rows/log readers) — new code should prefer this FK, which
     # is what powers rename/archive/delete/list-conversations support.
@@ -32,7 +31,6 @@ class ChatLog(models.Model):
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['user', 'conversation_id']),
-            models.Index(fields=['conversation_id', 'created_at']),
             models.Index(fields=['conversation', 'created_at']),
             models.Index(fields=['article_ref']),
             models.Index(fields=['was_helpful']),
