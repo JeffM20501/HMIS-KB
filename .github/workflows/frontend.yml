@@ -1,0 +1,12 @@
+name: Frontend CI/CD
+
+on:
+    push:
+        branches: [main]
+    pull_request: 
+        branches: [main]
+
+jobs:
+    steps:
+        -   name: Code Quality check
+            uses: actions/checkout@v4

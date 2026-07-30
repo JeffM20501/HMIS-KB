@@ -1,0 +1,38 @@
+#build
+FROM node:20-alpine AS builder
+
+RUN mkdir /app
+
+WORKDIR /app
+
+#copy packages
+COPY ./package*.json ./
+
+#install dep
+RUN npm install --omit=dev
+
+COPY . .
+
+#build app
+RUN npm run build
+
+
+#runtime
+FROM node:20-alpine AS runtime
+
+WORKDIR /app
+
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup \
+npm install -g serve
+
+#copy build assests
+COPY --from=builder /app/dist ./dist
+
+RUN  chown -R appuser:appgroup ./dist
+
+USER appuser
+
+EXPOSE 3000
+
+CMD ["node","serve"]
+
