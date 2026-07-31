@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hmiskb-fe
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: hmiskb-fe
+  template:
+    metadata:
+      labels:
+        app: hmiskb-fe
+    spec:
+      containers:
+      - name: hmis-fe-container
+        image: nginx:latest
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 80

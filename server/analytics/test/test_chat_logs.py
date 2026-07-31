@@ -54,12 +54,12 @@ class ChatLogTest(TestCase):
             self.assertIsNone(log.user)
             self.assertIsNotNone(log.conversation_id)
 
-    # ---------- EXISTING TESTS ----------
     def test_chat_log_creation(self):
         self._login(self.user)
         log = ChatLog.objects.create(
             user=self.user,
-            conversation_id='test-conv-123',
+            conversation=None,
+            # conversation_id='test-conv-123',
             question='How do I reset my password?',
             answer='You can reset your password by going to Settings...',
             article_ref=self.article,
@@ -76,7 +76,8 @@ class ChatLogTest(TestCase):
         self._login(self.user)
         ChatLog.objects.create(
             user=self.user,
-            conversation_id='test-conv',
+            conversation=None,
+            # conversation_id='test-conv',
             question='Test?',
             answer='Test answer'
         )
@@ -91,7 +92,8 @@ class ChatLogTest(TestCase):
         self._login(self.user)
         ChatLog.objects.create(
             user=self.user,
-            conversation_id='test-conv',
+            conversation=None,
+            # conversation_id='test-conv',
             question='Test?',
             answer='Test answer'
         )
@@ -105,7 +107,7 @@ class ChatLogTest(TestCase):
         other_user = create_regular_user(role='viewer', username='other')
         ChatLog.objects.create(
             user=other_user,
-            conversation_id='other-conv',
+            # conversation_id='other-conv',
             question='Other question?',
             answer='Other answer'
         )
@@ -119,7 +121,8 @@ class ChatLogTest(TestCase):
     def test_unanswered_endpoint(self):
         ChatLog.objects.create(
             user=self.user,
-            conversation_id='conv-1',
+            conversation=None,
+            # conversation_id='conv-1',
             question='Unanswered question?',
             answer='Some answer'
         )
@@ -134,14 +137,16 @@ class ChatLogTest(TestCase):
         self._login(self.admin)
         ChatLog.objects.create(
             user=self.user,
-            conversation_id='conv-1',
+            conversation=None,
+            # conversation_id='conv-1',
             question='Q1?',
             answer='A1',
             was_helpful=True
         )
         ChatLog.objects.create(
             user=self.user,
-            conversation_id='conv-2',
+            conversation=None,
+            # conversation_id='conv-2',
             question='Q2?',
             answer='A2',
             was_helpful=False
@@ -160,13 +165,15 @@ class ChatLogTest(TestCase):
         self._login(self.user)
         ChatLog.objects.create(
             user=self.user,
-            conversation_id=conv_id,
+            conversation=None,
+            # conversation_id=conv_id,
             question='Q1?',
             answer='A1'
         )
         ChatLog.objects.create(
             user=self.user,
-            conversation_id=conv_id,
+            conversation=None,
+            # conversation_id=conv_id,
             question='Q2?',
             answer='A2'
         )
@@ -180,7 +187,8 @@ class ChatLogTest(TestCase):
         self._login(self.user)
         log = ChatLog.objects.create(
             user=self.user,
-            conversation_id='conv-123',
+            conversation=None,
+            # conversation_id='conv-123',
             question='How to fix issue?',
             answer='Here is the solution...',
             article_ref=self.article

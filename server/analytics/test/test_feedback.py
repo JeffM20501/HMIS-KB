@@ -21,15 +21,16 @@ class FeedbackTest(TestCase):
         self.article = Article.objects.create(
             title='Test Article',
             slug='test-article',
-            content='This is test content for the article. It is definitely more than 50 characters long.',
+            content='This is test content for the article...',
             category=self.category,
             author=self.user,
             status='published'
         )
-
+        
         self.chat_log = ChatLog.objects.create(
             user=self.user,
-            conversation_id='test-conv',
+            conversation=None,
+            # conversation_id='test-conv',
             question='How do I reset password?',
             answer='Go to settings...'
         )
