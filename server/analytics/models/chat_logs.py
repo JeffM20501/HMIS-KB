@@ -6,9 +6,10 @@ class ChatLog(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        null=True,          # ← allow anonymous
+        null=True,        
         blank=True
     )
+    conversation_uuid = models.CharField(null=True,max_length=255, db_index=True)
     # Added alongside conversation_id (kept for backward compatibility with
     # any existing rows/log readers) — new code should prefer this FK, which
     # is what powers rename/archive/delete/list-conversations support.
@@ -30,7 +31,7 @@ class ChatLog(models.Model):
     class Meta:
         ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['user', 'conversation_id']),
+            models.Index(fields=['user', 'conversation_uuid']),
             models.Index(fields=['conversation', 'created_at']),
             models.Index(fields=['article_ref']),
             models.Index(fields=['was_helpful']),

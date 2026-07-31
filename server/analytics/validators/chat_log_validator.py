@@ -30,7 +30,7 @@ def validate_answer(value):
     return value
 
 
-def validate_conversation_id(value):
+def validate_conversation_uuid(value):
     """Validate that the conversation ID is provided and valid."""
     if not value:
         raise ValidationError(_("Conversation ID is required."))
