@@ -11,8 +11,8 @@ on:
 env:
   PYTHON_VERSION: '3.14' 
   DJANGO_SETTINGS_MODULE: app.settings
-  ECR_REGISTRY_BE: ${{ECR_REGISTRY_BE}}
-  AWS_REGION: ${{AWS_REGION}}
+  ECR_REGISTRY_BE: ${{ ECR_REGISTRY_BE }}
+  AWS_REGION: ${{ AWS_REGION }}
 
 jobs:
   test:
@@ -82,7 +82,7 @@ jobs:
           pytest -v --tb=short  
   build-and-push:
       runs-on: ubuntu-latest
-      if: github.ref == 'ref/heads/main'
+      if: github.ref == 'refs/heads/main'
 
       steps:
           -   name: Check Code
