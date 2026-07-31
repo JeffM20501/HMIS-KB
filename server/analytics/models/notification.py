@@ -92,14 +92,14 @@ class Notification(models.Model):
         if not self.read:
             self.read = True
             self.read_at = timezone.now()
-            self.save()
+            self.save(update_fields=['read','read_at'])
     
     def mark_unread(self):
         """Mark notification as unread."""
         if self.read:
             self.read = False
             self.read_at = None
-            self.save()
+            self.save(update_fields=['read','read_at'])
     
     @classmethod
     def create_article_submitted_notification(cls, article, editor, admins):

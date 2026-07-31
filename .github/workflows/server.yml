@@ -3,12 +3,16 @@ name: Backend CI/CD Pipeline
 on:
   push:
     branches: [ main ]
+    paths: 
+      - '/server/**'
   pull_request:
     branches: [ main ]
 
 env:
   PYTHON_VERSION: '3.14' 
   DJANGO_SETTINGS_MODULE: app.settings
+  ECR_REGISTRY_BE: ${{ECR_REGISTRY_BE}}
+  AWS_REGION: ${{AWS_REGION}}
 
 jobs:
   test:
@@ -49,6 +53,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           cd server
+          pip install -r requirements-dev.txt
           pip install -r requirements.txt
       - name: Run DB migrations
         env:
@@ -70,75 +75,33 @@ jobs:
           EMAIL_HOST_PASSWORD: ${{ secrets.BREVO_SMTP_PASSWORD }}
           EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
           DEFAULT_FROM_EMAIL: ${{ secrets.DEFAULT_FROM_EMAIL }}
-          HUGGINGFACE_API_KEY: ${{secrets.HUGGINGFACE_API_KEY}}
+          GROQ_API_KEY: ${{secrets.GROQ_API_KEY}}
           SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
         run: |
           cd server
           pytest -v --tb=short  
-
   build-and-push:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.ref == 'ref/heads/main'
+      runs-on: ubuntu-latest
+      if: github.ref == 'ref/heads/main'
 
-    steps:
-      - name: code check
-        uses: actions/checkout@v4
-      
-      - name: Set uo Docker build
-        uses: docker/setup-buildx-action@v3
+      steps:
+          -   name: Check Code
+              uses: actions/checkout@v4
 
-      - name: Log in to docker hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
-      
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./server/Dockerfile.backend
-          push: true
-          tags: |
-            ${{ env.IMAGE_NAME }}:latest
-            ${{ env.IMAGE_NAME}}:v2.0.0
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-        
-
-  deploy:
-    needs: [test, build-and-push]
-    runs-on: self-hosted
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-      - name: Pull Docker image
-        run: |
-          docker pull ${{ env.IMAGE_NAME }}:latest
-      - name: Stop and remove old container
-        run: |
-          docker stop hmis-kb-backend || true
-          docker rm hmis-kb-backend || true
-
-      - name: Run new container
-        env:
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          DEBUG: 0
-          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
-          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
-          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
-          EMAIL_HOST_USER: ${{ secrets.BREVO_SMTP_USER }}
-          EMAIL_HOST_PASSWORD: ${{ secrets.BREVO_SMTP_PASSWORD }}
-          EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
-          DEFAULT_FROM_EMAIL: ${{ secrets.DEFAULT_FROM_EMAIL }}
-          HUGGINGFACE_API_KEY: ${{secrets.HUGGINGFACE_API_KEY}}
-          SIGNING_KEY: ${{secrets.SIGNING_KEY}}
-        run: |
-          docker run -d --name hmis-kb-backend -p 8000:8080 --restart=unless-stopped --env-file .env kimmuna/hmis-kb-backend:v2.0.0
-
-      - name: Verify deployment
-        run: |
-          sleep 10
-          curl -f http://localhost:8000/health || exit 1
+          -   name: Configure AWS credentials
+              uses: aws/actions/configure-aws-credentials@v4
+              with:
+                  AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+                  AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+                  AWS_REGION: $AWS_REGION
+          
+          -   name: Login to ECR
+              id: ecr-login
+              uses: aws-actions/amazon-ecr-login@v2
+          
+          -   name: Build push FE image
+              working-directory: ./client
+              run: |
+                  docker build -f Dockerfile.frontend  -t $ECR_REGISTRY_BE:${{github.sha}} .
+                  docker push $ECR_REGISTRY_BE:${{github.sha}}
+                  

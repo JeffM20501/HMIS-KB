@@ -6,6 +6,7 @@ from articles.models.article_tag import ArticleTag
 from users.models import User
 from articles.validators.article_validator import *
 from analytics.models import ArticleViewLog
+from django.utils.text import slugify
 
 STATUS_CHOICES = [
     ('draft', 'Draft'),
@@ -17,7 +18,7 @@ STATUS_CHOICES = [
 class Article(models.Model):
     
     title = models.CharField(max_length=200)
-    slug = models.SlugField(max_length=200, unique=True)
+    slug = models.SlugField(max_length=200, unique=True, blank=True)
     content = models.TextField()
     
     category = models.ForeignKey(
@@ -65,6 +66,24 @@ class Article(models.Model):
         blank=True, 
         default='article',
     )
+    
+    module=models.CharField(max_length=100, blank=True, default='')
+    product_version=models.CharField(max_length=20,blank=True, default='')
+    
+    
+    def save(self,*args,**kwargs):
+        if not self.pk and not self.slug:
+            base_slug=slugify(self.title)
+            
+            slug=base_slug
+            counter=1
+            
+            while Article.objects.filter(slug=slug).exists():
+                slug=f'{base_slug}-{counter}'
+                counter+=1
+            self.slug=slug
+        super().save(*args,**kwargs)
+    
     
     def clean(self):
         """PRD: FR-3.3 Editors can create/edit but not publish."""

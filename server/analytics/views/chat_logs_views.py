@@ -44,9 +44,9 @@ class ChatLogViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = queryset.filter(user=user)
         
         # Filter by conversation
-        conversation_id = self.request.query_params.get('conversation_id')
-        if conversation_id:
-            queryset = queryset.filter(conversation_id=conversation_id)
+        conversation_uuid = self.request.query_params.get('conversation_uuid')
+        if conversation_uuid:
+            queryset = queryset.filter(conversation_uuid=conversation_uuid)
         
         # Filter by helpfulness
         was_helpful = self.request.query_params.get('was_helpful')
@@ -87,15 +87,15 @@ class ChatLogViewSet(viewsets.ReadOnlyModelViewSet):
         """
         Get all messages in a conversation.
         """
-        conversation_id = request.query_params.get('conversation_id')
+        conversation_uuid = request.query_params.get('conversation_uuid')
         
-        if not conversation_id:
+        if not conversation_uuid:
             return Response(
-                {"error": "conversation_id is required."},
+                {"error": "Some thing went wrong it's not your fault. Try again later."},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        logs = ChatLog.objects.filter(conversation_id=conversation_id)
+        logs = ChatLog.objects.filter(conversation_uuid=conversation_uuid)
         
         # Check permission
         if request.user.role != 'admin':
@@ -103,11 +103,11 @@ class ChatLogViewSet(viewsets.ReadOnlyModelViewSet):
         
         if not logs.exists():
             return Response(
-                {"error": "Conversation not found or you don't have permission."},
+                {"error": "Conversation not found"},
                 status=status.HTTP_404_NOT_FOUND
             )
         
-        serializer = self.get_serializer(logs, many=True)
+        serializer = ChatLogListSerializer(logs, many=True)
         return Response(serializer.data)
     
     @action(detail=False, methods=['get'])

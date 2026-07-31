@@ -8,21 +8,40 @@ class ArticleSerializer(serializers.ModelSerializer):
     author_username = serializers.ReadOnlyField(source='author.username')
     publisher_username = serializers.ReadOnlyField(source='published_by.username')
     media = serializers.SerializerMethodField()
-    
+    author_full_name = serializers.SerializerMethodField()
+    author_avatar=serializers.SerializerMethodField()
+    category = serializers.SlugRelatedField(
+        slug_field='slug',
+        queryset=Category.objects.all(),
+        allow_null=True,
+        required=False
+    )
     
     
     class Meta:
         model = Article
         fields = [
             'id', 'title', 'slug', 'content', 'category',
-            'author', 'author_username', 'published_by', 'publisher_username',
+            'author', 'author_username', 'author_full_name','author_avatar', 'published_by', 'publisher_username',
             'status', 'views', 'created_at', 'updated_at', 'published_at', 'tags',
-            'article_type', 'media',
+            'article_type', 'media','product_version','module'
         ]
         read_only_fields = [
             'views', 'created_at', 'updated_at', 'published_at',
-            'author', 'published_by'
+            'author', 'published_by','slug'
         ]
+    
+    def get_author_full_name(self,obj):
+        if not obj.author:
+            return None
+        if hasattr(obj.author, 'full_name'):
+            return obj.author.full_name
+        return obj.author.username
+    
+    def get_author_avatar(self,obj):
+        if obj.author and hasattr(obj.author, 'avatar'):
+            return obj.author.avatar
+        return None
     
     def validate(self, data):
         """Cross-field validation."""

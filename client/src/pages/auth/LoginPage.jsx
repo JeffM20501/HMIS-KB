@@ -1,212 +1,144 @@
-import { useState, useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { BookOpen, Eye, EyeOff, Loader2 } from "lucide-react";
-import useAuth from "../../hooks/useAuth";
-import ErrorBanner from "../../components/common/ErrorBanner.jsx";
-import client from "../../api/client";
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { ShieldCheck, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, User2 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { useAuth } from '../../hooks/useAuth';
+import { extractErrorMessage } from '../../api/axios';
+import Input from '../../components/ui/Input.jsx';
+import Label from '../../components/ui/Label.jsx';
+import FieldError from '../../components/ui/FieldError.jsx';
+import Button from '../../components/ui/Button.jsx';
+import AuthBrandPanel from '../../components/auth/AuthBrandPanel.jsx';
+import { ROUTES } from '../../constants/routes';
+
+// Presentational only — these are the same public counts shown on the
+// Home page hero; not wired to a live query here since they're decorative
+// context for a page an unauthenticated visitor is looking at, not a stat
+// dashboard. See HomePage.jsx for the real, live-fetched versions.
+const BRAND_STATS = [
+  { value: '165+', label: 'Published Articles' },
+  { value: '10', label: 'Module Categories' },
+  { value: '8', label: 'Active Editors' },
+  { value: '58K', label: 'Monthly Views' },
+];
 
 export default function LoginPage() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm();
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const from = location.state?.from?.pathname || "/app/dashboard";
+  const [params] = useSearchParams();
 
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(true);
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [stats, setStats] = useState({
-    total_articles: 85,
-    avg_rating: 4.4,
-    search_success_rate: 75,
-    total_views: 0,
-  });
-  const [statsLoading, setStatsLoading] = useState(true);
-
-  // Fetch real stats from the backend
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await client.get("/stats/");
-        setStats(res.data);
-      } catch (err) {
-        console.warn("Failed to fetch stats, using fallback values.");
-        // fallback values already set in initial state
-      } finally {
-        setStatsLoading(false);
-      }
-    };
-    fetchStats();
-  }, []);
-
-  const statsDisplay = [
-    { value: `${stats.total_articles}+`, label: "Articles" },
-    { value: `${stats.avg_rating.toFixed(1)}★`, label: "Avg Rating" },
-    { value: stats.search_success_rate ? `${stats.search_success_rate}%` : "—", label: "Search Success" },
-  ];
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    if (!username || !password) {
-      setError("Please enter your username and password.");
-      return;
-    }
-    setLoading(true);
+  const onSubmit = async (values) => {
     try {
-      await login(username, password);
-      navigate(from, { replace: true });
+      const user = await login(values);
+      const next = params.get('next');
+      if (next) navigate(next);
+      else navigate(user.role === 'admin' ? '/admin' : '/editor');
     } catch (err) {
-      setError(err.message || "Invalid username or password.");
-    } finally {
-      setLoading(false);
+      toast.error(extractErrorMessage(err) || 'Invalid username or password.');
     }
   };
 
   return (
-    <div className="min-h-screen flex" style={{ fontFamily: "var(--font-inter)" }}>
-      {/* Left panel — now showing real stats */}
-      <div className="hidden lg:flex flex-col justify-between p-12 w-2/5" style={{ background: "#06033A" }}>
-        <Link to="/" className="flex items-center gap-3">
-          <div className="flex items-center justify-center rounded-md" style={{ width: 36, height: 36, background: "#F22F46" }}>
-            <BookOpen size={18} color="white" strokeWidth={2.5} />
-          </div>
-          <span className="text-lg font-semibold" style={{ color: "white" }}>HealthKB</span>
-        </Link>
-
+    <div className="min-h-screen flex bg-surface">
+      <AuthBrandPanel>
         <div>
-          <blockquote className="text-2xl font-light leading-relaxed mb-6" style={{ color: "rgba(255,255,255,0.85)" }}>
-            &ldquo;The single source of truth for every HMIS workflow, protocol, and procedure — right when you need it.&rdquo;
-          </blockquote>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "#F22F46", color: "white" }}>AW</div>
-            <div>
-              <div className="text-sm font-medium" style={{ color: "rgba(255,255,255,0.85)" }}>Amina Wanjiku</div>
-              <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>Ward Nurse, Kenyatta National Hospital</div>
-            </div>
-          </div>
+          <h1 className="text-3xl font-bold text-white mb-4 leading-tight">Clinical knowledge at your fingertips</h1>
+          <p className="text-sm leading-relaxed text-white/70">
+            The centralized documentation and support hub for the TaifaCare HMIS — SOPs, lab protocols, billing
+            guides, and more.
+          </p>
         </div>
-
-        {/* Stats section — real data from DB */}
-        <div className="grid grid-cols-3 gap-4">
-          {statsDisplay.map((s) => (
-            <div key={s.label} className="rounded-lg p-4" style={{ background: "rgba(255,255,255,0.06)" }}>
-              {statsLoading ? (
-                <div className="h-8 w-12 mx-auto bg-white/10 animate-pulse rounded" />
-              ) : (
-                <div className="text-xl font-semibold mb-0.5" style={{ color: "white" }}>{s.value}</div>
-              )}
-              <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>{s.label}</div>
-            </div>
-          ))}
+        <div className="grid grid-cols-2 gap-3">
+          
         </div>
-      </div>
+      </AuthBrandPanel>
 
-      {/* Right panel — login form (unchanged) */}
-      <div className="flex-1 flex items-center justify-center p-8" style={{ background: "#F4F4F6" }}>
-        <div className="w-full max-w-md">
-          <Link to="/" className="flex items-center gap-2 mb-8 lg:hidden">
-            <div className="flex items-center justify-center rounded-md" style={{ width: 32, height: 32, background: "#F22F46" }}>
-              <BookOpen size={16} color="white" />
-            </div>
-            <span className="text-base font-semibold" style={{ color: "#121C2D" }}>HealthKB</span>
+      <div className="flex-1 flex flex-col items-center justify-center px-6">
+        <div className="w-full max-w-sm">
+          <Link
+            to={ROUTES.HOME}
+            className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-primary mb-6"
+          >
+            <ArrowLeft className="w-4 h-4" /> Back to home
           </Link>
 
-          <div className="bg-white rounded-xl p-8 shadow-sm" style={{ border: "1px solid #E1E3EA" }}>
-            <div className="mb-7">
-              <h1 className="text-2xl font-semibold mb-1.5" style={{ color: "#121C2D" }}>Sign in</h1>
-              <p className="text-sm" style={{ color: "#696E7A" }}>Access the HMIS Knowledge Base Platform</p>
+          <div className="flex items-center gap-3 mb-8 lg:hidden">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-primary">
+              <ShieldCheck className="w-4 h-4 text-white" />
             </div>
+            <div className="text-sm font-bold text-text-primary">TaifaCare KB</div>
+          </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <ErrorBanner message={error} />
+          <h2 className="text-2xl font-bold text-text-primary mb-1">Sign in</h2>
+          <p className="text-sm text-text-secondary mb-7">Access the TaifaCare Knowledge Base</p>
 
+          <div className="bg-white rounded-2xl border border-border p-6 shadow-sm">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
               <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: "#243656" }}>Username</label>
-                <input
+                <Label required>Username</Label>
+                <Input
                   type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter your username"
+                  icon={User2}
+                  placeholder="jsmith"
                   autoComplete="username"
-                  className="w-full px-3.5 py-2.5 rounded-md text-sm outline-none border transition-all"
-                  style={{ borderColor: "#E1E3EA", color: "#121C2D" }}
-                  onFocus={(e) => (e.currentTarget.style.borderColor = "#F22F46")}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = "#E1E3EA")}
+                  error={!!errors.username}
+                  {...register('username', { required: 'Username is required' })}
                 />
+                <FieldError>{errors.username?.message}</FieldError>
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-sm font-medium" style={{ color: "#243656" }}>Password</label>
-                  <Link to="/forgot-password" className="text-xs hover:underline" style={{ color: "#F22F46" }}>
+                  <Label required className="mb-0">
+                    Password
+                  </Label>
+                  <Link to={ROUTES.FORGOT_PASSWORD} className="text-xs font-medium text-primary hover:underline">
                     Forgot password?
                   </Link>
                 </div>
                 <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
-                    autoComplete="current-password"
-                    className="w-full px-3.5 py-2.5 rounded-md text-sm outline-none border transition-all pr-10"
-                    style={{ borderColor: "#E1E3EA", color: "#121C2D" }}
-                    onFocus={(e) => (e.currentTarget.style.borderColor = "#F22F46")}
-                    onBlur={(e) => (e.currentTarget.style.borderColor = "#E1E3EA")}
+                  <Input
+                    type={showPassword ? 'text' : 'password'}
+                    icon={Lock}
+                    placeholder="••••••••"
+                    error={!!errors.password}
+                    {...register('password', { required: 'Password is required' })}
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2"
-                    style={{ color: "#9EA6B3" }}
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary"
                   >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                <FieldError>{errors.password?.message}</FieldError>
               </div>
 
-              <div className="flex items-center gap-2 pt-1">
-                <input
-                  type="checkbox"
-                  id="remember"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
-                  className="rounded accent-red-500"
-                />
-                <label htmlFor="remember" className="text-sm" style={{ color: "#696E7A" }}>
-                  Keep me signed in for 8 hours
-                </label>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-md text-sm font-medium transition-opacity disabled:opacity-70"
-                style={{ background: "#F22F46", color: "white", marginTop: 4 }}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 size={15} className="animate-spin" /> Signing in…
-                  </>
-                ) : (
-                  "Sign in to HealthKB"
-                )}
-              </button>
+              <Button type="submit" className="w-full" size="lg" isLoading={isSubmitting}>
+                <Lock className="w-4 h-4" /> Sign In <ArrowRight className="w-4 h-4" />
+              </Button>
             </form>
+
+            <div className="mt-4 pt-4 border-t border-gray-100 text-center">
+              <p className="text-xs text-text-secondary">
+                Don't have an account?{' '}
+                <Link to={ROUTES.SIGNUP} className="font-semibold text-primary">
+                  Create account
+                </Link>
+              </p>
+            </div>
           </div>
 
-          <p className="text-center text-xs mt-5" style={{ color: "#9EA6B3" }}>
-            Protected by end-to-end encryption &middot; Sessions expire after 8 hours of inactivity
-          </p>
-
-          <p className="text-center text-xs mt-3" style={{ color: "#9EA6B3" }}>
-            Don&apos;t have an account?{" "}
-            <Link to="/register" className="font-medium hover:underline" style={{ color: "#F22F46" }}>
-              Request access
-            </Link>
+          <p className="text-center text-xs text-text-secondary mt-5">
+            Protected by TaifaCare security · <span className="text-primary">Privacy Policy</span>
           </p>
         </div>
       </div>

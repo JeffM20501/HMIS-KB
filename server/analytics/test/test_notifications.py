@@ -120,7 +120,7 @@ class NotificationTest(TestCase):
         
         self._login(self.admin)
         url = reverse('analytics:notification-mark-read', kwargs={'pk': notification.id})
-        response = self.client.patch(url, content_type='application/json')
+        response = self.client.post(url, content_type='application/json')
         
         self.assertEqual(response.status_code, 200)
         notification.refresh_from_db()

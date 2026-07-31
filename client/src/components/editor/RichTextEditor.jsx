@@ -1,195 +1,76 @@
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import Image from "@tiptap/extension-image";
-import Link from "@tiptap/extension-link";
-import {
-    Bold, Italic, Strikethrough, List, ListOrdered,
-    Heading1, Heading2, Quote, Link as LinkIcon,
-    Image as ImageIcon, Undo, Redo, Code,
-} from "lucide-react";
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Underline from '@tiptap/extension-underline';
+import Link from '@tiptap/extension-link';
+import Placeholder from '@tiptap/extension-placeholder';
+import TaskList from '@tiptap/extension-task-list';
+import TaskItem from '@tiptap/extension-task-item';
+import Table from '@tiptap/extension-table';
+import TableRow from '@tiptap/extension-table-row';
+import TableHeader from '@tiptap/extension-table-header';
+import TableCell from '@tiptap/extension-table-cell';
+import TextAlign from '@tiptap/extension-text-align';
+import Highlight from '@tiptap/extension-highlight';
+import { Markdown } from 'tiptap-markdown';
+import EditorToolbar from './Toolbar.jsx';
+import { UploadImage } from './extensions/ImageExtension.js';
+import { Callout } from './extensions/CalloutExtension.js';
 
-const ToolbarButton = ({ onClick, isActive, disabled, children, title }) => (
-    <button
-    onClick={onClick}
-    disabled={disabled}
-    title={title}
-    className={`p-1.5 rounded transition-colors ${
-        isActive
-        ? "bg-red-100 text-red-600"
-        : "hover:bg-gray-100 text-gray-600"
-    } disabled:opacity-40 disabled:cursor-not-allowed`}
-    >
-    {children}
-    </button>
-);
-
-export default function RichTextEditor({ content, onChange, placeholder = "Write your content here…" }) {
-    const editor = useEditor({
+/**
+ * Uncontrolled by design: `initialContent` (Markdown — always Markdown,
+ * never HTML, see ADR below) seeds the document once on mount. Pass a
+ * `key` prop from the parent (e.g. the article slug) to force a remount
+ * when switching between articles, rather than fighting the editor's
+ * internal ProseMirror state with a controlled `value`. `onChange` fires
+ * with the current Markdown string on every update.
+ *
+ * --- ADR: why Markdown, not HTML, is the canonical content format ---
+ * `tiptap-markdown` intercepts both directions: `content` is parsed from
+ * Markdown into the ProseMirror doc on load, and `editor.storage.markdown
+ * .getMarkdown()` serializes the doc back to Markdown on every update.
+ * HTML is never produced, stored in React state, or sent to the backend.
+ * This matters beyond "cleaner storage" — it's what makes the knowledge
+ * base viable as a future RAG source: Markdown tokenizes predictably,
+ * chunks along semantic boundaries (headings, paragraphs, list items)
+ * without carrying markup noise into the embedding, diffs cleanly for
+ * version history, and is trivially portable if the content ever needs
+ * to move to a different rendering stack.
+ */
+export default function RichTextEditor({ initialContent = '', onChange, editable = true, placeholder }) {
+  const editor = useEditor({
     extensions: [
-        StarterKit.configure({
-        heading: {
-            levels: [1, 2, 3],
-        },
-        }),
-        Image,
-        Link.configure({
-        openOnClick: false,
-        HTMLAttributes: {
-            class: "text-blue-600 underline",
-        },
-        }),
+      StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
+      Underline,
+      Link.configure({ openOnClick: false, autolink: true }),
+      UploadImage,
+      Callout,
+      Placeholder.configure({ placeholder: placeholder || 'Start writing your article…' }),
+      TaskList,
+      TaskItem.configure({ nested: true }),
+      Table.configure({ resizable: true }),
+      TableRow,
+      TableHeader,
+      TableCell,
+      TextAlign.configure({ types: ['heading', 'paragraph'] }),
+      Highlight,
+      Markdown.configure({ html: false, transformPastedText: true, transformCopiedText: true }),
     ],
-    content: content || "",
+    content: initialContent,
+    editable,
     onUpdate: ({ editor }) => {
-        onChange(editor.getHTML());
+      onChange?.(editor.storage.markdown.getMarkdown());
     },
     editorProps: {
-        attributes: {
-        class:
-            "prose prose-sm max-w-none focus:outline-none min-h-[200px] px-4 py-3",
-        },
+      attributes: {
+        class: 'kb-prose max-w-none min-h-[460px] px-6 py-6 focus:outline-none',
+      },
     },
-    });
+  });
 
-    if (!editor) return null;
-
-    const toggleHeading = (level) => {
-    editor.chain().focus().toggleHeading({ level }).run();
-    };
-
-    const setLink = () => {
-    const url = window.prompt("Enter the URL:");
-    if (url) {
-        editor.chain().focus().setLink({ href: url }).run();
-    }
-    };
-
-    const addImage = () => {
-    const url = window.prompt("Enter the image URL:");
-    if (url) {
-        editor.chain().focus().setImage({ src: url }).run();
-    }
-    };
-
-    return (
-    <div className="border rounded-md overflow-hidden" style={{ borderColor: "#E1E3EA" }}>
-        {/* Toolbar */}
-        <div className="flex flex-wrap items-center gap-0.5 p-1.5 border-b bg-gray-50/50" style={{ borderColor: "#E1E3EA" }}>
-        {/* Headings */}
-        <ToolbarButton
-            onClick={() => toggleHeading(1)}
-            isActive={editor.isActive("heading", { level: 1 })}
-            title="Heading 1"
-        >
-            <Heading1 size={16} />
-        </ToolbarButton>
-        <ToolbarButton
-            onClick={() => toggleHeading(2)}
-            isActive={editor.isActive("heading", { level: 2 })}
-            title="Heading 2"
-        >
-            <Heading2 size={16} />
-        </ToolbarButton>
-
-        <div className="w-px h-6 bg-gray-200 mx-1" />
-
-        {/* Formatting */}
-        <ToolbarButton
-            onClick={() => editor.chain().focus().toggleBold().run()}
-            isActive={editor.isActive("bold")}
-            title="Bold"
-        >
-            <Bold size={16} />
-        </ToolbarButton>
-        <ToolbarButton
-            onClick={() => editor.chain().focus().toggleItalic().run()}
-            isActive={editor.isActive("italic")}
-            title="Italic"
-        >
-            <Italic size={16} />
-        </ToolbarButton>
-        <ToolbarButton
-            onClick={() => editor.chain().focus().toggleStrike().run()}
-            isActive={editor.isActive("strike")}
-            title="Strikethrough"
-        >
-            <Strikethrough size={16} />
-        </ToolbarButton>
-        <ToolbarButton
-            onClick={() => editor.chain().focus().toggleCode().run()}
-            isActive={editor.isActive("code")}
-            title="Inline code"
-        >
-            <Code size={16} />
-        </ToolbarButton>
-
-        <div className="w-px h-6 bg-gray-200 mx-1" />
-
-        {/* Lists */}
-        <ToolbarButton
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
-            isActive={editor.isActive("bulletList")}
-            title="Bullet list"
-        >
-            <List size={16} />
-        </ToolbarButton>
-        <ToolbarButton
-            onClick={() => editor.chain().focus().toggleOrderedList().run()}
-            isActive={editor.isActive("orderedList")}
-            title="Numbered list"
-        >
-            <ListOrdered size={16} />
-        </ToolbarButton>
-
-        <div className="w-px h-6 bg-gray-200 mx-1" />
-
-        {/* Blockquote */}
-        <ToolbarButton
-            onClick={() => editor.chain().focus().toggleBlockquote().run()}
-            isActive={editor.isActive("blockquote")}
-            title="Quote"
-        >
-            <Quote size={16} />
-        </ToolbarButton>
-
-        <div className="w-px h-6 bg-gray-200 mx-1" />
-
-        {/* Link & Image */}
-        <ToolbarButton
-            onClick={setLink}
-            isActive={editor.isActive("link")}
-            title="Insert link"
-        >
-            <LinkIcon size={16} />
-        </ToolbarButton>
-        <ToolbarButton
-            onClick={addImage}
-            title="Insert image"
-        >
-            <ImageIcon size={16} />
-        </ToolbarButton>
-
-        <div className="w-px h-6 bg-gray-200 mx-1" />
-
-        {/* Undo/Redo */}
-        <ToolbarButton
-            onClick={() => editor.chain().focus().undo().run()}
-            disabled={!editor.can().undo()}
-            title="Undo"
-        >
-            <Undo size={16} />
-        </ToolbarButton>
-        <ToolbarButton
-            onClick={() => editor.chain().focus().redo().run()}
-            disabled={!editor.can().redo()}
-            title="Redo"
-        >
-            <Redo size={16} />
-        </ToolbarButton>
-        </div>
-
-        {/* Editor content */}
-        <EditorContent editor={editor} />
+  return (
+    <div>
+      {editable && <EditorToolbar editor={editor} />}
+      <EditorContent editor={editor} />
     </div>
-    );
+  );
 }

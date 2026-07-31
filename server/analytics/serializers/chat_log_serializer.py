@@ -3,7 +3,7 @@ from analytics.models.chat_logs import ChatLog
 from analytics.validators.chat_log_validator import (
     validate_question,
     validate_answer,
-    validate_conversation_id
+    validate_conversation_uuid
 )
 
 
@@ -17,10 +17,10 @@ class ChatLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = ChatLog
         fields = [
-            'id', 'user', 'username', 'conversation_id',
+            'id', 'user', 'username', 'conversation_uuid',
             'question', 'answer', 'article_ref', 'article_title',
             'was_helpful', 'response_time', 'confidence_score',
-            'has_feedback', 'created_at'
+            'has_feedback', 'created_at',
         ]
         read_only_fields = ['created_at']
     
@@ -34,8 +34,8 @@ class ChatLogSerializer(serializers.ModelSerializer):
     def validate_answer(self, value):
         return validate_answer(value)
     
-    def validate_conversation_id(self, value):
-        return validate_conversation_id(value)
+    def validate_conversation_uuid(self, value):
+        return validate_conversation_uuid(value)
     
     def validate(self, data):
         """Cross-field validation."""
@@ -65,7 +65,7 @@ class ChatLogListSerializer(serializers.ModelSerializer):
     class Meta:
         model = ChatLog
         fields = [
-            'id', 'username', 'conversation_id',
+            'id', 'username', 'conversation_uuid',
             'question', 'article_title', 'was_helpful', 'created_at'
         ]
 
@@ -82,7 +82,7 @@ class ChatLogDetailSerializer(serializers.ModelSerializer):
         model = ChatLog
         fields = [
             'id', 'user', 'username', 'user_email',
-            'conversation_id', 'question', 'answer',
+            'conversation_uuid', 'question', 'answer',
             'article_ref', 'article_title', 'was_helpful',
             'response_time', 'confidence_score', 'feedback',
             'created_at'
@@ -111,7 +111,7 @@ class ChatRequestSerializer(serializers.Serializer):
             raise serializers.ValidationError("Question must be at least 2 characters.")
         return value
     
-    def validate_conversation_id(self, value):
+    def validate_conversation_uuid(self, value):
         if not value:
             raise serializers.ValidationError("Conversation ID is required.")
         return value

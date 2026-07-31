@@ -1,0 +1,40 @@
+# ---- Builder stage ----
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files for caching
+COPY package*.json ./
+
+# Install dependencies (including dev dependencies for building)
+RUN npm install
+
+# Copy the rest of the source
+COPY . .
+
+# Build the app (Vite/CRA output to dist/build; adjust if needed)
+RUN npm run build
+
+# ---- Runtime stage ----
+FROM node:20-alpine AS runtime
+
+# Create a non-root user
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+WORKDIR /app
+
+# Install a lightweight static server
+RUN npm install -g serve
+
+# Copy built assets from builder (assumes dist/; change to build/ if using CRA)
+COPY --from=builder /app/dist ./dist
+
+# Set ownership and switch to non-root user
+RUN chown -R appuser:appgroup ./dist
+
+USER appuser
+
+EXPOSE 3000
+
+# Serve the static files on port 3000
+CMD ["serve", "-s", "dist", "-l", "3000"]

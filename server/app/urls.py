@@ -23,9 +23,11 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
     TokenVerifyView
 )
+from healthy_views import Healthy
 
 urlpatterns = [
     path('admin/', admin.site.urls), 
+    path('health/', Healthy.as_view()),
     path('api/v1/', include([
         path('chat/', include('chatbot.urls')),
         path('u/',include('users.urls')),

@@ -84,7 +84,7 @@ class ArticleAPITest(BaseAPITestCase):
             'title': 'My New Draft Article',
             'slug': slug,
             'content': 'This is detailed content for my new draft article. It needs to be at least 50 characters long to pass validation.',
-            'category': self.category.id,
+            'category': self.category.slug,
             'status': 'draft'
         }, content_type='application/json')
         self.assertEqual(response.status_code, 201)

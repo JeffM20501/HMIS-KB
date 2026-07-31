@@ -1,45 +1,60 @@
 from django.core.management.base import BaseCommand
-from articles.models import Article
-from chatbot.vector.vector_store import VectorStoreManager
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+from articles.models.article import Article
+from chatbot.services.indexing import reindex_article, remove_article_chunks
+
 
 class Command(BaseCommand):
-    help = 'Index all published articles into the vector database'
+    """
+    Bulk (re)index all published articles. Useful for:
+      - initial backfill on a fresh install
+      - recovering after an embedding-model change (bump
+        ArticleChunk.embedding_model and re-run to migrate everything)
+      - manual recovery if a signal-driven reindex failed and was only
+        logged (see chatbot/signals.py's exception handling)
+
+    Shares its actual chunk/embed logic with the automatic signal-driven
+    path via chatbot/services/indexing.py, rather than a separate one-off
+    implementation that could drift out of sync with it. Idempotent — safe
+    to run repeatedly (each article's chunks are replaced wholesale, never
+    appended), unlike the previous version, which called
+    `vector_store.add_documents()` unconditionally and duplicated every
+    chunk on a second run.
+    """
+
+    help = '(re)generate embeddings for all published articles.'
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--article-id',
+            type=int,
+            default=None,
+            help='Only (re)index a single article by id, instead of all published articles.',
+        )
 
     def handle(self, *args, **options):
-        self.stdout.write('Starting article indexing...')
-        
-        articles = Article.objects.filter(status='published')
-        self.stdout.write(f'Found {articles.count()} published articles.')
-        
-        vector_store = VectorStoreManager()
-        
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=512,
-            chunk_overlap=50,
-            separators=["\n\n", "\n", ". ", " ", ""],
+        queryset = Article.objects.filter(status='published')
+        if options['article_id']:
+            queryset = queryset.filter(id=options['article_id'])
+
+        total = queryset.count()
+        if total == 0:
+            self.stdout.write(self.style.WARNING('No published articles found to index.'))
+            return
+
+        indexed, skipped, failed = 0, 0, 0
+
+        for article in queryset.iterator():
+            chunk_count = reindex_article(article)
+            if chunk_count > 0:
+                indexed += 1
+                self.stdout.write(f"  indexed: {article.title} ({chunk_count} chunks)")
+            elif chunk_count == 0 and not article.content.strip():
+                skipped += 1
+            else:
+                failed += 1
+                self.stderr.write(self.style.ERROR(f"  FAILED: {article.title}"))
+
+        self.stdout.write(
+            self.style.SUCCESS(f"Done. indexed={indexed} skipped_empty={skipped} failed={failed} total={total}")
         )
-        
-        processed = 0
-        for article in articles:
-            self.stdout.write(f'Processing: {article.title}')
-            
-            full_text = f"{article.title}\n\n{article.content}"
-            chunks = text_splitter.split_text(full_text)
-            
-            metadatas = []
-            for _ in chunks:
-                metadatas.append({
-                    'article_id': article.id,
-                    'title': article.title,
-                    'slug': article.slug,
-                    'category_id': article.category_id,
-                    'author_id': article.author_id,
-                    'published_at': str(article.published_at) if article.published_at else '',
-                })
-            
-            vector_store.add_documents(chunks, metadatas)
-            processed += 1
-            self.stdout.write(f'  Added {len(chunks)} chunks for "{article.title}"')
-        
-        self.stdout.write(self.style.SUCCESS(f'Done. Processed {processed} articles.'))

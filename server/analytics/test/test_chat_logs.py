@@ -39,32 +39,23 @@ class ChatLogTest(TestCase):
         token = self._get_token(user)
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
 
-    # ---------- ANONYMOUS CHAT (NEW) ----------
     def test_anonymous_chat_creates_log_without_user(self):
-        """Anonymous chat creates ChatLog with user=None."""
-        # Mock the RAG pipeline answer to avoid real calls
         from unittest.mock import patch
-        with patch('chatbot.rag.rag_pipline.RAGPipeline.answer') as mock_answer:
-            mock_answer.return_value = {
-                'answer': 'Test answer',
-                'article_ref': None,
-                'was_grounded': False,
-                'confidence_score': 0.5,
-                'response_time': 0.1
-            }
-            response = self.client.post('/api/v1/chat/', {'question': 'Hello'})
+        from chatbot.services.rag_pipeline import RAGResult
+        with patch('chatbot.services.rag_pipeline.run_pipeline') as mock_run:
+            mock_run.return_value = RAGResult(answer='Test answer', sources=[], latency_seconds=0.1)
+            response = self.client.post('/api/v1/chat/', {'message': 'Hello'})
             self.assertEqual(response.status_code, 200)
             log = ChatLog.objects.first()
             self.assertIsNotNone(log)
             self.assertIsNone(log.user)
             self.assertIsNotNone(log.conversation_id)
 
-    # ---------- EXISTING TESTS ----------
     def test_chat_log_creation(self):
         self._login(self.user)
         log = ChatLog.objects.create(
             user=self.user,
-            conversation_id='test-conv-123',
+            conversation=None,
             question='How do I reset my password?',
             answer='You can reset your password by going to Settings...',
             article_ref=self.article,
@@ -72,7 +63,7 @@ class ChatLogTest(TestCase):
             confidence_score=0.9
         )
         self.assertEqual(log.user, self.user)
-        self.assertEqual(log.conversation_id, 'test-conv-123')
+        self.assertIsNone(log.conversation)
         self.assertEqual(log.question, 'How do I reset my password?')
         self.assertEqual(log.article_ref, self.article)
         self.assertIsNotNone(log.created_at)
@@ -81,11 +72,10 @@ class ChatLogTest(TestCase):
         self._login(self.user)
         ChatLog.objects.create(
             user=self.user,
-            conversation_id='test-conv',
+            conversation=None,
             question='Test?',
             answer='Test answer'
         )
-
         self._login(self.admin)
         url = reverse('analytics:chat-log-list')
         response = self.client.get(url)
@@ -96,11 +86,10 @@ class ChatLogTest(TestCase):
         self._login(self.user)
         ChatLog.objects.create(
             user=self.user,
-            conversation_id='test-conv',
+            conversation=None,
             question='Test?',
             answer='Test answer'
         )
-
         url = reverse('analytics:chat-log-list')
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
@@ -110,11 +99,10 @@ class ChatLogTest(TestCase):
         other_user = create_regular_user(role='viewer', username='other')
         ChatLog.objects.create(
             user=other_user,
-            conversation_id='other-conv',
+            conversation=None,
             question='Other question?',
             answer='Other answer'
         )
-
         self._login(self.user)
         url = reverse('analytics:chat-log-list')
         response = self.client.get(url)
@@ -124,11 +112,10 @@ class ChatLogTest(TestCase):
     def test_unanswered_endpoint(self):
         ChatLog.objects.create(
             user=self.user,
-            conversation_id='conv-1',
+            conversation=None,
             question='Unanswered question?',
             answer='Some answer'
         )
-
         self._login(self.admin)
         url = reverse('analytics:chat-log-unanswered')
         response = self.client.get(url)
@@ -139,19 +126,18 @@ class ChatLogTest(TestCase):
         self._login(self.admin)
         ChatLog.objects.create(
             user=self.user,
-            conversation_id='conv-1',
+            conversation=None,
             question='Q1?',
             answer='A1',
             was_helpful=True
         )
         ChatLog.objects.create(
             user=self.user,
-            conversation_id='conv-2',
+            conversation=None,
             question='Q2?',
             answer='A2',
             was_helpful=False
         )
-
         url = reverse('analytics:chat-log-stats')
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
@@ -160,24 +146,24 @@ class ChatLogTest(TestCase):
         self.assertEqual(response.data['not_helpful_count'], 1)
 
     def test_conversation_endpoint(self):
-        conv_id = 'multi-turn-conv'
-
+        conv_uuid = 'multi-turn-conv'
         self._login(self.user)
         ChatLog.objects.create(
             user=self.user,
-            conversation_id=conv_id,
+            conversation=None,
+            conversation_uuid=conv_uuid,
             question='Q1?',
             answer='A1'
         )
         ChatLog.objects.create(
             user=self.user,
-            conversation_id=conv_id,
+            conversation=None,
+            conversation_uuid=conv_uuid,
             question='Q2?',
             answer='A2'
         )
-
         url = reverse('analytics:chat-log-conversation')
-        response = self.client.get(url, {'conversation_id': conv_id})
+        response = self.client.get(url, {'conversation_uuid': conv_uuid})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
 
@@ -185,7 +171,7 @@ class ChatLogTest(TestCase):
         self._login(self.user)
         log = ChatLog.objects.create(
             user=self.user,
-            conversation_id='conv-123',
+            conversation=None,
             question='How to fix issue?',
             answer='Here is the solution...',
             article_ref=self.article

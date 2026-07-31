@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Feedback,ChatLog,SearchLog,Notification,ArticleViewLog
+from .models import Feedback,ChatLog,SearchLog,Notification,ArticleViewLog,ChatLogSource
 
 @admin.register(Feedback)
 class FeedbackAdmin(admin.ModelAdmin):
@@ -15,12 +15,18 @@ class FeedbackAdmin(admin.ModelAdmin):
         ('Timestamps', {'fields': ('created_at',)}),
     )
 
+class ChatLogSourceInline(admin.TabularInline):
+    model = ChatLogSource
+    extra = 0
+    readonly_fields = ['article', 'confidence', 'rank']
+
 @admin.register(ChatLog)
 class ChatLogAdmin(admin.ModelAdmin):
-    list_display = ['id', 'user', 'conversation_id', 'question_preview', 'was_helpful', 'created_at']
+    list_display = ['id', 'user', 'conversation', 'conversation_id', 'question_preview', 'was_helpful', 'created_at']
     list_filter = ['was_helpful', 'created_at', 'user']
     search_fields = ['user__username', 'question', 'answer']
     readonly_fields = ['created_at']
+    inlines = [ChatLogSourceInline]
     
     def question_preview(self, obj):
         return obj.question[:50] + '...' if len(obj.question) > 50 else obj.question
@@ -28,7 +34,7 @@ class ChatLogAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('User', {'fields': ('user',)}),
-        ('Conversation', {'fields': ('conversation_id',)}),
+        ('Conversation', {'fields': ('conversation', 'conversation_id')}),
         ('Content', {'fields': ('question', 'answer')}),
         ('Reference', {'fields': ('article_ref',)}),
         ('Feedback', {'fields': ('was_helpful',)}),
