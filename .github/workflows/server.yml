@@ -82,7 +82,7 @@ jobs:
           pytest -v --tb=short  
   build-and-push:
       runs-on: ubuntu-latest
-      if: github.ref == 'ref/heads/main'
+      if: github.ref == 'refs/heads/main'
 
       steps:
           -   name: Check Code
