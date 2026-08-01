@@ -21,6 +21,16 @@ spec:
         envFrom:
         - secretRef:
             name: db-credentials
+        env: 
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: django-secrets
+              key: SECRET_KEY
+        - name: DEBUG
+          value: "0"
+        - name: ALLOWED_HOSTS
+          value: "jeff-muna.capstone.company.com,localhost,127.0.0.1"
         resources:
           limits:
             memory: "128Mi"

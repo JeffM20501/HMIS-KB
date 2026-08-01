@@ -97,7 +97,7 @@ jobs:
               id: ecr-login
               uses: aws-actions/amazon-ecr-login@v2
           
-          -   name: Build push FE image
+          -   name: Build push backend image to ECR
               working-directory: ./client
               run: |
                   docker build -f Dockerfile.frontend -t ${{env.ECR_REGISTRY_BE}}:latest  -t $ECR_REGISTRY_BE:${{github.sha}} .
@@ -110,8 +110,9 @@ jobs:
               aws eks update-kubeconfig --name innovation-lab --region ${{ env.AWS_REGION }}
 
               kubectl set image deployment/jeff-hmis-be \
-                jeff-hmis-be-container=${{env.ECR_REGISTRY_BE}}:${{env.IMAGE_TAG}}
+                jeff-hmis-be-container=${{env.ECR_REGISTRY_BE}}:${{env.IMAGE_TAG}} \
+                -n jeff-muna
 
-              kubectl rollout status deployment/jeff-hmiskb-be
+              kubectl rollout status deployment/jeff-hmiskb-be -n jeff-muna
 
-              kubectl apply -f k8s/service-backend.yml
+              kubectl apply -f k8s/service-backend.yml -n jeff-muna
