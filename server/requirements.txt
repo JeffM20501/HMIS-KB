@@ -111,3 +111,4 @@ packaging==26.2
 setuptools==83.0.0
 six==1.17.0
 attrs==26.1.0
+mysqlclient==2.2.8
