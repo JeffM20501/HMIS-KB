@@ -41,6 +41,9 @@ jobs:
           IMAGE_TAG: ${{github.sha}}
         run: |
           aws eks update-kubeconfig --name innovation-lab --region ${{ env.AWS_REGION }}
+          
+          kubectl apply -f k8s/deployment-frontend.yml -n jeff-muna
+
           kubectl set image deployment/jeff-hmiskb-fe \
             jeff-hmis-fe-container=${{env.ECR_REGISTRY_FE}}:${{github.sha}} \
             -n jeff-muna
@@ -48,5 +51,5 @@ jobs:
           kubectl rollout status deployment/jeff-hmiskb-fe -n jeff-muna
 
           kubectl apply -f k8s/service-frontend.yml -n jeff-muna
-          kubectl apply -f dk8s/ingress.yml -n jeff-muna
+          kubectl apply -f k8s/ingress.yml -n jeff-muna
 

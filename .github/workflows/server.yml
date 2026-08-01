@@ -109,7 +109,9 @@ jobs:
             run: |
               aws eks update-kubeconfig --name innovation-lab --region ${{ env.AWS_REGION }}
 
-              kubectl set image deployment/jeff-hmis-be \
+              kubectl apply -f k8s/deployment-backend.yml -n jeff-muna
+            
+              kubectl set image deployment/jeff-hmiskb-be \
                 jeff-hmis-be-container=${{env.ECR_REGISTRY_BE}}:${{env.IMAGE_TAG}} \
                 -n jeff-muna
 
