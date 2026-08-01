@@ -101,5 +101,5 @@ jobs:
               working-directory: ./client
               run: |
                   docker build -f Dockerfile.frontend -t ${{env.ECR_REGISTRY_BE}}:latest  -t $ECR_REGISTRY_BE:${{github.sha}} .
-                  docker push ${{env.ECR_REGISTRY_BE}}:latest $ECR_REGISTRY_BE:${{github.sha}}
+                  docker push --all-tags ${{env.ECR_REGISTRY_BE}}
                   
