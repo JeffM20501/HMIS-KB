@@ -1,23 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: jeff-hmiskb-fe
+  name: jeff-hmiskb-be
   namespace: jeff-muna
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: jeff-hmiskb-fe
+      app: jeff-hmiskb-be
   template:
     metadata:
       labels:
-        app: jeff-hmiskb-fe
+        app: jeff-hmiskb-be
     spec:
       imagePullSecrets:
-      - name: ecr-registry-secret   # ← this must exist in namespace
+      - name: ecr-registry-secret
       containers:
-      - name: jeff-hmis-fe-container
-        image: 024848484634.dkr.ecr.eu-west-1.amazonaws.com/jeff-muna/frontend:latest
+      - name: jeff-hmis-be-container
+        image: 024848484634.dkr.ecr.eu-west-1.amazonaws.com/jeff-muna/backend:latest
+        envFrom:
+        - secretRef:
+            name: db-credentials
         resources:
           limits:
             memory: "128Mi"

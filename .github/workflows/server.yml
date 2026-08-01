@@ -100,6 +100,6 @@ jobs:
           -   name: Build push FE image
               working-directory: ./client
               run: |
-                  docker build -f Dockerfile.frontend  -t $ECR_REGISTRY_BE:${{github.sha}} .
-                  docker push $ECR_REGISTRY_BE:${{github.sha}}
+                  docker build -f Dockerfile.frontend -t ${{env.ECR_REGISTRY_BE}}:latest  -t $ECR_REGISTRY_BE:${{github.sha}} .
+                  docker push ${{env.ECR_REGISTRY_BE}}:latest $ECR_REGISTRY_BE:${{github.sha}}
                   

@@ -1,65 +1,26 @@
-kind: Pod
-apiVersion: v1
-metadata:
-  name: taifa-care-frontend
-  labels:
-    app: taifa-care-frontend
-spec:
-  containers:
-    - name: taifa-care-frontend
-      image: 'kicbase/echo-server:1.0'
----
-kind: Service
-apiVersion: v1
-metadata:
-  name: taifa-care-frontend-service
-spec:
-  selector:
-    app: taifa-care-frontend
-  ports:
-    - port: 8080
----
-kind: Pod
-apiVersion: v1
-metadata:
-  name: taifa-care-backend
-  labels:
-    app: taifa-care-backend
-spec:
-  containers:
-    - name: bar-app
-      image: 'kicbase/echo-server:1.0'
----
-kind: Service
-apiVersion: v1
-metadata:
-  name: taifa-care-backend-service
-spec:
-  selector:
-    app: taifa-care-backend
-  ports:
-    - port: 8080
----
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: example-ingress
+  name: jeff-hmiskb-ingress
+  namespace: jeff-muna
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: / #op
 spec:
   rules:
-    - http:
-        paths:
-          - pathType: Prefix
-            path: /taifa-care-frontend
-            backend:
-              service:
-                name: foo-service
-                port:
-                  number: 8080
-          - pathType: Prefix
-            path: /taifa-care-backend
-            backend:
-              service:
-                name: bar-service
-                port:
-                  number: 8080
----
+  - host: jeff-muna.capstone.company.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: jeff-hmiskb-fe-service
+            port:
+              number: 80
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: jeff-hmiskb-be-service
+            port:
+              number: 80
