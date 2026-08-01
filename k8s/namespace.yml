@@ -1,1 +1,5 @@
-name: jeff-muna
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: jeff-muna
+  

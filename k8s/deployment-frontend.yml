@@ -1,23 +1,41 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: hmiskb-fe
+  name: jeff-hmiskb-fe
+  namespace: jeff-muna
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: hmiskb-fe
+      app: jeff-hmiskb-fe
   template:
     metadata:
       labels:
-        app: hmiskb-fe
+        app: jeff-hmiskb-fe
     spec:
+      imagePullSecrets:
+      - name: ecr-registry-secret   # ← this must exist in namespace
       containers:
-      - name: hmis-fe-container
-        image: nginx:latest
+      - name: jeff-hmis-fe-container
+        image: 024848484634.dkr.ecr.eu-west-1.amazonaws.com/jeff-muna/frontend:latest
         resources:
           limits:
             memory: "128Mi"
             cpu: "500m"
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
         ports:
         - containerPort: 80
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5

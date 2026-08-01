@@ -1,11 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: hmiskb-fe-service
+  name: jeff-hmiskb-fe-service
+  namespace: jeff-muna
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
-    app: hmiskb-fe-service
+    app: jeff-hmiskb-fe
   ports:
   - protocol: TCP
     port: 80
