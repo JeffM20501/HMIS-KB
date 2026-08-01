@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jeff-hmiskb-be
+  namespace: jeff-muna
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: jeff-hmiskb-be
+  template:
+    metadata:
+      labels:
+        app: jeff-hmiskb-be
+    spec:
+      imagePullSecrets:
+      - name: ecr-registry-secret
+      containers:
+      - name: jeff-hmis-be-container
+        image: 024848484634.dkr.ecr.eu-west-1.amazonaws.com/jeff-muna/backend:latest
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+        ports:
+        - containerPort: 80
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5

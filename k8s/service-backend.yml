@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: jeff-hmiskb-be-service
+  namespace: jeff-muna
+spec:
+  type: ClusterIP
+  selector:
+    app: jeff-hmiskb-be
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
