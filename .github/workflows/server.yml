@@ -101,5 +101,17 @@ jobs:
               working-directory: ./client
               run: |
                   docker build -f Dockerfile.frontend -t ${{env.ECR_REGISTRY_BE}}:latest  -t $ECR_REGISTRY_BE:${{github.sha}} .
-                  docker push ${{env.ECR_REGISTRY_BE}}:latest $ECR_REGISTRY_BE:${{github.sha}}
-                  
+                  docker push --all-tags ${{env.ECR_REGISTRY_BE}}
+          
+          - name: Deploy backend to EKS
+            env:
+              IMAGE_TAG: ${{github.sha}}
+            run: |
+              aws eks update-kubeconfig --name innovation-lab --region ${{ env.AWS_REGION }}
+
+              kubectl set image deployment/jeff-hmis-be \
+                jeff-hmis-be-container=${{env.ECR_REGISTRY_BE}}:${{env.IMAGE_TAG}}
+
+              kubectl rollout status deployment/jeff-hmiskb-be
+
+              kubectl apply -f k8s/service-backend.yml
