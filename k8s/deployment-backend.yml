@@ -34,10 +34,10 @@ spec:
           value: "jeff-muna.capstone.company.com,localhost,127.0.0.1"
         resources:
           limits:
-            memory: "128Mi"
+            memory: "2Gi"
             cpu: "500m"
           requests:
-            memory: "64Mi"
+            memory: "512Mi"
             cpu: "250m"
         ports:
         - containerPort: 8080
