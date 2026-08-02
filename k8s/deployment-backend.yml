@@ -33,7 +33,7 @@ spec:
         - name: DEBUG
           value: "1"
         - name: ALLOWED_HOSTS
-          value: "jeff-muna.capstone.company.com,localhost,127.0.0.1"
+          value: "jeff-muna.capstone.company.com,localhost,127.0.0.1,192.168.28.241,*.jeff-muna.svc.cluster.local"
         resources:
           limits:
             memory: "2Gi"

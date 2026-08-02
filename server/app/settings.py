@@ -35,8 +35,10 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(os.environ.get("DEBUG", default=0))
 
-
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver').split(",")
+if DEBUG:
+    ALLOWED_HOSTS=['*']
+else:
+    ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver').split(",")
 
 
 #users
@@ -99,7 +101,7 @@ cloudinary.config(
     secure=True
 )
 
-HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
+
 
 # Chatbot LLM provider — see chatbot/services/llm_client.py. Embeddings
 # (chatbot/services/embedding_service.py) run locally via sentence-
