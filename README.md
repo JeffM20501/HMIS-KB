@@ -1,21 +1,58 @@
-# HMIS-KB
+# HMIS-KB - TaifaCare Knowledge Base
+
+HMIS-KB is a full‑stack knowledge base platform for healthcare workers, built with Django (backend), React (frontend), and deployed on AWS EKS with a CI/CD pipeline.
+
+---
+
+## Architecture
+
+- **Frontend**: React + Vite, served via Nginx.
+- **Backend**: Django + Django REST Framework, running on Gunicorn.
+- **Database**: MySQL (provided by DevOps team).
+- **Container Registry**: AWS ECR.
+- **Orchestration**: AWS EKS (Kubernetes).
+- **CI/CD**: GitHub Actions
+
+---
 
 ## Getting Started
 
 - Follow these steps to set up the project locally.
 
-### Pre-requisites
+## Pre-requisites
 
-- Python 3.14.6
-- Node.js, React, and npm
-- PostgresSQL
-- Docker
-- Cloud Providers (Render,AWS, DigitalOcean)
-- A Cloudinary account or any other media management platform
-- Hugging face account or any other LLM  provider
-- A Brevo email or any other email provider
+To deploy or maintain this project, you need:
 
-#### 1. Clone Repository
+- [AWS CLI](https://aws.amazon.com/cli/) v2 configured with the `capstone` profile.
+- [kubectl](https://kubernetes.io/docs/tasks/tools/) installed.
+- [Docker](https://docs.docker.com/get-docker/) installed.
+- Access to the ECR repositories: `<account-id>.dkr.ecr.eu-west-1.amazonaws.com/jeff-muna/frontend` and `.../backend`.
+- Access to the EKS cluster (`innovation-lab`).
+- GitHub repository with the following secrets configured:
+
+| Secret Name | Description |
+| ------------- | ------------- |
+| `AWS_ACCESS_KEY_ID` | AWS IAM Access Key |
+| `AWS_SECRET_ACCESS_KEY` | AWS IAM Secret Key |
+| `AWS_REGION` | AWS region (eu-west-1) |
+| `ECR_REGISTRY_FE` | Full ECR URL for frontend |
+| `ECR_REGISTRY_BE` | Full ECR URL for backend |
+| `SECRET_KEY` | Django secret key (used in tests) |
+| `GROQ_API_KEY` | Groq API key (optional) |
+
+---
+
+## CI/CD Pipeline
+
+The pipeline is defined in `.github/workflows/` (frontend and backend workflows). It runs on every push to main and consists of:
+
+- Checkout code
+- Configure AWS credentials
+- Login to ECR
+- Build and push images (with `latest` and `git-sha` tags)
+- Deploy to EKS (update image, apply manifests, wait for rollout)
+
+## 1. Clone Repository
 
 - There are 2 ways to clone the repo, you can use `CLI` command or a GUI like `GitHub Desktop`
 - Recommend using `GitHub Desktop`
@@ -30,32 +67,52 @@ git clone https://github.com/your-org/HMIS_KB.git; cd HMIS_KB #make sure you go 
 ## File Structure
 
 ```bash
+.
 ├── client
+│   ├── Dockerfile.frontend
 │   ├── eslint.config.js
 │   ├── index.html
 │   ├── node_modules
 │   ├── package.json
 │   ├── pnpm-lock.yaml
+│   ├── pnpm-workspace.yaml
+│   ├── postcss.config.js
 │   ├── public
 │   ├── README.md
 │   ├── src
+│   ├── tailwind.config.js
 │   └── vite.config.js
 ├── ERD
 │   ├── HealthCare(KB)ERD.pdf
 │   ├── HealthCare(KB)ERD.png
 │   └── HealthCare(KB)ERD.sql
+├── k8s
+│   ├── deployment-backend.yml
+│   ├── deployment-frontend.yml
+│   ├── ingress.yml
+│   ├── namespace.yml
+│   ├── service-backend.yml
+│   └── service-frontend.yml
+├── LICENSE
 ├── README.md
+├── RUNBOOK.md
 ├── server
 │   ├── analytics
 │   ├── app
 │   ├── articles
+│   ├── chatbot
+│   ├── conftest.py
 │   ├── docker-compose.yml
 │   ├── Dockerfile.backend
+│   ├── healthy_views.py
 │   ├── HMIS_KB_collection.yml
 │   ├── manage.py
+│   ├── __pycache__
 │   ├── pytest.ini
 │   ├── README.md
+│   ├── requirements-dev.txt
 │   ├── requirements.txt
+│   ├── templates
 │   ├── users
 │   └── utils
 └── System Design
@@ -143,6 +200,26 @@ VITE_API=http://localhost:5000/api/v1
 | Variable | Description | Example |
 |---|---|---|
 | `VITE_API` | Base URL for the Django API | `http://localhost:8000/api/v1` |
+
+---
+
+## Deployment
+
+Deployment is fully automated via GitHub Actions. On every push to `main`:
+
+1. The **frontend** image is built, tagged with the commit SHA, and pushed to ECR.
+2. The **backend** image is built, tagged with the commit SHA, and pushed to ECR.
+3. The CI/CD pipeline updates the Kubernetes Deployments with the new image tags and applies all manifests to the `jeff-muna` namespace.
+
+### Manual Deployment (if needed)
+
+```bash
+# Configure kubectl
+aws eks update-kubeconfig --name <your-cluster-name> --region <you-region> --profile capstone
+
+# Apply all manifests
+kubectl apply -f k8s/ -n jeff-muna
+```
 
 ---
 
