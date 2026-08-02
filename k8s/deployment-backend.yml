@@ -23,6 +23,8 @@ spec:
         - secretRef:
             name: db-credentials
         env: 
+        - name: DB_HOST
+          value: "innovation.c3m2emiiu9qh.eu-west-1.rds.amazonaws.com"
         - name: SECRET_KEY
           valueFrom:
             secretKeyRef:
