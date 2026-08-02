@@ -202,8 +202,8 @@ kubectl exec -it <backend-pod> -n <your-namespace> -- python manage.py migrate
 To revert to a previous image tag:
 
 ```bash
-kubectl rollout undo deployment/jeff-hmiskb-be -n <your-namespace>
-kubectl rollout status deployment/jeff-hmiskb-be -n <your-namespace>
+kubectl rollout undo deployment/<your-app-name> -n <your-namespace>
+kubectl rollout status deployment/<your-app-name> -n <your-namespace>
 ```
 
 ## Monitoring
