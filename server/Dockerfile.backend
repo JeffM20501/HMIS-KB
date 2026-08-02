@@ -1,12 +1,12 @@
 # python runtime image
 FROM python:3.14-slim AS builder
 
-# Install development libraries for PostgreSQL and MySQL, plus pkg-config
+# Install required system dependencies:
+# - libpq-dev: needed for psycopg2 (PostgreSQL support)
+# - libmagic-dev: needed for python-magic (file type detection)
+# - MySQL compile-time deps (mysqlclient) are removed because we use pymysql
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
-    default-libmysqlclient-dev \
-    pkg-config \
-    gcc \
     libmagic-dev \
     && rm -rf /var/lib/apt/lists/*
 
@@ -25,7 +25,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # prod stage
 FROM python:3.14-slim
 
-# Install runtime libraries for PostgreSQL and MySQL
+# Install runtime libraries for both PostgreSQL and MySQL
+# - libpq5: runtime for psycopg2 (PostgreSQL)
+# - libmariadb3: runtime for mysqlclient (not needed for pymysql, but harmless)
+#   We keep it because it's small and ensures compatibility if mysqlclient is ever installed.
+# - libmagic1: runtime for python-magic
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     libmariadb3 \
