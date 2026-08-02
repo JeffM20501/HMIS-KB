@@ -36,9 +36,9 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 DEBUG = bool(os.environ.get("DEBUG", default=0))
 
 if DEBUG:
-    ALLOWED_HOSTS=['*']
+    ALLOWED_HOSTS = ['*']
 else:
-    ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver').split(",")
+    ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,testserver').split(',')
 
 
 #users
