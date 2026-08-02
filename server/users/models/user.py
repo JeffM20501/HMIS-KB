@@ -11,7 +11,7 @@ ROLES=[
 
 
 class User(AbstractUser):
-    department=models.CharField(default="staff", validators=[validate_department])
+    department=models.CharField(default="staff",max_length=100 ,validators=[validate_department])
     role=models.CharField(max_length=20,choices=ROLES, default="viewer", validators=[validate_role])
     updated_at=models.DateTimeField(auto_now=True)  
     avatar=models.URLField(
