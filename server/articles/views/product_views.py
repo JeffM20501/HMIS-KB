@@ -4,6 +4,7 @@ from articles.serializers.product_serializer import ProductSerializer
 from articles.permissions.product_permissions import IsProductWrite,IsProductRead
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from articles.serializers.article_serializers import ArticleSerializer
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset=Product.objects.all()
@@ -24,11 +25,10 @@ class ProductViewSet(viewsets.ModelViewSet):
         return queryset
     
     def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            permission_classes=[IsProductRead]
+        if self.action in ['list', 'retrieve', 'articles']:
+            permission_classes = [IsProductRead]
         else:
-            permission_classes=[IsProductWrite]
-        
+            permission_classes = [IsProductWrite]
         return [permission() for permission in permission_classes]
 
     def get_serializer_class(self):
