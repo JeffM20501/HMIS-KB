@@ -97,8 +97,8 @@ export default function AdminAnalyticsPage() {
             data={articleTrend}
             xKey="month"
             bars={[
-              { dataKey: 'created', name: 'Created', color: '#3B82F6' },
-              { dataKey: 'published', name: 'Published', color: '#10B981' },
+              { dataKey: 'created', name: 'Created', color: '#93C5FD' },
+              { dataKey: 'published', name: 'Published', color: '#2563EB' },
             ]}
           />
         </ChartCard>

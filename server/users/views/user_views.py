@@ -165,33 +165,46 @@ class UserViewSet(viewsets.ModelViewSet):
             })
         
         #article creation trend
-        now=timezone.now()
-        start_date=now-timedelta(days=365)
-        creation_qs=Article.objects.filter(
+        now = timezone.now()
+        start_date = now - timedelta(days=365)
+
+        # Created articles per month
+        created_qs = Article.objects.filter(
             created_at__gte=start_date
         ).annotate(
             month=TruncMonth('created_at')
-        ).values(
-            'month'
-        ).annotate(
+        ).values('month').annotate(
             count=Count('id')
         ).order_by('month')
-        
-        #pad moths with zero
-        creation_trend=[]
-        current=start_date.replace(day=1)
+
+        # Published articles per month
+        published_qs = Article.objects.filter(
+            published_at__gte=start_date,
+            status='published'
+        ).annotate(
+            month=TruncMonth('published_at')
+        ).values('month').annotate(
+            count=Count('id')
+        ).order_by('month')
+
+        created_dict = {item['month'].date(): item['count'] for item in created_qs}
+        published_dict = {item['month'].date(): item['count'] for item in published_qs}
+
+        creation_trend = []
+        current = start_date.replace(day=1)
         while current <= now:
-            month_str=current.strftime('%b %Y')
-            mathched=next((v for v in creation_qs if v['month'].date()==current.date()),None)
+            month_date = current.date()
+            month_label = current.strftime('%b')
             creation_trend.append({
-                'month':month_str,
-                'count':mathched['count'] if mathched else 0
+                'month': month_label,
+                'created': created_dict.get(month_date, 0),
+                'published': published_dict.get(month_date, 0)
             })
-            
-            if current.month==12:
-                current=current.replace(year=current.year+1, month=1)
+            # move to next month
+            if current.month == 12:
+                current = current.replace(year=current.year+1, month=1)
             else:
-                current=current.replace(month=current.month+1)
+                current = current.replace(month=current.month+1)
         
         #most viewed articles
         most_viewed=Article.objects.filter(status='published').order_by('-views')[:10]
