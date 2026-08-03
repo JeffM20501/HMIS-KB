@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from articles.models import Article,Category,Tag
+from articles.models import Article,Category,Tag,Product
 from django.contrib.auth import get_user_model
 from articles.serializers.media_serializer import MediaSerializer
 
@@ -17,6 +17,13 @@ class ArticleSerializer(serializers.ModelSerializer):
         required=False
     )
     
+    product=serializers.SlugRelatedField(
+        slug_field='slug',
+        queryset=Product.objects.all(),
+        allow_null=True,
+        required=False
+    )
+    
     
     class Meta:
         model = Article
@@ -24,7 +31,7 @@ class ArticleSerializer(serializers.ModelSerializer):
             'id', 'title', 'slug', 'content', 'category',
             'author', 'author_username', 'author_full_name','author_avatar', 'published_by', 'publisher_username',
             'status', 'views', 'created_at', 'updated_at', 'published_at', 'tags',
-            'article_type', 'media','product_version','module'
+            'article_type', 'media','product_version','module', 'product'
         ]
         read_only_fields = [
             'views', 'created_at', 'updated_at', 'published_at',
