@@ -71,7 +71,7 @@ export default function HomePage() {
           <h1 className="text-4xl sm:text-5xl font-bold text-white tracking-tight mb-4">
             How can we help you today?
           </h1>
-          <p className="text-lg text-white/75 mb-8">Search documentation across the TaifaCare HMIS platform</p>
+          <p className="text-lg text-white/75 mb-8">Search documentation across the TaifaCare Help Center</p>
 
           <form onSubmit={submitSearch} className="max-w-2xl mx-auto">
             <div className="flex items-center gap-2 bg-white rounded-2xl shadow-xl p-1.5">
