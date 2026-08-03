@@ -12,16 +12,17 @@ import { useDebounce } from '../../hooks/useDebounce';
 import { formatDateTime } from '../../utils/formatters';
 
 const ACTION_TONE = {
-  Published: 'green',
-  'Article Approved': 'green',
-  'User Invited': 'blue',
-  'Category Created': 'blue',
+  'Published': 'green',
   'Article Submitted': 'amber',
   'Role Changed': 'amber',
-  'Article Rejected': 'red',
-  'User Suspended': 'red',
-  Archived: 'gray',
-  'Settings Updated': 'purple',
+  'Rejected': 'red',
+  'Created': 'blue',
+  'Updated': 'blue',
+  'Deleted': 'red',
+  'Login': 'gray',
+  'Logout': 'gray',
+  'Viewed': 'gray',
+  'Exported': 'purple',
 };
 
 const ACTIONS = Object.keys(ACTION_TONE);
@@ -48,22 +49,22 @@ export default function AuditLogsPage() {
       header: 'User',
       render: (row) => (
         <div className="flex items-center gap-2">
-          <Avatar name={row.user?.full_name || row.user_email} size="sm" />
-          <span className="font-medium text-text-primary">{row.user?.full_name || row.user_email}</span>
+          <Avatar name={row.full_name || row.user_email} size="sm" />
+          <span className="font-medium text-text-primary">{row.full_name || row.user_email}</span>
         </div>
       ),
     },
     {
       key: 'action',
       header: 'Action',
-      render: (row) => <Badge tone={ACTION_TONE[row.action] || 'gray'}>{row.action}</Badge>,
+      render: (row) => <Badge tone={ACTION_TONE[row.display_action] || 'gray'}>{row.display_action}</Badge>,
     },
     {
       key: 'object',
       header: 'Object',
       render: (row) => (
         <div>
-          <p className="text-text-primary">{row.object_label || row.object_repr}</p>
+          <p className="text-text-primary">{row.object_label}</p>
           {row.detail && <p className="text-xs text-text-secondary">{row.detail}</p>}
         </div>
       ),

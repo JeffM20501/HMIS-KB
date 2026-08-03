@@ -40,10 +40,13 @@ class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
         if user_id:
             queryset = queryset.filter(user_id=user_id)
         
-        # Filter by action
-        action = self.request.query_params.get('action')
-        if action:
-            queryset = queryset.filter(action=action)
+        # Filter by action (display value → internal code)
+        action_display = self.request.query_params.get('action')
+        if action_display:
+            for code, display in AuditLog.ACTION_CHOICES:
+                if display == action_display:
+                    queryset = queryset.filter(action=code)
+                    break
         
         # Filter by content type
         content_type = self.request.query_params.get('content_type')
@@ -76,10 +79,10 @@ class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
         """
         total = AuditLog.objects.count()
         
-        # Count by action
+        # Count by action (use display names)
         action_counts = {}
-        for action, _ in AuditLog.ACTION_CHOICES:
-            action_counts[action] = AuditLog.objects.filter(action=action).count()
+        for code, display in AuditLog.ACTION_CHOICES:
+            action_counts[display] = AuditLog.objects.filter(action=code).count()
         
         # Count by user
         user_counts = {}
