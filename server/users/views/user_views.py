@@ -16,8 +16,8 @@ from django.db.models.functions import TruncMonth
 from django.utils import timezone
 from analytics.models import ArticleViewLog
 from datetime import timedelta
-from analytics.models import Feedback
-
+from analytics.models import Feedback, AuditLog
+from utils.get_ip import _get_client_ip
 from ..serializers.user_serializers import UserSerializer
 from ..serializers.password_reset_serializer import PasswordResetConfirmSerializer,PasswordResetRequestSerializer
 
@@ -241,6 +241,7 @@ class UserViewSet(viewsets.ModelViewSet):
         except User.DoesNotExist:
             return Response({'error':'User not found'},status=status.HTTP_404_NOT_FOUND)
         
+        old_role=user.role
         new_role=request.data.get('role')
         
         if new_role not in ['admin','editor','viewer']:
@@ -248,6 +249,14 @@ class UserViewSet(viewsets.ModelViewSet):
         
         user.role=new_role
         user.save()
+        AuditLog.log_action(
+            user=request.user,
+            action=AuditLog.ACTION_ROLE_CHANGE,
+            obj=user,
+            changes={'role': {'old': old_role, 'new': new_role}},
+            user_ip=_get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', '')
+        )
         return Response({'message':f'User role Updated to {new_role}'},status=status.HTTP_200_OK)
     
     @action(detail=True, methods=['post'])

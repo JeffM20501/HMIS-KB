@@ -26,4 +26,5 @@ export const EDITOR_NAV = [
   { label: 'Submitted', to: ROUTES.EDITOR_SUBMITTED, icon: Send },
   { label: 'My Articles', to: ROUTES.EDITOR_MY_ARTICLES, icon: FolderClock },
   { label: 'Notifications', to: ROUTES.EDITOR_NOTIFICATIONS, icon: Bell, badgeKey: 'notifications' },
+  { label: 'Settings', to: ROUTES.EDITOR_SETTINGS, icon: Settings },
 ];

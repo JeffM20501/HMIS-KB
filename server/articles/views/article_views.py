@@ -16,7 +16,8 @@ from utils.audit_log_helper import log_audit_action
 from analytics.models import Notification
 from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 from django.db.models import Q
-
+from analytics.models import AuditLog
+from utils.get_ip import _get_client_ip
 class ArticleViewSet(viewsets.ModelViewSet):
     queryset = Article.objects.all().order_by('-created_at')
     serializer_class = ArticleSerializer
@@ -165,6 +166,13 @@ class ArticleViewSet(viewsets.ModelViewSet):
             )
         article.status = 'pending_review'
         article.save()
+        AuditLog.log_action(
+            user=request.user,
+            action=AuditLog.ACTION_SUBMIT,
+            obj=article,
+            user_ip=_get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', '')
+        )
         try:
             from django.contrib.auth import get_user_model
             User = get_user_model()
@@ -190,6 +198,14 @@ class ArticleViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         article.publish(request.user)
+        AuditLog.log_action(
+            user=request.user,
+            action=AuditLog.ACTION_PUBLISH,
+            obj=article,
+            reason="Published article",
+            user_ip=_get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', '')
+        )
         Notification.create_article_published_notification(article, request.user)
         return Response(
             {'message': 'Article published successfully.'},
@@ -209,6 +225,14 @@ class ArticleViewSet(viewsets.ModelViewSet):
         reason = request.data.get('reason', 'No reason provided.')
         article.status = 'draft'
         article.save()
+        AuditLog.log_action(
+            user=request.user,
+            action=AuditLog.ACTION_REJECT,
+            obj=article,
+            reason=reason,
+            user_ip=_get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', '')
+        )
         Notification.create_article_rejected_notification(article, request.user, reason)
         return Response(
             {'message': f'Article rejected. Reason: {reason}'},

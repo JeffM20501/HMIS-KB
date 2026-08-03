@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Feedback,ChatLog,SearchLog,Notification,ArticleViewLog,ChatLogSource
+from .models import Feedback,ChatLog,SearchLog,Notification,ArticleViewLog,ChatLogSource, AuditLog
 
 @admin.register(Feedback)
 class FeedbackAdmin(admin.ModelAdmin):
@@ -80,4 +80,9 @@ class NotificationAdmin(admin.ModelAdmin):
 @admin.register(ArticleViewLog)
 class ArticleViewLog(admin.ModelAdmin):
     list_display=['id','timestamp', 'user', 'article']
-    
+
+@admin.register(AuditLog)
+class AuditLogAdmin(admin.ModelAdmin):
+    list_display = ['user', 'action', 'content_type', 'object_id', 'reason', 'timestamp']
+    list_filter = ['action', 'content_type']
+    search_fields = ['user__username', 'object_repr']
