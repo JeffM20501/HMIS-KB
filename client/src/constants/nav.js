@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, CheckSquare, BookOpen, Archive, Users, FolderOpen,
   ClipboardList, BarChart3, Activity, Settings, FilePlus2, FileText,
-  Send, FolderClock, Bell,
+  Send, FolderClock, Bell,Package,
 } from 'lucide-react';
 import { ROUTES } from './routes';
 
@@ -13,6 +13,7 @@ export const ADMIN_NAV = [
   { label: 'User Management', to: ROUTES.ADMIN_USERS, icon: Users },
   { label: 'Categories', to: ROUTES.ADMIN_CATEGORIES, icon: FolderOpen },
   { label: 'Templates', to: ROUTES.ADMIN_TEMPLATES, icon: ClipboardList },
+  { label: 'Products',  to: ROUTES.ADMIN_PRODUCTS, icon: Package },
   { label: 'Analytics', to: ROUTES.ADMIN_ANALYTICS, icon: BarChart3 },
   { label: 'Audit Logs', to: ROUTES.ADMIN_AUDIT_LOGS, icon: Activity },
   { label: 'Settings', to: ROUTES.ADMIN_SETTINGS, icon: Settings },

@@ -34,6 +34,7 @@ const UserManagementPage = lazy(() => import('./pages/admin/UserManagementPage.j
 const UserDetailPage = lazy(()=>import('./pages/admin/UserDetailPage.jsx'));
 const AdminCategoriesPage = lazy(() => import('./pages/admin/AdminCategoriesPage.jsx'));
 const TemplatesPage = lazy(() => import('./pages/admin/TemplatesPage.jsx'));
+const AdminProductsPage = lazy(() => import('./pages/admin/AdminProductsPage.jsx'));
 const AdminAnalyticsPage = lazy(() => import('./pages/admin/AdminAnalyticsPage.jsx'));
 const AuditLogsPage = lazy(() => import('./pages/admin/AuditLogsPage.jsx'));
 const AdminSettingsPage = lazy(() => import('./pages/admin/AdminSettingsPage.jsx'));
@@ -85,6 +86,7 @@ export default function App() {
               <Route path="users/:id" element={<UserDetailPage/>}/>
               <Route path="categories" element={<AdminCategoriesPage />} />
               <Route path="templates" element={<TemplatesPage />} />
+              <Route path="products" element={<AdminProductsPage />} />
               <Route path="analytics" element={<AdminAnalyticsPage />} />
               <Route path="audit-logs" element={<AuditLogsPage />} />
               <Route path="settings" element={<AdminSettingsPage />} />

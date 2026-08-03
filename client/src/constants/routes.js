@@ -25,6 +25,7 @@ export const ROUTES = {
   ADMIN_AUDIT_LOGS: '/admin/audit-logs',
   ADMIN_SETTINGS: '/admin/settings',
   ADMIN_PROFILE: '/admin/profile',
+  ADMIN_PRODUCTS: '/admin/products',
 
   // Editor
   EDITOR_DASHBOARD: '/editor',
