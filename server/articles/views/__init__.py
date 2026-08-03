@@ -4,5 +4,6 @@ from articles.views.tag_views import TagViewSet
 from articles.views.article_tag_views import ArticleTagViewSet
 from articles.views.media_views import MediaViewSet
 from articles.views.stats import PublicStatsView
+from articles.views.product_views import ProductViewSet
 
-__all__=['ArticleViewSet', 'CategoryViewSet','TagViewSet','ArticleTagViewSet','MediaViewSet', 'PublicStatsView']
+__all__=['ArticleViewSet', 'CategoryViewSet','TagViewSet','ArticleTagViewSet','MediaViewSet', 'PublicStatsView','ProductViewSet']
