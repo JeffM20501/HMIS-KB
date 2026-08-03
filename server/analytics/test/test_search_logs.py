@@ -114,12 +114,22 @@ class SearchLogTest(BaseAPITestCase):
         SearchLog.objects.create(user=self.user, query='apple', result_count=3)
 
         url = reverse('analytics:search-log-stats')
-        response = self.client.get(url)
+        response = self.client.get(url, {'range': '30d'})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['total_searches'], 3)
-        self.assertEqual(response.data['unique_queries'], 2)
-        self.assertEqual(response.data['no_results_searches'], 1)
-        self.assertIn('popular_queries', response.data)
+        # New response structure
+        self.assertIn('top_terms', response.data)
+        self.assertIn('zero_result_terms', response.data)
+        # Check top_terms – should include 'apple' with count 2
+        top_terms = response.data['top_terms']
+        self.assertGreaterEqual(len(top_terms), 1)
+        apple_term = next((t for t in top_terms if t['term'] == 'apple'), None)
+        self.assertIsNotNone(apple_term)
+        self.assertEqual(apple_term['count'], 2)
+        # Check zero_result_terms – should include 'banana'
+        zero_terms = response.data['zero_result_terms']
+        banana_term = next((t for t in zero_terms if t['term'] == 'banana'), None)
+        self.assertIsNotNone(banana_term)
+        self.assertEqual(banana_term['count'], 1)
 
     def test_viewer_cannot_access_stats(self):
         self._login(self.user)
