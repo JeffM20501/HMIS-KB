@@ -27,6 +27,7 @@ class ChatLog(models.Model):
     response_time = models.FloatField(null=True, blank=True)
     confidence_score = models.FloatField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    escalate_suggested = models.BooleanField(default=False)
     
     class Meta:
         ordering = ['-created_at']

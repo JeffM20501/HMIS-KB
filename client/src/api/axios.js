@@ -40,7 +40,7 @@ function isPublicUrl(url) {
     /^\/categories\/[^\/]+\/$/,                 
     /^\/search\/$/,                             
     /^\/analytics\/feedbacks\/for_object\/$/,   
-    /^\/analytics\/feedbacks\/stats\/$/,        
+    // /^\/analytics\/feedbacks\/stats\/$/,        
     // /^\/analytics\/time-series\/$/,             
     /^\/stats\/$/,                              
   ];

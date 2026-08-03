@@ -47,43 +47,25 @@ class FeedbackViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def stats(self, request):
-        content_type = request.query_params.get('content_type', 'article')
-        object_id = request.query_params.get('object_id')
-
-        if not object_id:
-            return Response(
-                {"error": "object_id is required for stats."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        feedbacks = Feedback.objects.filter(
-            content_type=content_type,
-            object_id=object_id
-        )
-
-        if content_type == 'article':
-            avg_rating = feedbacks.filter(rating__isnull=False).aggregate(Avg('rating'))['rating__avg']
-            total_ratings = feedbacks.filter(rating__isnull=False).count()
-            distribution = {i: feedbacks.filter(rating=i).count() for i in range(1, 6)}
-
-            return Response({
-                'average_rating': round(avg_rating, 2) if avg_rating else None,
-                'total_ratings': total_ratings,
-                'rating_distribution': distribution
-            })
-
-        elif content_type == 'chat':
-            total = feedbacks.count()
-            helpful_count = feedbacks.filter(helpful=True).count()
-
-            return Response({
-                'total_feedback': total,
-                'helpful_count': helpful_count,
-                'not_helpful_count': total - helpful_count,
-                'helpfulness_rate': round(helpful_count / total * 100, 2) if total > 0 else 0
-            })
-
-        return Response({"error": "Invalid content_type."}, status=400)
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        
+        # Count articles per editor (assuming author is editor)
+        editors = User.objects.filter(role='editor')
+        editor_stats = editors.annotate(
+            article_count=Count('articles_authored')
+        ).filter(article_count__gt=0).order_by('-article_count')[:5]
+        
+        most_active = [
+            {
+                'id': e.id,
+                'name': e.full_name or e.username,
+                'article_count': e.article_count
+            }
+            for e in editor_stats
+        ]
+        
+        return Response({'most_active_editors': most_active})
 
     @action(detail=False, methods=['get'])
     def my_feedback(self, request):

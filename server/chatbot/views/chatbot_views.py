@@ -108,6 +108,7 @@ class ChatbotView(APIView):
             article_ref=result.sources[0]['article'] if result.sources else None,
             response_time=result.latency_seconds,
             confidence_score=result.sources[0]['similarity'] if result.sources else None,
+            escalate_suggested=result.escalate_suggested
         )
 
         if conversation and not conversation.title:
