@@ -19,7 +19,7 @@ class User(AbstractUser):
         help_text='Cloudinary url',
         validators=[validate_url]
     )
-    faculty=models.CharField(blank=True)
+    facility=models.CharField(blank=True)
     
     def clean(self):
         
