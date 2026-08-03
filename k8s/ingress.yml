@@ -6,6 +6,7 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: / #op
 spec:
+  ingressClassName: nginx
   rules:
   - host: jeff-muna.capstone.company.com
     http:
