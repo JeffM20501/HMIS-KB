@@ -68,6 +68,13 @@ class Article(models.Model):
     )
     
     module=models.CharField(max_length=100, blank=True, default='')
+    product=models.ForeignKey(
+        'articles.Product',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='articles'
+    )
     product_version=models.CharField(max_length=20,blank=True, default='')
     
     

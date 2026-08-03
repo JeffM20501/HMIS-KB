@@ -57,7 +57,7 @@ export default function SignUpPage() {
         email: values.email,
         department: values.department,
         username:values.username,
-        // facility: values.facility,
+        facility: values.facility,
         password: values.password,
         // status: 'pending',
       }),

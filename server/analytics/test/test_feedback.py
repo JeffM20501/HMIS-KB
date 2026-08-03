@@ -154,19 +154,25 @@ class FeedbackTest(TestCase):
         self.assertEqual(response.data['count'], 1)
 
     def test_feedback_stats_endpoint(self):
-        self._login(self.user)
-        Feedback.objects.create(
-            user=self.user,
-            content_type='article',
-            object_id=self.article.id,
-            rating=5
+        # Create an editor and an article
+        editor = create_regular_user(role='editor', username='editor_test')
+        article2 = Article.objects.create(
+            title='Editor Article',
+            slug='editor-article',
+            content='This is an editor article.',
+            category=self.category,
+            author=editor,
+            status='published'
         )
+
+        self._login(self.admin)
         url = reverse('analytics:feedback-stats')
-        response = self.client.get(url, {
-            'content_type': 'article',
-            'object_id': self.article.id
-        })
+        response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        self.assertIn('average_rating', response.data)
-        self.assertEqual(response.data['total_ratings'], 1)
-        self.assertEqual(response.data['average_rating'], 5.0)
+        self.assertIn('most_active_editors', response.data)
+        editors = response.data['most_active_editors']
+        # At least one editor should be present (the editor we created)
+        self.assertGreaterEqual(len(editors), 1)
+        # Check that the first editor matches the editor's name and has article_count >= 1
+        self.assertEqual(editors[0]['name'], editor.full_name or editor.username)
+        self.assertGreaterEqual(editors[0]['article_count'], 1)

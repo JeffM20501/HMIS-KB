@@ -72,7 +72,7 @@ class SearchLogViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def stats(self, request):
         """
-        Get search statistics.
+        Get search statistics for the analytics dashboard.
         Admin only.
         """
         if request.user.role != 'admin':
@@ -81,40 +81,32 @@ class SearchLogViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
         
-        # Time period (default: last 30 days)
-        days = int(request.query_params.get('days', 30))
+        # Parse range param (e.g., '28d', '7d', '30d')
+        range_param = request.query_params.get('range', '28d')
+        days = int(range_param.replace('d', ''))
         since = timezone.now() - timedelta(days=days)
         
         logs = SearchLog.objects.filter(created_at__gte=since)
         
-        # Total searches
-        total = logs.count()
-        
-        # Unique searches (distinct queries)
-        unique = logs.values('query').distinct().count()
-        
-        # Most popular queries
-        popular = logs.values('query').annotate(
+        # Top 5 search terms (most frequent)
+        top_terms = logs.values('query').annotate(
             count=Count('id')
-        ).order_by('-count')[:10]
+        ).order_by('-count')[:5]
         
-        # Searches with no results
-        no_results = logs.filter(result_count=0).count()
-        
-        # Daily breakdown
-        daily = logs.extra(
-            select={'date': 'DATE(created_at)'}
-        ).values('date').annotate(
+        # Zero-result terms (searches with result_count=0)
+        zero_result_terms = logs.filter(result_count=0).values('query').annotate(
             count=Count('id')
-        ).order_by('-date')[:30]
+        ).order_by('-count')[:5]
         
         return Response({
-            'total_searches': total,
-            'unique_queries': unique,
-            'no_results_searches': no_results,
-            'popular_queries': popular,
-            'daily_breakdown': daily,
-            'period_days': days
+            'top_terms': [
+                {'term': item['query'], 'count': item['count']}
+                for item in top_terms
+            ],
+            'zero_result_terms': [
+                {'term': item['query'], 'count': item['count']}
+                for item in zero_result_terms
+            ]
         })
     
     @action(detail=False, methods=['get'])

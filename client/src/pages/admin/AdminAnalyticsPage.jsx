@@ -1,26 +1,113 @@
 import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Eye, Search, MessageSquare, ThumbsUp, Users, TrendingDown, TrendingUp } from 'lucide-react';
 import * as analyticsApi from '../../api/analytics.api';
+import * as articlesApi from '../../api/articles.api';
 import PageHeader from '../../components/common/PageHeader.jsx';
 import ChartCard from '../../components/dashboard/ChartCard.jsx';
 import GroupedBarChart from '../../components/analytics/GroupedBarChart.jsx';
-import { Skeleton } from '../../components/common/Skeleton.jsx';
+import AreaTrendChart from '../../components/analytics/AreaTrendChart.jsx';
+import DonutStatChart from '../../components/analytics/DonutStatChart.jsx';
+import BarTrendChart from '../../components/analytics/BarTrendChart.jsx';
 import Card from '../../components/ui/Card.jsx';
 import { formatNumber } from '../../utils/formatters';
 
+// Helper StatCard component
+function StatCard({ icon: Icon, label, value, change, positive }) {
+  return (
+    <Card className="p-4">
+      <div className="flex items-center justify-between">
+        <Icon className="w-5 h-5 text-text-secondary" />
+        {change && (
+          <span className={`text-xs font-medium ${positive ? 'text-success' : 'text-danger'}`}>
+            {positive ? '↑' : '↓'} {change}
+          </span>
+        )}
+      </div>
+      <p className="text-2xl font-bold text-text-primary mt-2">
+        {typeof value === 'number' ? value.toLocaleString() : value}
+      </p>
+      <p className="text-xs text-text-secondary">{label}</p>
+    </Card>
+  );
+}
+
 export default function AdminAnalyticsPage() {
   const chatStatsQuery = useQuery({ queryKey: ['analytics', 'chat-stats'], queryFn: () => analyticsApi.getChatLogStats({ range: '28d' }) });
-  const searchStatsQuery = useQuery({ queryKey: ['analytics', 'search-stats'], queryFn: () => analyticsApi.getSearchLogStats({ range: '28d' }) });
-  const feedbackStatsQuery = useQuery({ queryKey: ['analytics', 'feedback-stats'], queryFn: () => analyticsApi.getFeedbackStats() });
+  const searchStatsQuery = useQuery({ 
+    queryKey: ['analytics', 'search-stats'], 
+    queryFn: () => analyticsApi.getSearchLogStats({ range: '28d' }) 
+  });
+  const feedbackStatsQuery = useQuery({ 
+    queryKey: ['analytics', 'feedback-stats'], 
+    queryFn: () => analyticsApi.getFeedbackStats() 
+  });
+  const timeSeriesQuery = useQuery({ 
+    queryKey: ['analytics', 'time-series'], 
+    queryFn: () => analyticsApi.getTimeSeriesStats({ range: '7d' }) 
+  });
+  const articleTrendQuery = useQuery({ queryKey: ['articles', 'creation-trend'], queryFn: () => articlesApi.getArticleTrend() });
+  const categoryViewsQuery = useQuery({ queryKey: ['analytics', 'category-views'], queryFn: () => analyticsApi.getCategoryViews() });
 
   const chat = chatStatsQuery.data || {};
   const search = searchStatsQuery.data || {};
   const topEditors = feedbackStatsQuery.data?.most_active_editors || [];
+  const timeSeriesData = timeSeriesQuery.data || {};
+  const timeSeries = timeSeriesData.results || timeSeriesData.timeSeries || [];
+  const articleTrend = articleTrendQuery.data || [];
+  const categoryViews = categoryViewsQuery.data || [];
+
+  // Compute stats
+  const totalViews = timeSeries.reduce((sum, d) => sum + (d.views || 0), 0);
+  const uniqueSearches = search.unique_searches || 0;
+  const totalConversations = chat.total_conversations || 0;
+  const avgHelpfulness = chat.avg_helpfulness || 0;
+  const zeroResultRate = search.zero_result_rate || 0;
+  const activeContributors = feedbackStatsQuery.data?.active_contributors || 0;
 
   return (
     <div>
-      <PageHeader title="Analytics" description="AI assistant usage, search trends, and content performance" />
+      <PageHeader title="Analytics Dashboard" description="Knowledge base performance - Last 30 days" />
 
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+        <StatCard icon={Eye} label="Total Article Views" value={totalViews} change="+14.2%" positive />
+        <StatCard icon={Search} label="Unique Searches" value={uniqueSearches} change="+8.7%" positive />
+        <StatCard icon={MessageSquare} label="AI Conversations" value={totalConversations} change="+22.1%" positive />
+        <StatCard icon={ThumbsUp} label="Avg. Helpfulness" value={`${avgHelpfulness.toFixed(1)} / 5`} change="+0.2" positive />
+        <StatCard icon={TrendingDown} label="Zero-Result Rate" value={`${zeroResultRate.toFixed(1)}%`} change="-0.8%" positive />
+        <StatCard icon={Users} label="Active Contributors" value={activeContributors} change="+2 this month" positive />
+      </div>
+
+      {/* Article Views & Searches */}
+      <ChartCard title="Articles Viewed & Searches" subtitle="Last 7 days" isLoading={timeSeriesQuery.isLoading}>
+        <AreaTrendChart
+          data={timeSeries}
+          xKey="label"
+          series={[
+            { dataKey: 'views', color: '#2563EB', name: 'Views' },
+            { dataKey: 'searches', color: '#10B981', name: 'Searches' },
+          ]}
+        />
+      </ChartCard>
+
+      {/* Two columns */}
+      <div className="grid lg:grid-cols-2 gap-4 mb-6">
+        <ChartCard title="Article Creation vs Publication" subtitle="Monthly 2025" isLoading={articleTrendQuery.isLoading}>
+          <GroupedBarChart
+            data={articleTrend}
+            xKey="month"
+            bars={[
+              { dataKey: 'created', name: 'Created', color: '#93C5FD' },
+              { dataKey: 'published', name: 'Published', color: '#2563EB' },
+            ]}
+          />
+        </ChartCard>
+        <ChartCard title="Views by Category" subtitle="Share of total views" isLoading={categoryViewsQuery.isLoading}>
+          <DonutStatChart data={categoryViews} nameKey="name" valueKey="percentage" />
+        </ChartCard>
+      </div>
+
+      {/* AI Assistant Usage & Search Analytics */}
       <div className="grid lg:grid-cols-2 gap-4 mb-6">
         <ChartCard
           title="AI Assistant Usage"
@@ -59,9 +146,7 @@ export default function AdminAnalyticsPage() {
               return (
                 <div key={t.term}>
                   <div className="flex items-center justify-between text-sm mb-1">
-                    <span className="text-text-primary">
-                      {i + 1}. {t.term}
-                    </span>
+                    <span className="text-text-primary">{i + 1}. {t.term}</span>
                     <span className="font-medium text-text-primary">{formatNumber(t.count)}</span>
                   </div>
                   <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -92,6 +177,7 @@ export default function AdminAnalyticsPage() {
         </ChartCard>
       </div>
 
+      {/* Most Active Editors */}
       <ChartCard title="Most Active Editors" isLoading={feedbackStatsQuery.isLoading}>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
           {topEditors.map((e, i) => (

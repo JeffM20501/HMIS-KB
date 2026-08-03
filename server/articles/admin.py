@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 from .models import Category
 from django.utils.html import format_html
-from .models import Tag,ArticleTag,Media,Article
+from .models import Tag,ArticleTag,Media,Article,Product
 
 
 @admin.register(Article)
@@ -115,3 +115,9 @@ class MediaAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+    
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    list_display = ['name', 'slug', 'is_active', 'created_at']
+    search_fields = ['name', 'description']
+    prepopulated_fields = {'slug': ('name',)}

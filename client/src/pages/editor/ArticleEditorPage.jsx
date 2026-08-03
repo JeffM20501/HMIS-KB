@@ -7,6 +7,7 @@ import { Check, Save, Send, EyeIcon, PenTool, CheckCircle, X } from 'lucide-reac
 import toast from 'react-hot-toast';
 import * as articlesApi from '../../api/articles.api';
 import * as categoriesApi from '../../api/categories.api';
+import * as productsApi from '../../api/products.api'; 
 import { ARTICLE_TEMPLATES } from '../admin/TemplatesPage.jsx';
 import PageHeader from '../../components/common/PageHeader.jsx';
 import Select from '../../components/ui/Select.jsx';
@@ -30,10 +31,23 @@ export default function ArticleEditorPage() {
   const [successModal, setSuccessModal] = useState({ open: false, message: '', action: null });
 
   const { register, handleSubmit, watch, reset } = useForm({
-    defaultValues: { title: '', template: 'how_to', category: '', module: '', product_version: '' },
+    defaultValues: {
+      title: '',
+      template: 'how_to',
+      category: '',
+      product: '',           
+      module: '',
+      product_version: '',
+    },
   });
 
   const categoriesQuery = useQuery({ queryKey: ['categories', 'root'], queryFn: categoriesApi.getRootCategories });
+
+  
+  const productsQuery = useQuery({
+    queryKey: ['products'],
+    queryFn: () => productsApi.listProducts({ status: 'true' }), // adjust if needed
+  });
 
   const articleQuery = useQuery({
     queryKey: ['article', slug],
@@ -50,6 +64,7 @@ export default function ArticleEditorPage() {
         title: a.title,
         template: a.content_type || 'how_to',
         category: a.category?.slug || '',
+        product: a.product?.slug || '',       
         module: a.module || '',
         product_version: a.product_version || '',
       });
@@ -60,6 +75,7 @@ export default function ArticleEditorPage() {
 
   const activeTemplate = ARTICLE_TEMPLATES.find((t) => t.key === watch('template')) || ARTICLE_TEMPLATES[0];
   const categories = categoriesQuery.data?.results || categoriesQuery.data || [];
+  const products = productsQuery.data?.results || productsQuery.data || [];
 
   const saveMutation = useMutation({
     mutationFn: (payload) =>
@@ -105,6 +121,7 @@ export default function ArticleEditorPage() {
     title: values.title,
     article_type: values.template,
     category: values.category,
+    product: values.product,   
     module: values.module,
     product_version: values.product_version,
     content,
@@ -147,7 +164,6 @@ export default function ArticleEditorPage() {
       />
 
       <div className="grid lg:grid-cols-[260px_1fr] gap-6">
-        {/* Sidebar: metadata */}
         <aside className="space-y-5">
           <div>
             <Label>Template</Label>
@@ -159,6 +175,7 @@ export default function ArticleEditorPage() {
               ))}
             </Select>
           </div>
+
           <div>
             <Label>Category</Label>
             <Select {...register('category')}>
@@ -170,18 +187,35 @@ export default function ArticleEditorPage() {
               ))}
             </Select>
           </div>
+
+          {/* ✅ Product dropdown */}
+          <div>
+            <Label>Product</Label>
+            <Select {...register('product')}>
+              <option value="">Select product</option>
+              {products.map((p) => (
+                <option key={p.slug} value={p.slug}>
+                  {p.name}
+                </option>
+              ))}
+            </Select>
+          </div>
+
           <div>
             <Label>Module</Label>
             <Input placeholder="e.g. Patient Registry" {...register('module')} />
           </div>
+
           <div>
             <Label>Product Version</Label>
             <Input placeholder="e.g. v3.1" {...register('product_version')} />
           </div>
+
           <div>
             <Label>Tags</Label>
             <TagInput tags={tags} onChange={setTags} />
           </div>
+
           <div>
             <Label>Sections ({activeTemplate.name})</Label>
             <div className="space-y-1">
@@ -195,7 +229,6 @@ export default function ArticleEditorPage() {
           </div>
         </aside>
 
-        {/* Editor */}
         <div className="bg-white border border-border rounded-card overflow-hidden">
           <Tabs
             className="px-2"

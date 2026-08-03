@@ -26,17 +26,17 @@ class AuditLog(models.Model):
     ACTION_EXPORT = 'export'
     
     ACTION_CHOICES = [
-        (ACTION_CREATE, 'Create'),
-        (ACTION_UPDATE, 'Update'),
-        (ACTION_DELETE, 'Delete'),
-        (ACTION_PUBLISH, 'Publish'),
-        (ACTION_REJECT, 'Reject'),
-        (ACTION_SUBMIT, 'Submit for Review'),
+        (ACTION_CREATE, 'Created'),
+        (ACTION_UPDATE, 'Updated'),
+        (ACTION_DELETE, 'Deleted'),
+        (ACTION_PUBLISH, 'Published'),
+        (ACTION_REJECT, 'Rejected'),
+        (ACTION_SUBMIT, 'Article Submitted'),
         (ACTION_LOGIN, 'Login'),
         (ACTION_LOGOUT, 'Logout'),
-        (ACTION_ROLE_CHANGE, 'Role Change'),
-        (ACTION_VIEW, 'View'),
-        (ACTION_EXPORT, 'Export'),
+        (ACTION_ROLE_CHANGE, 'Role Changed'),
+        (ACTION_VIEW, 'Viewed'),
+        (ACTION_EXPORT, 'Exported'),
     ]
     
     # Who performed the action

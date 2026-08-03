@@ -44,7 +44,7 @@ export default function WorkplaceStep({ register, errors, watch, onBack, onNext 
         <FieldError>{errors.department?.message}</FieldError>
       </div>
 
-      {/* <div>
+      <div>
         <Label required>Facility</Label>
         <Select defaultValue="" error={!!errors.facility} {...register('facility', { required: 'Required' })}>
           <option value="" disabled>
@@ -57,7 +57,7 @@ export default function WorkplaceStep({ register, errors, watch, onBack, onNext 
           ))}
         </Select>
         <FieldError>{errors.facility?.message}</FieldError>
-      </div> */}
+      </div>
 
       <div className="flex gap-2.5 rounded-lg bg-primary-50 border border-primary/20 p-3.5">
         <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />

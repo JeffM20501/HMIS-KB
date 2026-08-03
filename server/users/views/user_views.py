@@ -16,8 +16,8 @@ from django.db.models.functions import TruncMonth
 from django.utils import timezone
 from analytics.models import ArticleViewLog
 from datetime import timedelta
-from analytics.models import Feedback
-
+from analytics.models import Feedback, AuditLog
+from utils.get_ip import _get_client_ip
 from ..serializers.user_serializers import UserSerializer
 from ..serializers.password_reset_serializer import PasswordResetConfirmSerializer,PasswordResetRequestSerializer
 
@@ -165,33 +165,46 @@ class UserViewSet(viewsets.ModelViewSet):
             })
         
         #article creation trend
-        now=timezone.now()
-        start_date=now-timedelta(days=365)
-        creation_qs=Article.objects.filter(
+        now = timezone.now()
+        start_date = now - timedelta(days=365)
+
+        # Created articles per month
+        created_qs = Article.objects.filter(
             created_at__gte=start_date
         ).annotate(
             month=TruncMonth('created_at')
-        ).values(
-            'month'
-        ).annotate(
+        ).values('month').annotate(
             count=Count('id')
         ).order_by('month')
-        
-        #pad moths with zero
-        creation_trend=[]
-        current=start_date.replace(day=1)
+
+        # Published articles per month
+        published_qs = Article.objects.filter(
+            published_at__gte=start_date,
+            status='published'
+        ).annotate(
+            month=TruncMonth('published_at')
+        ).values('month').annotate(
+            count=Count('id')
+        ).order_by('month')
+
+        created_dict = {item['month'].date(): item['count'] for item in created_qs}
+        published_dict = {item['month'].date(): item['count'] for item in published_qs}
+
+        creation_trend = []
+        current = start_date.replace(day=1)
         while current <= now:
-            month_str=current.strftime('%b %Y')
-            mathched=next((v for v in creation_qs if v['month'].date()==current.date()),None)
+            month_date = current.date()
+            month_label = current.strftime('%b')
             creation_trend.append({
-                'month':month_str,
-                'count':mathched['count'] if mathched else 0
+                'month': month_label,
+                'created': created_dict.get(month_date, 0),
+                'published': published_dict.get(month_date, 0)
             })
-            
-            if current.month==12:
-                current=current.replace(year=current.year+1, month=1)
+            # move to next month
+            if current.month == 12:
+                current = current.replace(year=current.year+1, month=1)
             else:
-                current=current.replace(month=current.month+1)
+                current = current.replace(month=current.month+1)
         
         #most viewed articles
         most_viewed=Article.objects.filter(status='published').order_by('-views')[:10]
@@ -241,6 +254,7 @@ class UserViewSet(viewsets.ModelViewSet):
         except User.DoesNotExist:
             return Response({'error':'User not found'},status=status.HTTP_404_NOT_FOUND)
         
+        old_role=user.role
         new_role=request.data.get('role')
         
         if new_role not in ['admin','editor','viewer']:
@@ -248,6 +262,14 @@ class UserViewSet(viewsets.ModelViewSet):
         
         user.role=new_role
         user.save()
+        AuditLog.log_action(
+            user=request.user,
+            action=AuditLog.ACTION_ROLE_CHANGE,
+            obj=user,
+            changes={'role': {'old': old_role, 'new': new_role}},
+            user_ip=_get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', '')
+        )
         return Response({'message':f'User role Updated to {new_role}'},status=status.HTTP_200_OK)
     
     @action(detail=True, methods=['post'])

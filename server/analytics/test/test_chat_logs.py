@@ -139,11 +139,17 @@ class ChatLogTest(TestCase):
             was_helpful=False
         )
         url = reverse('analytics:chat-log-stats')
-        response = self.client.get(url)
+        response = self.client.get(url, {'range': '28d'})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['total_chats'], 2)
-        self.assertEqual(response.data['helpful_count'], 1)
-        self.assertEqual(response.data['not_helpful_count'], 1)
+        # New response structure
+        self.assertIn('weekly', response.data)
+        self.assertIn('resolution_rate', response.data)
+        self.assertIn('escalation_rate', response.data)
+        self.assertIn('avg_turn_length', response.data)
+        # Check that weekly contains at least one entry
+        self.assertGreaterEqual(len(response.data['weekly']), 1)
+        # Check that resolution rate is computed (we have 1 helpful, 1 not helpful -> 50%)
+        self.assertEqual(response.data['resolution_rate'], 50)
 
     def test_conversation_endpoint(self):
         conv_uuid = 'multi-turn-conv'

@@ -13,6 +13,10 @@ from analytics.serializers.chat_log_serializer import (
 )
 from analytics.permissions.chat_logs_permissions import CanViewChatLogs
 from articles.models.article import Article
+from datetime import timedelta
+from django.db.models.functions import TruncWeek
+from django.db.models import Count,Avg,Q
+from django.utils import timezone
 
 
 class ChatLogViewSet(viewsets.ReadOnlyModelViewSet):
@@ -133,31 +137,40 @@ class ChatLogViewSet(viewsets.ReadOnlyModelViewSet):
     
     @action(detail=False, methods=['get'])
     def stats(self, request):
-        """
-        Get chat statistics.
-        Admin only.
-        """
-        if request.user.role != 'admin':
-            return Response(
-                {"error": "Only admins can view chat stats."},
-                status=status.HTTP_403_FORBIDDEN
-            )
+        days = int(request.query_params.get('range', '28').replace('d', ''))
+        since = timezone.now() - timedelta(days=days)
+        logs = ChatLog.objects.filter(created_at__gte=since)
         
-        total = ChatLog.objects.count()
-        helpful = ChatLog.objects.filter(was_helpful=True).count()
-        not_helpful = ChatLog.objects.filter(was_helpful=False).count()
-        no_feedback = ChatLog.objects.filter(was_helpful__isnull=True).count()
+        # Weekly aggregation
+        weekly = logs.annotate(
+            week=TruncWeek('created_at')
+        ).values('week').annotate(
+            conversations=Count('id'),
+            resolved=Count('id', filter=Q(was_helpful=True)),
+            escalated=Count('id', filter=Q(escalate_suggested=True))
+        ).order_by('week')
         
-        # Get top asked questions
-        top_questions = ChatLog.objects.values('question').annotate(
-            count=Count('id')
-        ).order_by('-count')[:10]
+        weekly_data = [
+            {
+                'week': item['week'].date().isoformat(),
+                'conversations': item['conversations'],
+                'resolved': item['resolved'],
+                'escalated': item['escalated']
+            }
+            for item in weekly
+        ]
+        
+        total = logs.count()
+        resolved = logs.filter(was_helpful=True).count()
+        escalated = logs.filter(escalate_suggested=True).count()
+        resolution_rate = round(resolved / total * 100) if total else 0
+        escalation_rate = round(escalated / total * 100) if total else 0
+        avg_turn = logs.aggregate(Avg('response_time'))['response_time__avg']
+        avg_turn_length = round(avg_turn, 1) if avg_turn else 0
         
         return Response({
-            'total_chats': total,
-            'helpful_count': helpful,
-            'not_helpful_count': not_helpful,
-            'no_feedback_count': no_feedback,
-            'helpfulness_rate': round(helpful / total * 100, 2) if total > 0 else 0,
-            'top_questions': top_questions
+            'weekly': weekly_data,
+            'resolution_rate': resolution_rate,
+            'escalation_rate': escalation_rate,
+            'avg_turn_length': avg_turn_length
         })
