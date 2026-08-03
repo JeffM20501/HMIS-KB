@@ -100,7 +100,7 @@ jobs:
           -   name: Build push backend image to ECR
               working-directory: ./server
               run: |
-                  docker build -f Dockerfile.backend -t ${{env.ECR_REGISTRY_BE}}:latest  -t $ECR_REGISTRY_BE:${{github.sha}} .
+                  docker build -f Dockerfile.backend -t ${{env.ECR_REGISTRY_BE}}:v1.0.0  -t $ECR_REGISTRY_BE:${{github.sha}} .
                   docker push --all-tags ${{env.ECR_REGISTRY_BE}}
           
           - name: Deploy backend to EKS

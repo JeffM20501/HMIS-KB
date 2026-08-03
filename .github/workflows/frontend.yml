@@ -33,7 +33,7 @@ jobs:
       - name: Build and push frontend image to ECR
         working-directory: ./client
         run: |
-          docker build -f Dockerfile.frontend -t ${{env.ECR_REGISTRY_FE}}:latest -t ${{ env.ECR_REGISTRY_FE }}:${{ github.sha }} .
+          docker build -f Dockerfile.frontend -t ${{env.ECR_REGISTRY_FE}}:v1.0.0 -t ${{ env.ECR_REGISTRY_FE }}:${{ github.sha }} .
           docker push --all-tags ${{env.ECR_REGISTRY_FE}}
       
       - name: Deploy to EKS
