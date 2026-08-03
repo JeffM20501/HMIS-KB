@@ -18,6 +18,9 @@ from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 from django.db.models import Q
 from analytics.models import AuditLog
 from utils.get_ip import _get_client_ip
+from django.db.models import Count
+from django.db.models.functions import TruncMonth
+from datetime import timedelta
 class ArticleViewSet(viewsets.ModelViewSet):
     queryset = Article.objects.all().order_by('-created_at')
     serializer_class = ArticleSerializer
@@ -255,3 +258,48 @@ class ArticleViewSet(viewsets.ModelViewSet):
         articles = Article.objects.filter(status='pending_review').order_by('-updated_at')
         serializer = self.get_serializer(articles, many=True)
         return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def creation_trend(self, request):
+        months = 12
+        end = timezone.now()
+        start = end - timedelta(days=365)  
+        
+        # Created articles per month (all statuses)
+        created_qs = Article.objects.filter(
+            created_at__gte=start
+        ).annotate(
+            month=TruncMonth('created_at')
+        ).values('month').annotate(
+            created=Count('id')
+        ).order_by('month')
+        
+        # Published articles per month (only published, using published_at)
+        published_qs = Article.objects.filter(
+            published_at__gte=start,
+            status='published'
+        ).annotate(
+            month=TruncMonth('published_at')
+        ).values('month').annotate(
+            published=Count('id')
+        ).order_by('month')
+        
+        created_dict = {item['month'].date(): item['created'] for item in created_qs}
+        published_dict = {item['month'].date(): item['published'] for item in published_qs}
+        
+        trend = []
+        current = start.replace(day=1)
+        while current <= end:
+            month_date = current.date()
+            trend.append({
+                'month': current.strftime('%b'),
+                'created': created_dict.get(month_date, 0),
+                'published': published_dict.get(month_date, 0)
+            })
+            # move to next month
+            if current.month == 12:
+                current = current.replace(year=current.year+1, month=1)
+            else:
+                current = current.replace(month=current.month+1)
+        
+        return Response(trend)

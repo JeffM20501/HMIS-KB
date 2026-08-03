@@ -31,3 +31,4 @@ export const getAuditLogStats = (params) => api.get('/analytics/audit-logs/stats
 // --- Article view logging + time-series (charts) ---
 export const logArticleView = (articleId) => api.post('/analytics/articleviewlog/', { article: articleId }).then((r) => r.data);
 export const getTimeSeriesStats = (params) => api.get('/analytics/time-series/', { params }).then((r) => r.data);
+export const getCategoryViews = () => api.get('/analytics/category-views/').then((r) => r.data);

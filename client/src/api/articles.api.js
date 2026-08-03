@@ -32,3 +32,6 @@ export const getPendingReview = (params) => api.get('/articles/pending_review/',
 
 // GET /api/v1/stats/  (public homepage stats: total articles, categories, etc.)
 export const getPublicStats = () => api.get('/stats/').then((r) => r.data);
+
+
+export const getArticleTrend = () => api.get('/articles/creation_trend/').then((r) => r.data);
