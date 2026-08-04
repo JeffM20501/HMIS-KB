@@ -4,6 +4,7 @@ import PageLoader from './components/common/PageLoader.jsx';
 
 import PublicLayout from './layouts/PublicLayout.jsx';
 import AuthLayout from './layouts/AuthLayout.jsx';
+import AuthBrandPanel from './components/auth/AuthBrandPanel.jsx';
 import AdminLayout from './layouts/AdminLayout.jsx';
 import EditorLayout from './layouts/EditorLayout.jsx';
 import ProtectedRoute from './routes/ProtectedRoute.jsx';
@@ -68,11 +69,10 @@ export default function App() {
             and keep the existing shared AuthLayout. */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignUpPage />} />
-        <Route element={<AuthLayout />}>
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/verify-otp" element={<VerifyOtpPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
-        </Route>
+
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/verify-otp" element={<VerifyOtpPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* Admin (protected + role-gated) */}
         <Route element={<ProtectedRoute />}>
