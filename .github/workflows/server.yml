@@ -11,6 +11,8 @@ env:
   DJANGO_SETTINGS_MODULE: app.settings
   ECR_REGISTRY_BE: ${{ secrets.ECR_REGISTRY_BE }}
   AWS_REGION: ${{ secrets.AWS_REGION }}
+  DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+  IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/hmis-kb-backend
 
 jobs:
   test:
@@ -53,6 +55,7 @@ jobs:
           cd server
           pip install -r requirements-dev.txt
           pip install -r requirements.txt
+
       - name: Run DB migrations
         env:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
@@ -77,44 +80,53 @@ jobs:
           SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
         run: |
           cd server
-          pytest -v --tb=short  
+          pytest -v --tb=short
+
   build-and-push:
-      runs-on: ubuntu-latest
-      if: github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && success()
 
-      steps:
-          -   name: Check Code
-              uses: actions/checkout@v4
+    steps:
+      - name: Check Code
+        uses: actions/checkout@v4
 
-          -   name: Configure AWS credentials
-              uses: aws-actions/configure-aws-credentials@v4
-              with:
-                aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}}
-                aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}}
-                aws-region: ${{env.AWS_REGION}}
-          
-          -   name: Login to ECR
-              id: ecr-login
-              uses: aws-actions/amazon-ecr-login@v2
-          
-          -   name: Build push backend image to ECR
-              working-directory: ./server
-              run: |
-                  docker build -f Dockerfile.backend -t ${{env.ECR_REGISTRY_BE}}:v1.0.0  -t $ECR_REGISTRY_BE:${{github.sha}} .
-                  docker push --all-tags ${{env.ECR_REGISTRY_BE}}
-          
-          - name: Deploy backend to EKS
-            env:
-              IMAGE_TAG: ${{github.sha}}
-            run: |
-              aws eks update-kubeconfig --name innovation-lab --region ${{ env.AWS_REGION }}
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-              kubectl apply -f k8s/deployment-backend.yml -n jeff-muna
-            
-              kubectl set image deployment/jeff-hmiskb-be \
-                jeff-hmis-be-container=${{env.ECR_REGISTRY_BE}}:${{env.IMAGE_TAG}} \
-                -n jeff-muna
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
 
-              kubectl rollout status deployment/jeff-hmiskb-be -n jeff-muna
+      - name: Login to ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
 
-              kubectl apply -f k8s/service-backend.yml -n jeff-muna
+      - name: Build and push backend image
+        working-directory: ./server
+        run: |
+          docker build -f Dockerfile.backend \
+            -t ${{ env.ECR_REGISTRY_BE }}:v1.0.0 \
+            -t ${{ env.ECR_REGISTRY_BE }}:${{ github.sha }} \
+            -t ${{ env.IMAGE_NAME }}:v2.0.0 \
+            -t ${{ env.IMAGE_NAME }}:${{ github.sha }} .
+          docker push --all-tags ${{ env.ECR_REGISTRY_BE }}
+          docker push --all-tags ${{ env.IMAGE_NAME }}
+
+      - name: Deploy backend to EKS
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          aws eks update-kubeconfig --name innovation-lab --region ${{ env.AWS_REGION }}
+          kubectl apply -f k8s/deployment-backend.yml -n jeff-muna
+          kubectl set image deployment/jeff-hmiskb-be \
+            jeff-hmis-be-container=${{ env.ECR_REGISTRY_BE }}:${{ env.IMAGE_TAG }} \
+            -n jeff-muna
+          kubectl rollout status deployment/jeff-hmiskb-be -n jeff-muna
+          kubectl apply -f k8s/service-backend.yml -n jeff-muna
