@@ -20,6 +20,7 @@ class User(AbstractUser):
         validators=[validate_url]
     )
     facility=models.CharField(blank=True)
+    is_active=models.BooleanField(default=True)
     
     def clean(self):
         

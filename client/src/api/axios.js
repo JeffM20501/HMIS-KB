@@ -131,16 +131,41 @@ function redirectToLogin() {
 }
 
 export function extractErrorMessage(error) {
-  const data = error?.response?.data;
-  if (!data) return error?.message || 'Something went wrong. Please try again.';
-  if (typeof data === 'string') return data;
-  if (data.detail) return data.detail;
-  const firstKey = Object.keys(data)[0];
-  if (firstKey) {
-    const val = data[firstKey];
-    return Array.isArray(val) ? `${firstKey}: ${val[0]}` : String(val);
+  // Network errors (no response from server)
+  if (!error.response) {
+    return 'Network error. Please check your internet connection and try again.';
   }
-  return 'Something went wrong. Please try again.';
+
+  const status = error.response.status;
+  const data = error.response?.data;
+
+  // Server errors (500, 502, 503, 504)
+  if (status >= 500) {
+    return 'Something went wrong when trying to connect to server. Please try again later.';
+  }
+
+  // Client errors (400, 403, 404, etc.)
+  if (data) {
+    if (typeof data === 'string') {
+      return data;
+    }
+    if (data.detail) {
+      return data.detail;
+    }
+    // Extract first error message from field errors
+    const firstKey = Object.keys(data)[0];
+    if (firstKey) {
+      const val = data[firstKey];
+      if (Array.isArray(val)) {
+        // If it's a list of messages, join them
+        return val.length > 0 ? val[0] : 'Validation error.';
+      }
+      return String(val);
+    }
+  }
+
+  // Fallback
+  return 'An unexpected error occurred. Please try again.';
 }
 
 export default api;

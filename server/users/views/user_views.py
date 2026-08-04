@@ -33,6 +33,37 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class=UserSerializer
     
     
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        user = self.request.user
+
+        if self.action == 'list':
+            queryset = queryset.annotate(article_count=Count('articles_authored'))
+            
+            if user.role != 'admin':
+                queryset = queryset.filter(id=user.id)
+
+        search = self.request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(username__icontains=search) |
+                Q(email__icontains=search) |
+                Q(first_name__icontains=search) |
+                Q(last_name__icontains=search)
+            )
+
+        role = self.request.query_params.get('role')
+        if role and role in ['admin', 'editor', 'viewer']:
+            queryset = queryset.filter(role=role)
+
+        status_filter = self.request.query_params.get('status')
+        if status_filter == 'active':
+            queryset = queryset.filter(is_active=True)
+        elif status_filter == 'suspended':
+            queryset = queryset.filter(is_active=False)
+
+        return queryset
+    
     def get_permissions(self):
         if self.action in ['list']:
             permission_classes=[CanListUsers]
@@ -145,6 +176,10 @@ class UserViewSet(viewsets.ModelViewSet):
         draft_count=Article.objects.filter(status='draft').count()
         archived_count=Article.objects.filter(status='archived').count()
         editor_count=User.objects.filter(role='editor').count()
+        total_users = User.objects.count()
+        active_users = User.objects.filter(is_active=True).count()
+        admin_count = User.objects.filter(role='admin').count()
+        
         
         #views category
         category_views=Category.objects.annotate(
@@ -233,7 +268,10 @@ class UserViewSet(viewsets.ModelViewSet):
             'pending_review_count': pending_review_count,
             'draft_count': draft_count,
             'archived_count': archived_count,
+            'total_users': total_users,
+            'active_users': active_users,
             'editor_count': editor_count,
+            'admin_count': admin_count,
             'views_by_category': views_by_category,
             'article_creation_trend': creation_trend,
             'most_viewed_articles': most_viewed_data,
@@ -242,7 +280,9 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], permission_classes=[IsAdmin])
     def admin_users(self, request):
         """ List all users (admin only)"""
-        users = get_user_model().objects.all()
+        users = User.objects.annotate(
+            article_count=Count('articles_authored')
+        ).order_by('-date_joined')
         serializer = UserSerializer(users, many=True)
         return Response(serializer.data)
 

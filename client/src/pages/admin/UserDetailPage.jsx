@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Shield, Ban, Trash2, Mail, UserCog } from 'lucide-react';
+import { ArrowLeft, Shield, Ban, Trash2, Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as usersApi from '../../api/users.api.js';
 import PageHeader from '../../components/common/PageHeader.jsx';
@@ -27,14 +27,12 @@ export default function UserDetailPage() {
     const [showRoleModal, setShowRoleModal] = useState(false);
     const [newRole, setNewRole] = useState('');
 
-    // Fetch user details
     const userQuery = useQuery({
     queryKey: ['user', id],
     queryFn: () => usersApi.getUser(id),
     enabled: !!id,
     });
 
-    // Fetch dashboard stats (for additional context)
     const dashboardQuery = useQuery({
     queryKey: ['users', 'admin-dashboard'],
     queryFn: usersApi.getAdminDashboard,
@@ -42,7 +40,6 @@ export default function UserDetailPage() {
 
     const user = userQuery.data;
 
-    // Mutations
     const roleMutation = useMutation({
     mutationFn: ({ id, role }) => usersApi.changeUserRole(id, role),
     onSuccess: () => {
@@ -55,7 +52,7 @@ export default function UserDetailPage() {
     });
 
     const statusMutation = useMutation({
-    mutationFn: ({ id, status }) => usersApi.patchUser(id, { status }),
+    mutationFn: ({ id, is_active }) => usersApi.patchUser(id, { is_active }),
     onSuccess: () => {
         toast.success('User status updated.');
         queryClient.invalidateQueries({ queryKey: ['user', id] });
@@ -73,7 +70,6 @@ export default function UserDetailPage() {
     onError: (err) => toast.error(extractErrorMessage(err)),
     });
 
-    // Loading state
     if (userQuery.isLoading) {
     return (
         <div className="max-w-4xl mx-auto px-6 py-8">
@@ -105,9 +101,9 @@ export default function UserDetailPage() {
     }
     };
 
+    // ✅ Toggle is_active boolean
     const handleToggleStatus = () => {
-    const newStatus = isActive ? 'suspended' : 'active';
-    statusMutation.mutate({ id: user.id, status: newStatus });
+    statusMutation.mutate({ id: user.id, is_active: !isActive });
     };
 
     const handleDelete = () => {
@@ -118,7 +114,6 @@ export default function UserDetailPage() {
 
     return (
     <div className="max-w-4xl mx-auto px-6 py-8">
-        {/* Back button */}
         <button
         onClick={() => navigate('/admin/users')}
         className="flex items-center gap-1 text-sm text-text-secondary hover:text-text-primary mb-6"
@@ -126,7 +121,6 @@ export default function UserDetailPage() {
         <ArrowLeft className="w-4 h-4" /> Back to Users
         </button>
 
-        {/* Header with avatar and actions */}
         <div className="flex items-start justify-between gap-4 mb-6">
         <div className="flex items-center gap-4">
             <Avatar name={user.full_name || user.email} size="lg" src={user.avatar} />
@@ -158,7 +152,6 @@ export default function UserDetailPage() {
         </div>
         </div>
 
-        {/* Stats cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <Card>
             <p className="text-xs text-text-secondary mb-1">Articles</p>
@@ -178,7 +171,6 @@ export default function UserDetailPage() {
         </Card>
         </div>
 
-        {/* Additional info (optional) */}
         <Card className="p-4">
         <h3 className="text-sm font-semibold text-text-primary mb-2">About this user</h3>
         <dl className="grid grid-cols-2 gap-2 text-sm">
@@ -201,7 +193,6 @@ export default function UserDetailPage() {
         </dl>
         </Card>
 
-        {/* Role Change Modal */}
         <Modal isOpen={showRoleModal} onClose={() => setShowRoleModal(false)} title="Change Role">
         <div className="space-y-4">
             <div>

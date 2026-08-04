@@ -12,10 +12,10 @@ import { useDebounce } from '../../hooks/useDebounce';
 import { formatDateTime } from '../../utils/formatters';
 
 const ACTION_TONE = {
-  'Published': 'green',
-  'Article Submitted': 'amber',
+  'Article Published': 'green',
+  'Article Submitted': 'blue',
   'Role Changed': 'amber',
-  'Rejected': 'red',
+  'Article Rejected': 'red',
   'Created': 'blue',
   'Updated': 'blue',
   'Deleted': 'red',

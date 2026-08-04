@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronRight, Clock, Calendar, Tag as TagIcon } from 'lucide-react';
+import { ChevronRight, Clock, Calendar, Tag as TagIcon, Eye, Star, ArrowBigRight } from 'lucide-react';
 import * as articlesApi from '../../api/articles.api';
 import * as analyticsApi from '../../api/analytics.api';
 import ArticleCard from '../../components/article/ArticleCard.jsx';
@@ -16,6 +16,13 @@ import EmptyState from '../../components/common/EmptyState.jsx';
 import { FileQuestion } from 'lucide-react';
 import { formatDate, estimateReadingTime } from '../../utils/formatters';
 import { extractHeadings } from '../../utils/headings';
+
+// Helper to generate summary from content
+const getSummary = (content, maxLength = 160) => {
+  if (!content) return '';
+  const plain = content.replace(/[#*`>_-]/g, '').replace(/\n/g, ' ').trim();
+  return plain.length > maxLength ? plain.slice(0, maxLength) + '…' : plain;
+};
 
 export default function ArticlePage() {
   const { slug } = useParams();
@@ -40,8 +47,6 @@ export default function ArticlePage() {
     enabled: !!article?.category?.slug,
   });
 
-  // Same slug algorithm rehype-slug uses in MarkdownRenderer, so these
-  // TOC ids always match the ids actually rendered on the headings below.
   const headings = useMemo(() => extractHeadings(article?.content || ''), [article?.content]);
 
   if (articleQuery.isLoading) {
@@ -66,13 +71,14 @@ export default function ArticlePage() {
   }
 
   const related = (relatedQuery.data?.results || relatedQuery.data || []).filter((a) => a.slug !== slug).slice(0, 3);
+  const summary = article.summary || getSummary(article.content, 160);
+  const avgRating = article.rating || null;
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-10">
+      {/* Breadcrumbs */}
       <div className="flex items-center gap-1.5 text-sm text-text-secondary mb-6 flex-wrap">
-        <Link to="/" className="hover:text-primary">
-          Home
-        </Link>
+        <Link to="/" className="hover:text-primary">Home</Link>
         {article.category && (
           <>
             <ChevronRight className="w-3.5 h-3.5" />
@@ -87,45 +93,71 @@ export default function ArticlePage() {
 
       <div className="grid lg:grid-cols-[1fr_220px] gap-10">
         <article>
-          <div className="flex items-center gap-2 mb-3">
+          {/* Badges */}
+          <div className="flex items-center gap-2 mb-3 flex-wrap">
             {article.category && <Badge tone="blue">{article.category.name}</Badge>}
+            {article.product?.name && <Badge tone="purple">{article.product.name}</Badge>}
             {article.product_version && (
-              <span className="text-xs text-text-secondary">v{article.product_version}</span>
+              <span className="text-xs text-text-secondary">Product Version {article.product_version} . </span>
             )}
           </div>
 
-          <h1 className="text-3xl sm:text-4xl font-bold text-text-primary tracking-tight mb-4">{article.title}</h1>
+          {/* Title */}
+          <h1 className="text-3xl sm:text-4xl font-bold text-text-primary tracking-tight mb-4">
+            {article.title}
+          </h1>
 
-          <div className="flex items-center gap-4 text-sm text-text-secondary mb-8 pb-6 border-b border-border">
+          {/* Summary */}
+          {summary && (
+            <p className="text-text-secondary text-base leading-relaxed mb-6">
+              {summary}
+            </p>
+          )}
+
+          {/* Metadata: author, date, read time, views, rating */}
+          <div className="flex items-center flex-wrap gap-x-4 gap-y-2 text-sm text-text-secondary mb-8 pb-6 border-b border-border">
             <div className="flex items-center gap-2">
-              <Avatar name={article?.author_full_name || 'Author'} src={article?.author_avatar} size="sm" />
-              <span>by {article?.author_full_name || article?.author_username ||'TaifaCare Team'}</span>
+              <Avatar name={article.author_full_name || 'Author'} src={article.author_avatar} size="sm" />
+              <span>by {article.author_full_name || article.author_username || 'TaifaCare Team'}</span>
             </div>
+            <span className="flex items-center gap-1">
+              <Calendar className="w-3.5 h-3.5" /> Updated {formatDate(article.updated_at)}
+            </span>
             <span className="flex items-center gap-1">
               <Clock className="w-3.5 h-3.5" /> {article.reading_time || estimateReadingTime(article.content)} min read
             </span>
             <span className="flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5" /> Updated {formatDate(article.updated_at)}
+              <Eye className="w-3.5 h-3.5" /> {article.views}
             </span>
+            {avgRating && (
+              <span className="flex items-center gap-1">
+                <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                {avgRating.toFixed(1)}
+              </span>
+            )}
           </div>
 
+          {/* Full content */}
           <MarkdownRenderer content={article.content || ''} className="max-w-article" />
 
-          {!!article.tags?.length && (
+          {/* Tags */}
+          {!!(article.tags?.length || article.tag_names?.length) && (
             <div className="flex flex-wrap items-center gap-2 mt-8 pt-6 border-t border-border">
               <TagIcon className="w-4 h-4 text-text-secondary" />
-              {article.tags.map((t) => (
-                <span key={t.id || t} className="text-xs px-2 py-1 rounded bg-gray-100 text-text-secondary">
-                  #{t.name || t}
+              {(article.tag_names || article.tags || []).map((t, idx) => (
+                <span key={idx} className="text-xs px-2 py-1 rounded bg-gray-100 text-text-secondary">
+                  #{typeof t === 'string' ? t : (t.name || t)}
                 </span>
               ))}
             </div>
           )}
 
+          {/* Feedback */}
           <div className="mt-8">
             <FeedbackWidget articleId={article.id} />
           </div>
 
+          {/* Related */}
           {related.length > 0 && (
             <div className="mt-12">
               <h2 className="text-xl font-bold text-text-primary mb-4">Related articles</h2>

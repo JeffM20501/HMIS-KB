@@ -8,9 +8,10 @@ from users.validators import (
 
 
 class UserSerializer(serializers.ModelSerializer):
+    article_count = serializers.IntegerField(read_only=True, default=0)
     class Meta:
         model = get_user_model()
-        fields = [ "id", "password","username", "email", "role", "department", "date_joined", "updated_at", 'avatar','first_name', 'last_name', 'full_name', 'facility']
+        fields = [ "id", "password","username", "email", "role", "department", "date_joined", "updated_at", 'avatar','first_name', 'last_name', 'full_name', 'facility', 'is_active', 'article_count']
         read_only_fields = ['updated_at', 'date_joined', 'url']
         extra_kwargs = {
             'password': {'write_only': True, 'required':True}

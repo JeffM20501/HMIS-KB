@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -7,7 +7,8 @@ import { Check, Save, Send, EyeIcon, PenTool, CheckCircle, X } from 'lucide-reac
 import toast from 'react-hot-toast';
 import * as articlesApi from '../../api/articles.api';
 import * as categoriesApi from '../../api/categories.api';
-import * as productsApi from '../../api/products.api'; 
+import * as productsApi from '../../api/products.api';
+import * as mediaApi from '../../api/media.api';
 import { ARTICLE_TEMPLATES } from '../admin/TemplatesPage.jsx';
 import PageHeader from '../../components/common/PageHeader.jsx';
 import Select from '../../components/ui/Select.jsx';
@@ -17,6 +18,7 @@ import Button from '../../components/ui/Button.jsx';
 import Tabs from '../../components/ui/Tabs.jsx';
 import RichTextEditor from '../../components/editor/RichTextEditor.jsx';
 import TagInput from '../../components/forms/TagInput.jsx';
+import MediaUploader from '../../components/editor/MediaUploader.jsx';
 import PageLoader from '../../components/common/PageLoader.jsx';
 import { extractErrorMessage } from '../../api/axios';
 
@@ -28,25 +30,26 @@ export default function ArticleEditorPage() {
   const [view, setView] = useState('write');
   const [tags, setTags] = useState([]);
   const [content, setContent] = useState('');
+  const [mediaItems, setMediaItems] = useState([]);
+  const [stagedFiles, setStagedFiles] = useState([]);
   const [successModal, setSuccessModal] = useState({ open: false, message: '', action: null });
+  const initialized = useRef(false);
 
   const { register, handleSubmit, watch, reset } = useForm({
     defaultValues: {
       title: '',
       template: 'how_to',
       category: '',
-      product: '',           
+      product: '',
       module: '',
       product_version: '',
     },
   });
 
   const categoriesQuery = useQuery({ queryKey: ['categories', 'root'], queryFn: categoriesApi.getRootCategories });
-
-  
   const productsQuery = useQuery({
     queryKey: ['products'],
-    queryFn: () => productsApi.listProducts({ status: 'true' }), // adjust if needed
+    queryFn: () => productsApi.listProducts({ status: 'true' }),
   });
 
   const articleQuery = useQuery({
@@ -55,31 +58,98 @@ export default function ArticleEditorPage() {
     enabled: isEditing,
   });
 
-  const ready = !isEditing || articleQuery.isSuccess;
+  const mediaQuery = useQuery({
+    queryKey: ['article', slug, 'media'],
+    queryFn: () => articlesApi.getArticleMedia(slug),
+    enabled: isEditing,
+  });
 
+  // Populate form when article data is loaded
   useEffect(() => {
-    if (articleQuery.data) {
+    if (articleQuery.data && !initialized.current) {
       const a = articleQuery.data;
       reset({
-        title: a.title,
+        title: a.title || '',
         template: a.content_type || 'how_to',
         category: a.category?.slug || '',
-        product: a.product?.slug || '',       
+        product: a.product?.slug || '',
         module: a.module || '',
         product_version: a.product_version || '',
       });
       setContent(a.content || '');
       setTags((a.tags || []).map((t) => t.name || t));
+      initialized.current = true;
     }
   }, [articleQuery.data, reset]);
+
+  // When editing, also set media items
+  useEffect(() => {
+    if (mediaQuery.data) {
+      setMediaItems(
+        mediaQuery.data.map((m) => ({
+          id: m.id,
+          name: m.filename || m.name || 'Media file',
+          size: m.size || 0,
+          type: m.type || m.file_type || 'image',
+          url: m.url || m.file_url,
+          preview: m.url || m.file_url,
+          uploading: false,
+          uploaded: true,
+          staged: false,
+          error: null,
+        }))
+      );
+    }
+  }, [mediaQuery.data]);
+
+  const ready = !isEditing || (articleQuery.isSuccess && categoriesQuery.isSuccess && productsQuery.isSuccess);
 
   const activeTemplate = ARTICLE_TEMPLATES.find((t) => t.key === watch('template')) || ARTICLE_TEMPLATES[0];
   const categories = categoriesQuery.data?.results || categoriesQuery.data || [];
   const products = productsQuery.data?.results || productsQuery.data || [];
 
+  // Upload staged files (now with articleId)
+  const uploadStagedFiles = async (files, articleId) => {
+    const uploadedIds = [];
+    for (const file of files) {
+      try {
+        const data = await mediaApi.uploadMedia(file, articleId);
+        if (data.id) {
+          uploadedIds.push(data.id);
+        }
+      } catch (err) {
+        toast.error(`Failed to upload ${file.name}: ${err.message}`);
+        throw err;
+      }
+    }
+    return uploadedIds;
+  };
+
   const saveMutation = useMutation({
-    mutationFn: (payload) =>
-      isEditing ? articlesApi.updateArticle(slug, payload) : articlesApi.createArticle(payload),
+    mutationFn: async (payload) => {
+      let articleData;
+      if (isEditing) {
+        articleData = await articlesApi.updateArticle(slug, { ...payload, media_ids: [] });
+      } else {
+        articleData = await articlesApi.createArticle({ ...payload, media_ids: [] });
+      }
+      const articleId = articleData.id;
+
+      if (stagedFiles.length > 0) {
+        const mediaIds = await uploadStagedFiles(stagedFiles, articleId);
+        setStagedFiles([]);
+        setMediaItems((prev) =>
+          prev.map((item) =>
+            item.staged ? { ...item, uploaded: true, staged: false, uploading: false } : item
+          )
+        );
+        const existingIds = mediaItems.filter((m) => m.uploaded && !m.staged).map((m) => m.id);
+        const allIds = [...existingIds, ...mediaIds];
+        await articlesApi.updateArticle(articleData.slug, { ...payload, media_ids: allIds });
+        queryClient.invalidateQueries({ queryKey: ['article', articleData.slug, 'media'] });
+      }
+      return articleData;
+    },
     onSuccess: (data) => {
       toast.success('Draft saved.');
       queryClient.invalidateQueries({ queryKey: ['articles'] });
@@ -89,7 +159,7 @@ export default function ArticleEditorPage() {
         action: () => {
           if (!isEditing && data?.slug) navigate(`/editor/articles/${data.slug}/edit`, { replace: true });
           setSuccessModal({ open: false, message: '', action: null });
-        }
+        },
       });
     },
     onError: (err) => toast.error(extractErrorMessage(err)),
@@ -97,10 +167,28 @@ export default function ArticleEditorPage() {
 
   const submitMutation = useMutation({
     mutationFn: async (payload) => {
-      const saved = isEditing
-        ? await articlesApi.updateArticle(slug, payload)
-        : await articlesApi.createArticle(payload);
-      return articlesApi.submitForReview(saved.slug || slug);
+      let articleData;
+      if (isEditing) {
+        articleData = await articlesApi.updateArticle(slug, { ...payload, media_ids: [] });
+      } else {
+        articleData = await articlesApi.createArticle({ ...payload, media_ids: [] });
+      }
+      const articleId = articleData.id;
+
+      if (stagedFiles.length > 0) {
+        const mediaIds = await uploadStagedFiles(stagedFiles, articleId);
+        setStagedFiles([]);
+        setMediaItems((prev) =>
+          prev.map((item) =>
+            item.staged ? { ...item, uploaded: true, staged: false, uploading: false } : item
+          )
+        );
+        const existingIds = mediaItems.filter((m) => m.uploaded && !m.staged).map((m) => m.id);
+        const allIds = [...existingIds, ...mediaIds];
+        await articlesApi.updateArticle(articleData.slug, { ...payload, media_ids: allIds });
+        queryClient.invalidateQueries({ queryKey: ['article', articleData.slug, 'media'] });
+      }
+      return articlesApi.submitForReview(articleData.slug);
     },
     onSuccess: () => {
       toast.success('Submitted for review.');
@@ -111,17 +199,48 @@ export default function ArticleEditorPage() {
         action: () => {
           navigate('/editor/submitted');
           setSuccessModal({ open: false, message: '', action: null });
-        }
+        },
       });
     },
     onError: (err) => toast.error(extractErrorMessage(err)),
   });
 
+  const handleUpload = (file) => {
+    const id = Date.now().toString();
+    const preview = URL.createObjectURL(file);
+    const type = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : file.type === 'application/pdf' ? 'pdf' : 'other';
+    const newItem = {
+      id,
+      name: file.name,
+      size: file.size,
+      type,
+      preview,
+      uploading: false,
+      uploaded: false,
+      staged: true,
+      progress: 0,
+      error: null,
+    };
+    setMediaItems((prev) => [...prev, newItem]);
+    setStagedFiles((prev) => [...prev, file]);
+  };
+
+  const handleRemove = (id) => {
+    const item = mediaItems.find((m) => m.id === id);
+    if (item && item.uploaded && !item.staged) {
+      articlesApi.deleteMedia(item.id).catch(() => {});
+    }
+    setMediaItems((prev) => prev.filter((m) => m.id !== id));
+    if (item && item.staged) {
+      setStagedFiles((prev) => prev.filter((_, i) => i !== mediaItems.findIndex((m) => m.id === id)));
+    }
+  };
+
   const buildPayload = (values) => ({
     title: values.title,
     article_type: values.template,
     category: values.category,
-    product: values.product,   
+    product: values.product,
     module: values.module,
     product_version: values.product_version,
     content,
@@ -188,7 +307,6 @@ export default function ArticleEditorPage() {
             </Select>
           </div>
 
-          {/* ✅ Product dropdown */}
           <div>
             <Label>Product</Label>
             <Select {...register('product')}>
@@ -226,6 +344,16 @@ export default function ArticleEditorPage() {
                 </div>
               ))}
             </div>
+          </div>
+
+          <div>
+            <Label>Media</Label>
+            <MediaUploader
+              items={mediaItems}
+              onUpload={handleUpload}
+              onRemove={handleRemove}
+              showStaged={true}
+            />
           </div>
         </aside>
 

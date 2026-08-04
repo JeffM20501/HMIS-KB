@@ -8,10 +8,12 @@ export const getArticleMedia = (articleId) =>
   api.get('/media/article_media/', { params: { article: articleId } }).then((r) => r.data);
 
 // POST /api/v1/media/upload/  (multipart/form-data) — used by the rich text editor for images/attachments
-export const uploadMedia = (file, meta = {}, onUploadProgress) => {
+export const uploadMedia = (file, articleId = null, onUploadProgress) => {
   const form = new FormData();
   form.append('file', file);
-  Object.entries(meta).forEach(([k, v]) => form.append(k, v));
+  if (articleId) {
+    form.append('article_id', articleId);
+  }
   return api
     .post('/media/upload/', form, {
       headers: { 'Content-Type': 'multipart/form-data' },

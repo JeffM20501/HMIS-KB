@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ChevronRight, Clock, Calendar, Tag as TagIcon, PenTool, Trash2, ArrowLeft } from 'lucide-react';
+import { ChevronRight, Clock, Calendar, Tag as TagIcon, PenTool, Trash2, ArrowLeft, File, FileText, Send } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as articlesApi from '../../api/articles.api';
 import * as analyticsApi from '../../api/analytics.api';
@@ -35,6 +35,14 @@ export default function EditorArticleViewPage() {
 
     const article = articleQuery.data;
 
+    // Fetch media for this article
+    const mediaQuery = useQuery({
+    queryKey: ['article', slug, 'media'],
+    queryFn: () => articlesApi.getArticleMedia(slug),
+    enabled: !!slug,
+    });
+    const mediaItems = mediaQuery.data || [];
+
     const deleteMutation = useMutation({
     mutationFn: () => articlesApi.deleteArticle(slug),
     onSuccess: () => {
@@ -45,9 +53,23 @@ export default function EditorArticleViewPage() {
     onError: (err) => toast.error(extractErrorMessage(err)),
     });
 
+    const submitMutation = useMutation({
+    mutationFn: () => articlesApi.submitForReview(slug),
+    onSuccess: () => {
+        toast.success('Article submitted for review.');
+        queryClient.invalidateQueries({ queryKey: ['articles', 'my-articles'] });
+        navigate('/editor/submitted');
+    },
+    onError: (err) => toast.error(extractErrorMessage(err)),
+    });
+
     const handleDelete = () => {
     deleteMutation.mutate();
     setShowDeleteModal(false);
+    };
+
+    const handleSubmit = () => {
+    submitMutation.mutate();
     };
 
     useEffect(() => {
@@ -65,11 +87,14 @@ export default function EditorArticleViewPage() {
 
     const headings = useMemo(() => extractHeadings(article?.content || ''), [article?.content]);
 
-    // Determine if user can edit/delete this article
     const isAuthor = user?.id === article?.author;
     const canEdit = user && (
-    user.role === 'admin' ||  // Admin can edit any article
-    (user.role === 'editor' && isAuthor&&article.status=='draft')  // Editor can edit only their own
+    user.role === 'admin' ||
+    (user.role === 'editor' && isAuthor && article?.status === 'draft')
+    );
+    const canSubmit = user && (
+    user.role === 'admin' ||
+    (user.role === 'editor' && isAuthor && article?.status === 'draft')
     );
 
     if (articleQuery.isLoading) {
@@ -98,7 +123,7 @@ export default function EditorArticleViewPage() {
 
     return (
     <div className="max-w-6xl mx-auto px-6 py-10">
-        {/* Header with Back button and Edit/Delete actions */}
+        {/* Header with Back button and actions */}
         <div className="flex items-center justify-between mb-6">
         <button
             onClick={() => navigate(-1)}
@@ -107,6 +132,15 @@ export default function EditorArticleViewPage() {
             <ArrowLeft className="w-4 h-4" /> Back
         </button>
         <div className="flex items-center gap-2">
+            {canSubmit && (
+            <Button
+                variant="secondary"
+                onClick={handleSubmit}
+                isLoading={submitMutation.isPending}
+            >
+                <Send className="w-4 h-4" /> Submit for Review
+            </Button>
+            )}
             {canEdit && (
             <>
                 <Link to={`/editor/articles/${article.slug}/edit`}>
@@ -141,7 +175,7 @@ export default function EditorArticleViewPage() {
         <article>
             <div className="flex items-center gap-2 mb-3">
             {article.category && <Badge tone="blue">{article.category.name}</Badge>}
-            {article.product_version && <span className="text-xs text-text-secondary">v{article.product_version}</span>}
+            {article.product_version && <span className="text-xs text-text-secondary">{article.product_version}</span>}
             {!isPublished && (
                 <Badge tone="amber">{article.status.replace('_', ' ')}</Badge>
             )}
@@ -170,18 +204,56 @@ export default function EditorArticleViewPage() {
 
             <MarkdownRenderer content={article.content || ''} className="max-w-article" />
 
-            {!!article.tags?.length && (
-            <div className="flex flex-wrap items-center gap-2 mt-8 pt-6 border-t border-border">
-                <TagIcon className="w-4 h-4 text-text-secondary" />
-                {article.tags.map((t) => (
-                <span key={t.id || t} className="text-xs px-2 py-1 rounded bg-gray-100 text-text-secondary">
-                    #{t.name || t}
-                </span>
+            {!!(article.tags?.length || article.tag_names?.length) && (
+                <div className="flex flex-wrap items-center gap-2 mt-8 pt-6 border-t border-border">
+                    <TagIcon className="w-4 h-4 text-text-secondary" />
+                    {(article.tag_names || article.tags || []).map((t, idx) => (
+                    <span key={idx} className="text-xs px-2 py-1 rounded bg-gray-100 text-text-secondary">
+                        #{typeof t === 'string' ? t : (t.name || t)}
+                    </span>
+                    ))}
+                </div>
+            )}
+
+            {/* Display attached media */}
+            {mediaItems.length > 0 && (
+            <div className="mt-8 pt-6 border-t border-border">
+                <h3 className="text-lg font-semibold text-text-primary mb-4">Attached Media</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {mediaItems.map((m) => (
+                    <div key={m.id} className="border border-border rounded-lg overflow-hidden bg-white">
+                    {m.type === 'image' ? (
+                        <img src={m.url} alt={m.filename} className="w-full h-32 object-cover" />
+                    ) : m.type === 'video' ? (
+                        <video src={m.url} className="w-full h-32 object-cover" controls muted />
+                    ) : m.type === 'pdf' ? (
+                        <div className="flex items-center justify-center h-32 bg-gray-50">
+                        <FileText className="w-12 h-12 text-red-500" />
+                        </div>
+                    ) : (
+                        <div className="flex items-center justify-center h-32 bg-gray-50">
+                        <File className="w-12 h-12 text-text-secondary" />
+                        </div>
+                    )}
+                    <div className="p-2">
+                        <p className="text-xs truncate text-text-secondary">{m.filename || m.name}</p>
+                        {m.url && (
+                        <a
+                            href={m.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-primary hover:underline"
+                        >
+                            View
+                        </a>
+                        )}
+                    </div>
+                    </div>
                 ))}
+                </div>
             </div>
             )}
 
-            {/* FeedbackWidget only for published articles */}
             {isPublished && (
             <div className="mt-8">
                 <FeedbackWidget articleId={article.id} />

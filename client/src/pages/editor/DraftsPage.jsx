@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
-import { PlusCircle, Send } from 'lucide-react';
+import { PlusCircle, Send, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as articlesApi from '../../api/articles.api';
 import PageHeader from '../../components/common/PageHeader.jsx';
@@ -65,9 +65,9 @@ export default function DraftsPage() {
       </div>
 
       {query.isLoading && (
-        <div className="grid sm:grid-cols-2 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-40 rounded-card" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-48 rounded-card" />
           ))}
         </div>
       )}
@@ -82,31 +82,48 @@ export default function DraftsPage() {
         />
       )}
 
+      {/* Cards layout – 3 per row */}
       {!query.isLoading && drafts.length > 0 && layout === 'cards' && (
-        <div className="grid sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {drafts.map((d) => (
-            <div key={d.slug} className="bg-white border border-border rounded-card p-5">
+            <div key={d.slug} className="bg-white border border-border rounded-card p-5 hover:shadow-sm transition-shadow flex flex-col">
               {d.category && (
-                <Badge tone="blue" className="mb-2">
+                <Badge tone="blue" className="mb-2 self-start">
                   {d.category.name || d.category}
                 </Badge>
               )}
-              <Link to={`/editor/articles/${d.slug}`} className="block font-semibold text-text-primary mb-1.5 hover:text-primary">
+              <Link
+                to={`/editor/articles/${d.slug}`}
+                className="block font-semibold text-text-primary mb-1.5 hover:text-primary transition-colors line-clamp-2"
+              >
                 {d.title || 'Untitled article'}
               </Link>
-              <p className="text-sm text-text-secondary line-clamp-2 mb-3">{d.summary}</p>
-              {!!d.tags?.length && (
+              <p className="text-sm text-text-secondary line-clamp-2 mb-3 flex-1">
+                {d.summary || d.content?.slice(0, 120) + '…'}
+              </p>
+              {d.tags?.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mb-3">
                   {d.tags.slice(0, 4).map((t) => (
-                    <span key={t.id || t} className="text-xs px-2 py-0.5 rounded bg-gray-100 text-text-secondary">
+                    <span
+                      key={t.id || t}
+                      className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-text-secondary"
+                    >
                       #{t.name || t}
                     </span>
                   ))}
                 </div>
               )}
-              <div className="flex items-center justify-between pt-2 border-t border-border">
-                <span className="text-xs text-text-secondary">{formatDate(d.updated_at)}</span>
-                <Button size="sm" variant="secondary" onClick={() => submitMutation.mutate(d.slug)} isLoading={submitMutation.isPending}>
+              <div className="flex items-center justify-between pt-3 border-t border-border mt-auto">
+                <span className="text-xs text-text-secondary">
+                  Updated {formatDate(d.updated_at)}
+                </span>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => submitMutation.mutate(d.slug)}
+                  isLoading={submitMutation.isPending}
+                  disabled={submitMutation.isPending}
+                >
                   <Send className="w-3.5 h-3.5" /> Submit
                 </Button>
               </div>
@@ -115,21 +132,81 @@ export default function DraftsPage() {
         </div>
       )}
 
+      {/* Table layout unchanged */}
       {!query.isLoading && drafts.length > 0 && layout === 'table' && (
-        <div className="bg-white border border-border rounded-card divide-y divide-border">
-          {drafts.map((d) => (
-            <div key={d.slug} className="flex items-center justify-between px-4 py-3">
-              <div className="min-w-0">
-                <Link to={`/editor/articles/${d.slug}/edit`} className="font-medium text-text-primary hover:text-primary">
-                  {d.title || 'Untitled article'}
-                </Link>
-                <p className="text-xs text-text-secondary">{formatDate(d.updated_at)}</p>
-              </div>
-              <Button size="sm" variant="secondary" onClick={() => submitMutation.mutate(d.slug)}>
-                <Send className="w-3.5 h-3.5" /> Submit
-              </Button>
-            </div>
-          ))}
+        <div className="bg-white border border-border rounded-card overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b border-border">
+              <tr>
+                <th className="text-left font-semibold text-text-secondary px-4 py-3">Title</th>
+                <th className="text-left font-semibold text-text-secondary px-4 py-3">Category</th>
+                <th className="text-left font-semibold text-text-secondary px-4 py-3">Tags</th>
+                <th className="text-left font-semibold text-text-secondary px-4 py-3">Module</th>
+                <th className="text-left font-semibold text-text-secondary px-4 py-3">Last Edited</th>
+                <th className="text-right font-semibold text-text-secondary px-4 py-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {drafts.map((d) => (
+                <tr key={d.slug} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3">
+                    <Link
+                      to={`/editor/articles/${d.slug}`}
+                      className="font-medium text-text-primary hover:text-primary transition-colors"
+                    >
+                      {d.title || 'Untitled article'}
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3">
+                    {d.category ? (
+                      <Badge tone="blue">{d.category.name || d.category}</Badge>
+                    ) : (
+                      <span className="text-text-secondary">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {d.tags?.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {d.tags.slice(0, 3).map((t) => (
+                          <span
+                            key={t.id || t}
+                            className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-text-secondary"
+                          >
+                            #{t.name || t}
+                          </span>
+                        ))}
+                        {d.tags.length > 3 && (
+                          <span className="text-xs text-text-secondary">+{d.tags.length - 3}</span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-text-secondary">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-text-secondary">
+                    {d.module || '—'}
+                  </td>
+                  <td className="px-4 py-3 text-text-secondary">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5" />
+                      {formatDate(d.updated_at)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => submitMutation.mutate(d.slug)}
+                      isLoading={submitMutation.isPending}
+                      disabled={submitMutation.isPending}
+                    >
+                      <Send className="w-3.5 h-3.5" /> Submit
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
