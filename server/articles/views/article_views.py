@@ -9,6 +9,8 @@ from articles.permissions.article_permissions import (
     IsEditor, IsAdmin, CanDeleteArticle, CanEditArticle
 )
 from analytics.models import SearchLog
+from articles.models import Media
+from articles.serializers.media_serializer import MediaSerializer
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from datetime import timedelta
@@ -303,3 +305,13 @@ class ArticleViewSet(viewsets.ModelViewSet):
                 current = current.replace(month=current.month+1)
         
         return Response(trend)
+    
+    @action(detail=True, methods=['get'])
+    def media(self, request, slug=None):
+        """
+        Get all media for a specific article.
+        """
+        article = self.get_object()
+        media = Media.objects.filter(article=article)
+        serializer = MediaSerializer(media, many=True, context={'request': request})
+        return Response(serializer.data)

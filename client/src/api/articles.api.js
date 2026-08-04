@@ -35,3 +35,9 @@ export const getPublicStats = () => api.get('/stats/').then((r) => r.data);
 
 
 export const getArticleTrend = () => api.get('/articles/creation_trend/').then((r) => r.data);
+
+export const getArticleMedia = (slug) =>
+    api.get(`/articles/${slug}/media/`).then((r) => r.data);
+
+export const deleteMedia = (mediaId) =>
+    api.delete(`/articles/media/${mediaId}/`).then((r) => r.data);

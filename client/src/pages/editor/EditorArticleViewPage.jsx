@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ChevronRight, Clock, Calendar, Tag as TagIcon, PenTool, Trash2, ArrowLeft } from 'lucide-react';
+import { ChevronRight, Clock, Calendar, Tag as TagIcon, PenTool, Trash2, ArrowLeft, File, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as articlesApi from '../../api/articles.api';
 import * as analyticsApi from '../../api/analytics.api';
@@ -35,6 +35,14 @@ export default function EditorArticleViewPage() {
 
     const article = articleQuery.data;
 
+    // Fetch media for this article
+    const mediaQuery = useQuery({
+    queryKey: ['article', slug, 'media'],
+    queryFn: () => articlesApi.getArticleMedia(slug),
+    enabled: !!slug,
+    });
+    const mediaItems = mediaQuery.data || [];
+
     const deleteMutation = useMutation({
     mutationFn: () => articlesApi.deleteArticle(slug),
     onSuccess: () => {
@@ -65,11 +73,10 @@ export default function EditorArticleViewPage() {
 
     const headings = useMemo(() => extractHeadings(article?.content || ''), [article?.content]);
 
-    // Determine if user can edit/delete this article
     const isAuthor = user?.id === article?.author;
     const canEdit = user && (
-    user.role === 'admin' ||  // Admin can edit any article
-    (user.role === 'editor' && isAuthor&&article.status=='draft')  // Editor can edit only their own
+    user.role === 'admin' ||
+    (user.role === 'editor' && isAuthor && article?.status === 'draft')
     );
 
     if (articleQuery.isLoading) {
@@ -141,7 +148,7 @@ export default function EditorArticleViewPage() {
         <article>
             <div className="flex items-center gap-2 mb-3">
             {article.category && <Badge tone="blue">{article.category.name}</Badge>}
-            {article.product_version && <span className="text-xs text-text-secondary">v{article.product_version}</span>}
+            {article.product_version && <span className="text-xs text-text-secondary">{article.product_version}</span>}
             {!isPublished && (
                 <Badge tone="amber">{article.status.replace('_', ' ')}</Badge>
             )}
@@ -181,7 +188,45 @@ export default function EditorArticleViewPage() {
             </div>
             )}
 
-            {/* FeedbackWidget only for published articles */}
+            {/* Display attached media */}
+            {mediaItems.length > 0 && (
+            <div className="mt-8 pt-6 border-t border-border">
+                <h3 className="text-lg font-semibold text-text-primary mb-4">Attached Media</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {mediaItems.map((m) => (
+                    <div key={m.id} className="border border-border rounded-lg overflow-hidden bg-white">
+                    {m.type === 'image' ? (
+                        <img src={m.url} alt={m.filename} className="w-full h-32 object-cover" />
+                    ) : m.type === 'video' ? (
+                        <video src={m.url} className="w-full h-32 object-cover" controls muted />
+                    ) : m.type === 'pdf' ? (
+                        <div className="flex items-center justify-center h-32 bg-gray-50">
+                        <FileText className="w-12 h-12 text-red-500" />
+                        </div>
+                    ) : (
+                        <div className="flex items-center justify-center h-32 bg-gray-50">
+                        <File className="w-12 h-12 text-text-secondary" />
+                        </div>
+                    )}
+                    <div className="p-2">
+                        <p className="text-xs truncate text-text-secondary">{m.filename || m.name}</p>
+                        {m.url && (
+                        <a
+                            href={m.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-primary hover:underline"
+                        >
+                            View
+                        </a>
+                        )}
+                    </div>
+                    </div>
+                ))}
+                </div>
+            </div>
+            )}
+
             {isPublished && (
             <div className="mt-8">
                 <FeedbackWidget articleId={article.id} />
