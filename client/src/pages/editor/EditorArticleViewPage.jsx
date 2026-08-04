@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ChevronRight, Clock, Calendar, Tag as TagIcon, PenTool, Trash2, ArrowLeft, File, FileText } from 'lucide-react';
+import { ChevronRight, Clock, Calendar, Tag as TagIcon, PenTool, Trash2, ArrowLeft, File, FileText, Send } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as articlesApi from '../../api/articles.api';
 import * as analyticsApi from '../../api/analytics.api';
@@ -53,9 +53,23 @@ export default function EditorArticleViewPage() {
     onError: (err) => toast.error(extractErrorMessage(err)),
     });
 
+    const submitMutation = useMutation({
+    mutationFn: () => articlesApi.submitForReview(slug),
+    onSuccess: () => {
+        toast.success('Article submitted for review.');
+        queryClient.invalidateQueries({ queryKey: ['articles', 'my-articles'] });
+        navigate('/editor/submitted');
+    },
+    onError: (err) => toast.error(extractErrorMessage(err)),
+    });
+
     const handleDelete = () => {
     deleteMutation.mutate();
     setShowDeleteModal(false);
+    };
+
+    const handleSubmit = () => {
+    submitMutation.mutate();
     };
 
     useEffect(() => {
@@ -75,6 +89,10 @@ export default function EditorArticleViewPage() {
 
     const isAuthor = user?.id === article?.author;
     const canEdit = user && (
+    user.role === 'admin' ||
+    (user.role === 'editor' && isAuthor && article?.status === 'draft')
+    );
+    const canSubmit = user && (
     user.role === 'admin' ||
     (user.role === 'editor' && isAuthor && article?.status === 'draft')
     );
@@ -105,7 +123,7 @@ export default function EditorArticleViewPage() {
 
     return (
     <div className="max-w-6xl mx-auto px-6 py-10">
-        {/* Header with Back button and Edit/Delete actions */}
+        {/* Header with Back button and actions */}
         <div className="flex items-center justify-between mb-6">
         <button
             onClick={() => navigate(-1)}
@@ -114,6 +132,15 @@ export default function EditorArticleViewPage() {
             <ArrowLeft className="w-4 h-4" /> Back
         </button>
         <div className="flex items-center gap-2">
+            {canSubmit && (
+            <Button
+                variant="secondary"
+                onClick={handleSubmit}
+                isLoading={submitMutation.isPending}
+            >
+                <Send className="w-4 h-4" /> Submit for Review
+            </Button>
+            )}
             {canEdit && (
             <>
                 <Link to={`/editor/articles/${article.slug}/edit`}>
