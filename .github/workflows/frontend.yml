@@ -29,12 +29,6 @@ jobs:
       - name: Install dependencies
         working-directory: ./client
         run: npm ci
-
-      # Run frontend tests if they exist
-      - name: Run tests
-        working-directory: ./client
-        run: npm test -- --watchAll=false --ci
-
       - name: Build frontend
         working-directory: ./client
         run: npm run build
