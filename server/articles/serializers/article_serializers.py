@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from articles.models import Article,Category,Tag,Product
+from articles.models import Article, Category, Tag, Product, ArticleTag
 from django.contrib.auth import get_user_model
 from articles.serializers.media_serializer import MediaSerializer
 
@@ -9,7 +9,8 @@ class ArticleSerializer(serializers.ModelSerializer):
     publisher_username = serializers.ReadOnlyField(source='published_by.username')
     media = serializers.SerializerMethodField()
     author_full_name = serializers.SerializerMethodField()
-    author_avatar=serializers.SerializerMethodField()
+    author_avatar = serializers.SerializerMethodField()
+    
     category = serializers.SlugRelatedField(
         slug_field='slug',
         queryset=Category.objects.all(),
@@ -17,83 +18,115 @@ class ArticleSerializer(serializers.ModelSerializer):
         required=False
     )
     
-    product=serializers.SlugRelatedField(
+    product = serializers.SlugRelatedField(
         slug_field='slug',
         queryset=Product.objects.all(),
         allow_null=True,
         required=False
     )
     
+    tags = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        write_only=True,
+        allow_empty=True
+    )
     
+    tag_names = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = Article
         fields = [
             'id', 'title', 'slug', 'content', 'category',
-            'author', 'author_username', 'author_full_name','author_avatar', 'published_by', 'publisher_username',
-            'status', 'views', 'created_at', 'updated_at', 'published_at', 'tags',
-            'article_type', 'media','product_version','module', 'product'
+            'author', 'author_username', 'author_full_name', 'author_avatar',
+            'published_by', 'publisher_username',
+            'status', 'views', 'created_at', 'updated_at', 'published_at',
+            'article_type', 'media', 'product_version', 'module', 'product',
+            'tags', 'tag_names'
         ]
         read_only_fields = [
             'views', 'created_at', 'updated_at', 'published_at',
-            'author', 'published_by','slug'
+            'author', 'published_by', 'slug'
         ]
-    
-    def get_author_full_name(self,obj):
+
+    def get_author_full_name(self, obj):
         if not obj.author:
             return None
         if hasattr(obj.author, 'full_name'):
             return obj.author.full_name
         return obj.author.username
-    
-    def get_author_avatar(self,obj):
+
+    def get_author_avatar(self, obj):
         if obj.author and hasattr(obj.author, 'avatar'):
             return obj.author.avatar
         return None
-    
+
+    def get_tag_names(self, obj):
+        """Return list of tag names for the article."""
+        return [tag.name for tag in obj.tags.all()]
+
     def validate(self, data):
-        """Cross-field validation."""
         request = self.context.get('request')
-        
-        # Only editors/admins can create articles
         if request and request.user.role not in ['editor', 'admin']:
             raise serializers.ValidationError({
                 'author': 'Only editors and admins can create articles.'
             })
-        
-        # If status is published, validate publisher
         if data.get('status') == 'published':
             if not data.get('published_by'):
                 raise serializers.ValidationError({
                     'published_by': 'Published articles must have a publisher.'
                 })
-        
         return data
-    
+
     def create(self, validated_data):
-        """Create article with current user as author and default status draft."""
+        # Pop tags before creating the article
+        tags_data = validated_data.pop('tags', [])
         request = self.context.get('request')
         if request and request.user:
             validated_data['author'] = request.user
-        
         if 'status' not in validated_data:
             validated_data['status'] = 'draft'
-        
         if 'article_type' not in validated_data or not validated_data['article_type']:
-            validated_data['article_type']='article'
-            
+            validated_data['article_type'] = 'article'
         
-        return super().create(validated_data)
-    
-    
+        article = super().create(validated_data)
+        self._handle_tags(article, tags_data, request.user if request else None)
+        return article
+
+    def update(self, instance, validated_data):
+        tags_data = validated_data.pop('tags', None)
+        # Update basic fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        if tags_data is not None:
+            self._handle_tags(instance, tags_data, self.context.get('request').user if self.context.get('request') else None)
+        return instance
+
+    def _handle_tags(self, article, tag_names, user=None):
+        """Get or create tags and link them to the article."""
+        tag_objects = []
+        for name in tag_names:
+            if name and name.strip():
+                tag, _ = Tag.objects.get_or_create(name=name.strip())
+                tag_objects.append(tag)
+        # Replace tags (this also deletes old ArticleTag entries)
+        # If you want to preserve added_by, you need to create ArticleTag manually.
+        # For simplicity, we use set() which creates the join records.
+        article.tags.set(tag_objects)
+        # ArticleTag.objects.update_or_create(
+        #     article=article,
+        #     tag=tag,
+        #     defaults={'added_by': user}
+        # )
+
     def get_media(self, obj):
         return MediaSerializer(obj.media_files.all(), many=True).data
-    
+
     def validate_article_type(self, value):
         normalized = value.replace('-', '_')
         allowed = ['how_to', 'sop', 'faq', 'troubleshooting', 'feature_ref', 'release_notes', 'article']
-        
         if normalized not in allowed:
             raise serializers.ValidationError(f"Invalid article type. Allowed: {', '.join(allowed)}")
-        
-        return normalized 
-    
+        return normalized

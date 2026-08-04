@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -33,6 +33,7 @@ export default function ArticleEditorPage() {
   const [mediaItems, setMediaItems] = useState([]);
   const [stagedFiles, setStagedFiles] = useState([]);
   const [successModal, setSuccessModal] = useState({ open: false, message: '', action: null });
+  const initialized = useRef(false);
 
   const { register, handleSubmit, watch, reset } = useForm({
     defaultValues: {
@@ -63,11 +64,12 @@ export default function ArticleEditorPage() {
     enabled: isEditing,
   });
 
+  // Populate form when article data is loaded
   useEffect(() => {
-    if (articleQuery.data) {
+    if (articleQuery.data && !initialized.current) {
       const a = articleQuery.data;
       reset({
-        title: a.title,
+        title: a.title || '',
         template: a.content_type || 'how_to',
         category: a.category?.slug || '',
         product: a.product?.slug || '',
@@ -76,9 +78,11 @@ export default function ArticleEditorPage() {
       });
       setContent(a.content || '');
       setTags((a.tags || []).map((t) => t.name || t));
+      initialized.current = true;
     }
   }, [articleQuery.data, reset]);
 
+  // When editing, also set media items
   useEffect(() => {
     if (mediaQuery.data) {
       setMediaItems(
@@ -98,7 +102,7 @@ export default function ArticleEditorPage() {
     }
   }, [mediaQuery.data]);
 
-  const ready = !isEditing || articleQuery.isSuccess;
+  const ready = !isEditing || (articleQuery.isSuccess && categoriesQuery.isSuccess && productsQuery.isSuccess);
 
   const activeTemplate = ARTICLE_TEMPLATES.find((t) => t.key === watch('template')) || ARTICLE_TEMPLATES[0];
   const categories = categoriesQuery.data?.results || categoriesQuery.data || [];
@@ -123,7 +127,6 @@ export default function ArticleEditorPage() {
 
   const saveMutation = useMutation({
     mutationFn: async (payload) => {
-      // Step 1: Save article without media to get ID
       let articleData;
       if (isEditing) {
         articleData = await articlesApi.updateArticle(slug, { ...payload, media_ids: [] });
@@ -132,7 +135,6 @@ export default function ArticleEditorPage() {
       }
       const articleId = articleData.id;
 
-      // Step 2: Upload staged files with article ID
       if (stagedFiles.length > 0) {
         const mediaIds = await uploadStagedFiles(stagedFiles, articleId);
         setStagedFiles([]);
@@ -141,11 +143,9 @@ export default function ArticleEditorPage() {
             item.staged ? { ...item, uploaded: true, staged: false, uploading: false } : item
           )
         );
-        // Step 3: Update article with media IDs
         const existingIds = mediaItems.filter((m) => m.uploaded && !m.staged).map((m) => m.id);
         const allIds = [...existingIds, ...mediaIds];
         await articlesApi.updateArticle(articleData.slug, { ...payload, media_ids: allIds });
-        // Re-fetch to update media list
         queryClient.invalidateQueries({ queryKey: ['article', articleData.slug, 'media'] });
       }
       return articleData;
@@ -188,7 +188,6 @@ export default function ArticleEditorPage() {
         await articlesApi.updateArticle(articleData.slug, { ...payload, media_ids: allIds });
         queryClient.invalidateQueries({ queryKey: ['article', articleData.slug, 'media'] });
       }
-      // Submit for review after saving
       return articlesApi.submitForReview(articleData.slug);
     },
     onSuccess: () => {

@@ -204,15 +204,15 @@ export default function EditorArticleViewPage() {
 
             <MarkdownRenderer content={article.content || ''} className="max-w-article" />
 
-            {!!article.tags?.length && (
-            <div className="flex flex-wrap items-center gap-2 mt-8 pt-6 border-t border-border">
-                <TagIcon className="w-4 h-4 text-text-secondary" />
-                {article.tags.map((t) => (
-                <span key={t.id || t} className="text-xs px-2 py-1 rounded bg-gray-100 text-text-secondary">
-                    #{t.name || t}
-                </span>
-                ))}
-            </div>
+            {!!(article.tags?.length || article.tag_names?.length) && (
+                <div className="flex flex-wrap items-center gap-2 mt-8 pt-6 border-t border-border">
+                    <TagIcon className="w-4 h-4 text-text-secondary" />
+                    {(article.tag_names || article.tags || []).map((t, idx) => (
+                    <span key={idx} className="text-xs px-2 py-1 rounded bg-gray-100 text-text-secondary">
+                        #{typeof t === 'string' ? t : (t.name || t)}
+                    </span>
+                    ))}
+                </div>
             )}
 
             {/* Display attached media */}

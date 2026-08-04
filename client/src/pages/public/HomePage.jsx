@@ -12,14 +12,23 @@ import { Link } from 'react-router-dom';
 
 const POPULAR_SEARCHES = ['patient registration', 'NHIF claims', 'login error', 'lab results', 'discharge summary'];
 
+// Helper to format category names (e.g., "system-administration" -> "System Administration")
+const formatCategoryName = (name) => {
+  if (!name) return '';
+  // If it's already a nicely formatted string (contains spaces), return as is
+  if (name.includes(' ')) return name;
+  // Otherwise, convert slug to title case
+  return name
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
 export default function HomePage() {
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Supports the header's "Categories" / "Contact" nav links, which
-  // anchor-scroll here rather than pointing at separate pages that don't
-  // exist yet (see PublicHeader.jsx).
   useEffect(() => {
     if (!location.hash) return;
     const el = document.getElementById(location.hash.slice(1));
@@ -141,6 +150,7 @@ export default function HomePage() {
           {!categoriesQuery.isLoading && !categoriesQuery.isError && (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {categories.map((cat) => {
+                const displayName = formatCategoryName(cat.name);
                 const Icon = getCategoryIcon(cat.icon || cat.slug);
                 const color = cat.color || '#2563EB';
                 return (
@@ -151,7 +161,7 @@ export default function HomePage() {
                     >
                       <Icon className="w-5 h-5" />
                     </span>
-                    <h3 className="font-semibold text-text-primary mb-1">{cat.name}</h3>
+                    <h3 className="font-semibold text-text-primary mb-1">{displayName}</h3>
                     <p className="text-sm text-text-secondary line-clamp-2 mb-3">{cat.description}</p>
 
                     {!!cat.top_articles?.length && (
@@ -208,29 +218,32 @@ export default function HomePage() {
           )}
           {!popularQuery.isLoading && (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {popular.map((a, i) => (
-                <Link
-                  key={a.id || a.slug}
-                  to={`/articles/${a.slug}`}
-                  className="flex gap-4 bg-white border border-border rounded-card p-4 hover:border-primary transition-colors"
-                >
-                  <span className="text-2xl font-bold text-gray-200 leading-none shrink-0">
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="font-semibold text-text-primary text-sm leading-snug mb-2 line-clamp-2">{a.title}</p>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {a.category && (
-                        <span className="text-xs px-2 py-0.5 rounded bg-primary-50 text-primary">
-                          {a.category.name || a.category}
-                        </span>
-                      )}
-                      <span className="text-xs text-text-secondary">{formatNumber(a.views)} views</span>
-                      <span className="text-xs text-text-secondary">{a.reading_time || 5}m</span>
+              {popular.map((a, i) => {
+                const categoryName = a.category ? (a.category.name || formatCategoryName(a.category)) : null;
+                return (
+                  <Link
+                    key={a.id || a.slug}
+                    to={`/articles/${a.slug}`}
+                    className="flex gap-4 bg-white border border-border rounded-card p-4 hover:border-primary transition-colors"
+                  >
+                    <span className="text-2xl font-bold text-gray-200 leading-none shrink-0">
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-text-primary text-sm leading-snug mb-2 line-clamp-2">{a.title}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {categoryName && (
+                          <span className="text-xs px-2 py-0.5 rounded bg-primary-50 text-primary">
+                            {categoryName}
+                          </span>
+                        )}
+                        <span className="text-xs text-text-secondary">{formatNumber(a.views)} views</span>
+                        <span className="text-xs text-text-secondary">{a.reading_time || 5}m</span>
+                      </div>
                     </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                );
+              })}
             </div>
           )}
         </section>
@@ -247,32 +260,35 @@ export default function HomePage() {
           )}
           {!recentQuery.isLoading && (
             <div className="bg-white border border-border rounded-card divide-y divide-border overflow-hidden">
-              {recent.map((a) => (
-                <Link
-                  key={a.id || a.slug}
-                  to={`/articles/${a.slug}`}
-                  className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors"
-                >
-                  <span className="w-8 h-8 rounded-lg bg-primary-50 text-primary flex items-center justify-center shrink-0">
-                    <BookOpen className="w-4 h-4" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-text-primary text-sm truncate">{a.title}</p>
-                    <p className="text-xs text-text-secondary">
-                      {a.category?.name || a.category} · v{a.product_version || '1.0'}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-4 shrink-0 text-xs text-text-secondary">
-                    {a.rating && (
-                      <span className="flex items-center gap-1">
-                        <ThumbsUp className="w-3.5 h-3.5" /> {a.rating}
-                      </span>
-                    )}
-                    <span>{formatDate(a.updated_at)}</span>
-                    <ChevronRight className="w-4 h-4" />
-                  </div>
-                </Link>
-              ))}
+              {recent.map((a) => {
+                const categoryName = a.category ? (a.category.name || formatCategoryName(a.category)) : null;
+                return (
+                  <Link
+                    key={a.id || a.slug}
+                    to={`/articles/${a.slug}`}
+                    className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors"
+                  >
+                    <span className="w-8 h-8 rounded-lg bg-primary-50 text-primary flex items-center justify-center shrink-0">
+                      <BookOpen className="w-4 h-4" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-text-primary text-sm truncate">{a.title}</p>
+                      <p className="text-xs text-text-secondary">
+                        {categoryName || 'Uncategorized'} · {a.product_version || '1.0'}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-4 shrink-0 text-xs text-text-secondary">
+                      {a.rating && (
+                        <span className="flex items-center gap-1">
+                          <ThumbsUp className="w-3.5 h-3.5" /> {a.rating}
+                        </span>
+                      )}
+                      <span>{formatDate(a.updated_at)}</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           )}
         </section>
