@@ -83,11 +83,10 @@ class AuditLogTest(BaseAPITestCase):
         token = self._get_token(self.admin)
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
         url = reverse('analytics:audit-log-list')
-        # Filter by action (display name)
-        response = self.client.get(url, {'action': 'Published'})
+        response = self.client.get(url, {'action': 'Article Published'})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['count'], 1)
-        self.assertEqual(response.data['results'][0]['display_action'], 'Published')
+        self.assertEqual(response.data['results'][0]['display_action'], 'Article Published')
         # Filter by user
         response = self.client.get(url, {'user_id': self.viewer.id})
         self.assertEqual(response.status_code, 200)

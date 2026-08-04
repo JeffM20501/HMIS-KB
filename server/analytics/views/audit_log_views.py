@@ -34,42 +34,35 @@ class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         """Filter queryset based on query parameters."""
         queryset = super().get_queryset()
-        
-        # Filter by user
         user_id = self.request.query_params.get('user_id')
         if user_id:
             queryset = queryset.filter(user_id=user_id)
-        
-        # Filter by action (display value → internal code)
+
         action_display = self.request.query_params.get('action')
         if action_display:
             for code, display in AuditLog.ACTION_CHOICES:
                 if display == action_display:
                     queryset = queryset.filter(action=code)
                     break
-        
-        # Filter by content type
+
         content_type = self.request.query_params.get('content_type')
         if content_type:
             queryset = queryset.filter(content_type=content_type)
-        
-        # Filter by date range
+
         start_date = self.request.query_params.get('start_date')
         end_date = self.request.query_params.get('end_date')
-        
         if start_date:
             queryset = queryset.filter(timestamp__gte=start_date)
         if end_date:
             queryset = queryset.filter(timestamp__lte=end_date)
-        
-        # Search by object representation or username
+
         search = self.request.query_params.get('search')
         if search:
             queryset = queryset.filter(
                 Q(object_repr__icontains=search) |
                 Q(user__username__icontains=search)
             )
-        
+
         return queryset
     
     @action(detail=False, methods=['get'], url_path='stats')
