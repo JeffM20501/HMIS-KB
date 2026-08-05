@@ -6,7 +6,10 @@ CREATE TABLE "user" (
   "role" text NOT NULL,
   "department" text DEFAULT 'staff',
   "date_joined" timestamp DEFAULT (now()),
-  "updated_at" timestamp DEFAULT (now())
+  "updated_at" timestamp DEFAULT (now()),
+  "avatar" url,
+  "facility" text,
+  "is_active" bool DEFAULT true
 );
 
 CREATE TABLE "categories" (
@@ -22,13 +25,13 @@ CREATE TABLE "categories" (
 CREATE TABLE "articles" (
   "id" integer PRIMARY KEY,
   "slug" text UNIQUE NOT NULL,
-  "category_id" integer,
+  "category_id" integer NOT NULL,
   "title" text,
   "content" text,
   "views" integer,
   "status" enum DEFAULT 'draft',
   "author_id" integer NOT NULL,
-  "published_by" integer,
+  "published_by" integer NOT NULL,
   "created_at" timestamp,
   "updated_at" timestamp,
   "published_at" timestamp
@@ -68,13 +71,17 @@ CREATE TABLE "feedback" (
 
 CREATE TABLE "chat_logs" (
   "id" integer PRIMARY KEY,
-  "user_id" integer NOT NULL,
+  "user" integer NOT NULL,
   "question" text NOT NULL,
   "answer" text NOT NULL,
-  "conversation_id" integer NOT NULL,
-  "article_ref_id" integer,
+  "conversation_uuid" integer NOT NULL,
+  "conversation" int,
+  "article_ref" integer NOT NULL,
   "was_helpful" bool,
-  "created_at" timestamp DEFAULT (now())
+  "created_at" timestamp DEFAULT (now()),
+  "response_time" float,
+  "confidence_score" float,
+  "escalate_suggested" bool DEFAULT false
 );
 
 CREATE TABLE "search_logs" (
@@ -87,16 +94,17 @@ CREATE TABLE "search_logs" (
 
 CREATE TABLE "password_reset_otp" (
   "id" integer PRIMARY KEY,
-  "user_id" integer,
+  "user" integer NOT NULL,
   "otp" text,
-  "created_at" timestamp DEFAULT (now()),
+  "created_at" timestamp,
   "expires_at" timestamp,
-  "used" bool
+  "used" bool DEFAULT false,
+  "verified" bool DEFAULT false
 );
 
 CREATE TABLE "notification" (
   "id" integer PRIMARY KEY,
-  "recipient_id" integer,
+  "recipient_id" integer NOT NULL,
   "sender_id" integer,
   "notification_type" text,
   "content_type" integer,
@@ -112,9 +120,66 @@ CREATE TABLE "notification" (
   "updated_at" timestamp
 );
 
+CREATE TABLE "chat_log_source" (
+  "chat_log" int NOT NULL,
+  "article" int NOT NULL,
+  "confidence" float DEFAULT 0,
+  "rank" int DEFAULT 0
+);
+
+CREATE TABLE "article_chunks" (
+  "id" int PRIMARY KEY,
+  "article" integer NOT NULL,
+  "chunck_index" int,
+  "content" text,
+  "token_count" int DEFAULT 0,
+  "embedding" vector,
+  "embedding_model" char,
+  "created_at" timestamp,
+  "updated_at" timestamp
+);
+
+CREATE TABLE "conversations" (
+  "id" int PRIMARY KEY,
+  "user" int NOT NULL,
+  "session_key" char,
+  "title" char,
+  "is_archived" bool DEFAULT false,
+  "created_at" timestamp,
+  "updated_at" timestamp
+);
+
+CREATE TABLE "audit_log" (
+  "id" int PRIMARY KEY,
+  "user" int,
+  "user_ip" ip,
+  "user_agent" text,
+  "action" char,
+  "content_type" char,
+  "object_id" int,
+  "object_repr" char,
+  "changes" json,
+  "reason" text,
+  "timestamp" timestamp
+);
+
+ALTER TABLE "audit_log" ADD FOREIGN KEY ("user") REFERENCES "user" ("id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "audit_log" ADD FOREIGN KEY ("object_id") REFERENCES "articles" ("id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "audit_log" ADD FOREIGN KEY ("object_id") REFERENCES "user" ("id") DEFERRABLE INITIALLY IMMEDIATE;
+
 ALTER TABLE "notification" ADD FOREIGN KEY ("recipient_id") REFERENCES "user" ("id") DEFERRABLE INITIALLY IMMEDIATE;
 
-ALTER TABLE "password_reset_otp" ADD FOREIGN KEY ("user_id") REFERENCES "user" ("id") DEFERRABLE INITIALLY IMMEDIATE;
+ALTER TABLE "password_reset_otp" ADD FOREIGN KEY ("user") REFERENCES "user" ("id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "article_chunks" ADD FOREIGN KEY ("article") REFERENCES "articles" ("id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "conversations" ADD FOREIGN KEY ("user") REFERENCES "user" ("id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "chat_log_source" ADD FOREIGN KEY ("article") REFERENCES "articles" ("id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "chat_log_source" ADD FOREIGN KEY ("chat_log") REFERENCES "chat_logs" ("id") DEFERRABLE INITIALLY IMMEDIATE;
 
 ALTER TABLE "articles" ADD FOREIGN KEY ("author_id") REFERENCES "user" ("id") DEFERRABLE INITIALLY IMMEDIATE;
 
@@ -132,8 +197,8 @@ ALTER TABLE "feedback" ADD FOREIGN KEY ("article_id") REFERENCES "articles" ("id
 
 ALTER TABLE "feedback" ADD FOREIGN KEY ("user_id") REFERENCES "user" ("id") DEFERRABLE INITIALLY IMMEDIATE;
 
-ALTER TABLE "chat_logs" ADD FOREIGN KEY ("user_id") REFERENCES "user" ("id") DEFERRABLE INITIALLY IMMEDIATE;
+ALTER TABLE "chat_logs" ADD FOREIGN KEY ("user") REFERENCES "user" ("id") DEFERRABLE INITIALLY IMMEDIATE;
 
-ALTER TABLE "chat_logs" ADD FOREIGN KEY ("article_ref_id") REFERENCES "articles" ("id") DEFERRABLE INITIALLY IMMEDIATE;
+ALTER TABLE "chat_logs" ADD FOREIGN KEY ("article_ref") REFERENCES "articles" ("id") DEFERRABLE INITIALLY IMMEDIATE;
 
 ALTER TABLE "search_logs" ADD FOREIGN KEY ("user_id") REFERENCES "user" ("id") DEFERRABLE INITIALLY IMMEDIATE;

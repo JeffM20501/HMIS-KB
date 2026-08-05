@@ -67,12 +67,20 @@ REST_FRAMEWORK={
         "chat_anon": "15/min",
         "chat_user": "60/min",
     },
+    "DEFAULT_SCHEMA_CLASS":'drf_spectacular.openapi.AutoSchema',
 }
 
 SIMPLE_JWT={
     'ACCESS_TOKEN_LIFETIME':timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME':timedelta(days=1),
     'SIGNING_KEY':os.environ.get('SIGNING_KEY')
+}
+
+SPECTACULAR_SETTINGS={
+    'TITLE':'HMIS Knowledge Base API(Taifa Care Help Center)',
+    'DESCRIPTION': 'Complete API for the KB platform and Chatbot widget',
+    'VERSION': 'V1',
+    'SERVE_INCLUDE_SCHEMA':False
 }
 
 # Application definition
@@ -82,6 +90,7 @@ INSTALLED_APPS = [
     'articles.apps.ArticlesConfig',
     'analytics.apps.AnalyticsConfig',
     'chatbot.apps.ChatbotConfig',
+    'drf_spectacular',
     'django_extensions',
     'corsheaders',
     'rest_framework', #djangorestframework

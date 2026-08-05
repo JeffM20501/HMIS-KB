@@ -1,0 +1,5049 @@
+openapi: 3.0.3
+info:
+  title: HMIS Knowledge Base API(Taifa Care Help Center)
+  version: V1
+  description: Complete API for the KB platform and Chatbot widget
+paths:
+  /api/v1/analytics/audit-logs/:
+    get:
+      operationId: api_v1_analytics_audit_logs_list
+      description: |-
+        API endpoint for viewing audit logs.
+
+        PRD FR-3.6: Admin actions are logged with timestamp and user ID.
+        Only admins can view audit logs.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAuditLogListList'
+          description: ''
+  /api/v1/analytics/audit-logs/{id}/:
+    get:
+      operationId: api_v1_analytics_audit_logs_retrieve
+      description: |-
+        API endpoint for viewing audit logs.
+
+        PRD FR-3.6: Admin actions are logged with timestamp and user ID.
+        Only admins can view audit logs.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this audit log.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLogDetail'
+          description: ''
+  /api/v1/analytics/audit-logs/stats/:
+    get:
+      operationId: api_v1_analytics_audit_logs_stats_retrieve
+      description: Get statistics about audit logs.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLog'
+          description: ''
+  /api/v1/analytics/category-views/:
+    get:
+      operationId: api_v1_analytics_category_views_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/analytics/chat-logs/:
+    get:
+      operationId: api_v1_analytics_chat_logs_list
+      description: |-
+        API endpoint for viewing chat logs.
+
+        PRD FR-5.8: All assistant queries and responses are logged.
+        PRD FR-5.9: Admins can review unanswered/low-confidence questions.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedChatLogListList'
+          description: ''
+  /api/v1/analytics/chat-logs/{id}/:
+    get:
+      operationId: api_v1_analytics_chat_logs_retrieve
+      description: |-
+        API endpoint for viewing chat logs.
+
+        PRD FR-5.8: All assistant queries and responses are logged.
+        PRD FR-5.9: Admins can review unanswered/low-confidence questions.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this chat log.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatLogDetail'
+          description: ''
+  /api/v1/analytics/chat-logs/conversation/:
+    get:
+      operationId: api_v1_analytics_chat_logs_conversation_retrieve
+      description: Get all messages in a conversation.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatLog'
+          description: ''
+  /api/v1/analytics/chat-logs/stats/:
+    get:
+      operationId: api_v1_analytics_chat_logs_stats_retrieve
+      description: |-
+        API endpoint for viewing chat logs.
+
+        PRD FR-5.8: All assistant queries and responses are logged.
+        PRD FR-5.9: Admins can review unanswered/low-confidence questions.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatLog'
+          description: ''
+  /api/v1/analytics/chat-logs/unanswered/:
+    get:
+      operationId: api_v1_analytics_chat_logs_unanswered_retrieve
+      description: |-
+        PRD FR-5.9: Get unanswered/low-confidence questions.
+        Admin only.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatLog'
+          description: ''
+  /api/v1/analytics/feedbacks/:
+    get:
+      operationId: api_v1_analytics_feedbacks_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFeedbackList'
+          description: ''
+    post:
+      operationId: api_v1_analytics_feedbacks_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Feedback'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Feedback'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Feedback'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feedback'
+          description: ''
+  /api/v1/analytics/feedbacks/{id}/:
+    get:
+      operationId: api_v1_analytics_feedbacks_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this feedback.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feedback'
+          description: ''
+    put:
+      operationId: api_v1_analytics_feedbacks_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this feedback.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Feedback'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Feedback'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Feedback'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feedback'
+          description: ''
+    patch:
+      operationId: api_v1_analytics_feedbacks_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this feedback.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedFeedback'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedFeedback'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedFeedback'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feedback'
+          description: ''
+    delete:
+      operationId: api_v1_analytics_feedbacks_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this feedback.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/analytics/feedbacks/for_object/:
+    get:
+      operationId: api_v1_analytics_feedbacks_for_object_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feedback'
+          description: ''
+  /api/v1/analytics/feedbacks/my_feedback/:
+    get:
+      operationId: api_v1_analytics_feedbacks_my_feedback_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feedback'
+          description: ''
+  /api/v1/analytics/feedbacks/stats/:
+    get:
+      operationId: api_v1_analytics_feedbacks_stats_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feedback'
+          description: ''
+  /api/v1/analytics/notification/:
+    get:
+      operationId: api_v1_analytics_notification_list
+      description: API endpoint for user notifications.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNotificationListList'
+          description: ''
+    post:
+      operationId: api_v1_analytics_notification_create
+      description: API endpoint for user notifications.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Notification'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Notification'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Notification'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/v1/analytics/notification/{id}/:
+    get:
+      operationId: api_v1_analytics_notification_retrieve
+      description: API endpoint for user notifications.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this notification.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+    put:
+      operationId: api_v1_analytics_notification_update
+      description: API endpoint for user notifications.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this notification.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Notification'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Notification'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Notification'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+    patch:
+      operationId: api_v1_analytics_notification_partial_update
+      description: API endpoint for user notifications.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this notification.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedNotification'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedNotification'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedNotification'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+    delete:
+      operationId: api_v1_analytics_notification_destroy
+      description: API endpoint for user notifications.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this notification.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/analytics/notification/{id}/mark_read/:
+    post:
+      operationId: api_v1_analytics_notification_mark_read_create
+      description: Mark a single notification as read.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this notification.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Notification'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Notification'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Notification'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/v1/analytics/notification/{id}/mark_unread/:
+    post:
+      operationId: api_v1_analytics_notification_mark_unread_create
+      description: Mark a single notification as unread.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this notification.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Notification'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Notification'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Notification'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/v1/analytics/notification/mark_all_read/:
+    post:
+      operationId: api_v1_analytics_notification_mark_all_read_create
+      description: Mark all notifications as read for the current user.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Notification'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Notification'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Notification'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/v1/analytics/notification/unread_count/:
+    get:
+      operationId: api_v1_analytics_notification_unread_count_retrieve
+      description: Get the count of unread notifications.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/v1/analytics/search-logs/:
+    get:
+      operationId: api_v1_analytics_search_logs_list
+      description: |-
+        API endpoint for search logs.
+        PRD FR-2.6: All searches are logged for analytics.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSearchLogListList'
+          description: ''
+    post:
+      operationId: api_v1_analytics_search_logs_create
+      description: |-
+        API endpoint for search logs.
+        PRD FR-2.6: All searches are logged for analytics.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchLog'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SearchLog'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SearchLog'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchLog'
+          description: ''
+  /api/v1/analytics/search-logs/{id}/:
+    get:
+      operationId: api_v1_analytics_search_logs_retrieve
+      description: |-
+        API endpoint for search logs.
+        PRD FR-2.6: All searches are logged for analytics.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this search log.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchLog'
+          description: ''
+    put:
+      operationId: api_v1_analytics_search_logs_update
+      description: |-
+        API endpoint for search logs.
+        PRD FR-2.6: All searches are logged for analytics.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this search log.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchLog'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SearchLog'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SearchLog'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchLog'
+          description: ''
+    patch:
+      operationId: api_v1_analytics_search_logs_partial_update
+      description: |-
+        API endpoint for search logs.
+        PRD FR-2.6: All searches are logged for analytics.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this search log.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSearchLog'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSearchLog'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSearchLog'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchLog'
+          description: ''
+    delete:
+      operationId: api_v1_analytics_search_logs_destroy
+      description: |-
+        API endpoint for search logs.
+        PRD FR-2.6: All searches are logged for analytics.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this search log.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/analytics/search-logs/my_searches/:
+    get:
+      operationId: api_v1_analytics_search_logs_my_searches_retrieve
+      description: Get the current user's search history.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchLog'
+          description: ''
+  /api/v1/analytics/search-logs/stats/:
+    get:
+      operationId: api_v1_analytics_search_logs_stats_retrieve
+      description: |-
+        Get search statistics for the analytics dashboard.
+        Admin only.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchLog'
+          description: ''
+  /api/v1/analytics/time-series/:
+    get:
+      operationId: api_v1_analytics_time_series_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/article-tag/:
+    get:
+      operationId: api_v1_article_tag_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedArticleTagList'
+          description: ''
+    post:
+      operationId: api_v1_article_tag_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticleTag'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ArticleTag'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ArticleTag'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleTag'
+          description: ''
+  /api/v1/article-tag/{id}/:
+    get:
+      operationId: api_v1_article_tag_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this article tag.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleTag'
+          description: ''
+    put:
+      operationId: api_v1_article_tag_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this article tag.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticleTag'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ArticleTag'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ArticleTag'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleTag'
+          description: ''
+    patch:
+      operationId: api_v1_article_tag_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this article tag.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedArticleTag'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedArticleTag'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedArticleTag'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleTag'
+          description: ''
+    delete:
+      operationId: api_v1_article_tag_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this article tag.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/article-tag/bulk-add/:
+    post:
+      operationId: api_v1_article_tag_bulk_add_create
+      description: |-
+        Bulk add tags to an article.
+        Expects: {'article_id': 1, 'tag_ids': [1, 2, 3]}
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticleTag'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ArticleTag'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ArticleTag'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleTag'
+          description: ''
+  /api/v1/article-tag/bulk-remove/:
+    post:
+      operationId: api_v1_article_tag_bulk_remove_create
+      description: |-
+        Bulk remove tags from an article.
+        Expects: {'article_id': 1, 'tag_ids': [1, 2, 3]}
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticleTag'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ArticleTag'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ArticleTag'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleTag'
+          description: ''
+  /api/v1/articles/:
+    get:
+      operationId: api_v1_articles_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedArticleList'
+          description: ''
+    post:
+      operationId: api_v1_articles_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Article'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Article'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Article'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+          description: ''
+  /api/v1/articles/{slug}/:
+    get:
+      operationId: api_v1_articles_retrieve
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+          description: ''
+    put:
+      operationId: api_v1_articles_update
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Article'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Article'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Article'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+          description: ''
+    patch:
+      operationId: api_v1_articles_partial_update
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedArticle'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedArticle'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedArticle'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+          description: ''
+    delete:
+      operationId: api_v1_articles_destroy
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/articles/{slug}/media/:
+    get:
+      operationId: api_v1_articles_media_retrieve
+      description: Get all media for a specific article.
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+          description: ''
+  /api/v1/articles/{slug}/publish/:
+    post:
+      operationId: api_v1_articles_publish_create
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Article'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Article'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Article'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+          description: ''
+  /api/v1/articles/{slug}/reject/:
+    post:
+      operationId: api_v1_articles_reject_create
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Article'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Article'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Article'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+          description: ''
+  /api/v1/articles/{slug}/submit_for_review/:
+    post:
+      operationId: api_v1_articles_submit_for_review_create
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Article'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Article'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Article'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+          description: ''
+  /api/v1/articles/creation_trend/:
+    get:
+      operationId: api_v1_articles_creation_trend_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+          description: ''
+  /api/v1/articles/my_articles/:
+    get:
+      operationId: api_v1_articles_my_articles_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+          description: ''
+  /api/v1/articles/pending_review/:
+    get:
+      operationId: api_v1_articles_pending_review_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+          description: ''
+  /api/v1/auth/token/:
+    post:
+      operationId: api_v1_auth_token_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+  /api/v1/auth/token/refresh/:
+    post:
+      operationId: api_v1_auth_token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/v1/auth/token/verify:
+    post:
+      operationId: api_v1_auth_token_verify_create
+      description: |-
+        Takes a token and indicates if it is valid.  This view provides no
+        information about a token's fitness for a particular use.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenVerify'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenVerify'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenVerify'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenVerify'
+          description: ''
+  /api/v1/categories/:
+    get:
+      operationId: api_v1_categories_list
+      description: |-
+        API endpoint for managing article categories.
+
+        PRD FR-1.5: Articles can be categorized
+        PRD FR-8.1: Top-level categories for organizing content
+        PRD FR-2.3: Users can filter search results by category
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCategoryListList'
+          description: ''
+    post:
+      operationId: api_v1_categories_create
+      description: |-
+        API endpoint for managing article categories.
+
+        PRD FR-1.5: Articles can be categorized
+        PRD FR-8.1: Top-level categories for organizing content
+        PRD FR-2.3: Users can filter search results by category
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Category'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Category'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Category'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+  /api/v1/categories/{id}/:
+    get:
+      operationId: api_v1_categories_retrieve
+      description: |-
+        API endpoint for managing article categories.
+
+        PRD FR-1.5: Articles can be categorized
+        PRD FR-8.1: Top-level categories for organizing content
+        PRD FR-2.3: Users can filter search results by category
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this category.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    put:
+      operationId: api_v1_categories_update
+      description: |-
+        API endpoint for managing article categories.
+
+        PRD FR-1.5: Articles can be categorized
+        PRD FR-8.1: Top-level categories for organizing content
+        PRD FR-2.3: Users can filter search results by category
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this category.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Category'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Category'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Category'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    patch:
+      operationId: api_v1_categories_partial_update
+      description: |-
+        API endpoint for managing article categories.
+
+        PRD FR-1.5: Articles can be categorized
+        PRD FR-8.1: Top-level categories for organizing content
+        PRD FR-2.3: Users can filter search results by category
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this category.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCategory'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCategory'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCategory'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    delete:
+      operationId: api_v1_categories_destroy
+      description: |-
+        API endpoint for managing article categories.
+
+        PRD FR-1.5: Articles can be categorized
+        PRD FR-8.1: Top-level categories for organizing content
+        PRD FR-2.3: Users can filter search results by category
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this category.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/categories/{id}/articles/:
+    get:
+      operationId: api_v1_categories_articles_retrieve
+      description: Get all articles in a specific category.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this category.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+  /api/v1/categories/root_categories/:
+    get:
+      operationId: api_v1_categories_root_categories_retrieve
+      description: Get only root categories (categories with no parent).
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+  /api/v1/chat/:
+    post:
+      operationId: api_v1_chat_create
+      description: |-
+        POST /api/v1/chat/
+
+        Public (AllowAny) — the chat widget is embedded in both the public
+        Help Center and the authenticated Admin/Editor portals (per the PRD's
+        embeddability requirement), so this intentionally accepts both
+        anonymous and authenticated callers. Role-awareness (FR-5.4 — never
+        surface content a user's role wouldn't otherwise see) is handled
+        structurally rather than per-request: chatbot/signals.py only ever
+        creates embeddings for articles with status='published', so there is
+        no draft/pending-review content in the vector index at all for any
+        role to leak — retrieval simply has nothing restricted to accidentally
+        return.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/chat/conversations/:
+    get:
+      operationId: api_v1_chat_conversations_list
+      description: |-
+        Backs the chat-history requirements: list conversations, load a
+        previous conversation's messages, rename, archive, and delete.
+
+        Scoped per-requester in get_queryset (not just via object permission)
+        so the list endpoint itself never returns another user's conversations
+        — object-level permission alone only protects retrieve/update/delete
+        of a specific id you already know, not enumeration via the list view.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedConversationList'
+          description: ''
+  /api/v1/chat/conversations/{id}/:
+    get:
+      operationId: api_v1_chat_conversations_retrieve
+      description: |-
+        Backs the chat-history requirements: list conversations, load a
+        previous conversation's messages, rename, archive, and delete.
+
+        Scoped per-requester in get_queryset (not just via object permission)
+        so the list endpoint itself never returns another user's conversations
+        — object-level permission alone only protects retrieve/update/delete
+        of a specific id you already know, not enumeration via the list view.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+          description: ''
+    patch:
+      operationId: api_v1_chat_conversations_partial_update
+      description: |-
+        Backs the chat-history requirements: list conversations, load a
+        previous conversation's messages, rename, archive, and delete.
+
+        Scoped per-requester in get_queryset (not just via object permission)
+        so the list endpoint itself never returns another user's conversations
+        — object-level permission alone only protects retrieve/update/delete
+        of a specific id you already know, not enumeration via the list view.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedConversation'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedConversation'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedConversation'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+          description: ''
+    delete:
+      operationId: api_v1_chat_conversations_destroy
+      description: |-
+        Backs the chat-history requirements: list conversations, load a
+        previous conversation's messages, rename, archive, and delete.
+
+        Scoped per-requester in get_queryset (not just via object permission)
+        so the list endpoint itself never returns another user's conversations
+        — object-level permission alone only protects retrieve/update/delete
+        of a specific id you already know, not enumeration via the list view.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/chat/conversations/{id}/archive/:
+    patch:
+      operationId: api_v1_chat_conversations_archive_partial_update
+      description: |-
+        Backs the chat-history requirements: list conversations, load a
+        previous conversation's messages, rename, archive, and delete.
+
+        Scoped per-requester in get_queryset (not just via object permission)
+        so the list endpoint itself never returns another user's conversations
+        — object-level permission alone only protects retrieve/update/delete
+        of a specific id you already know, not enumeration via the list view.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedConversation'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedConversation'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedConversation'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+          description: ''
+  /api/v1/chat/conversations/{id}/messages/:
+    get:
+      operationId: api_v1_chat_conversations_messages_retrieve
+      description: |-
+        Backs the chat-history requirements: list conversations, load a
+        previous conversation's messages, rename, archive, and delete.
+
+        Scoped per-requester in get_queryset (not just via object permission)
+        so the list endpoint itself never returns another user's conversations
+        — object-level permission alone only protects retrieve/update/delete
+        of a specific id you already know, not enumeration via the list view.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+          description: ''
+  /api/v1/chat/conversations/{id}/rename/:
+    patch:
+      operationId: api_v1_chat_conversations_rename_partial_update
+      description: |-
+        Backs the chat-history requirements: list conversations, load a
+        previous conversation's messages, rename, archive, and delete.
+
+        Scoped per-requester in get_queryset (not just via object permission)
+        so the list endpoint itself never returns another user's conversations
+        — object-level permission alone only protects retrieve/update/delete
+        of a specific id you already know, not enumeration via the list view.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedConversation'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedConversation'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedConversation'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+          description: ''
+  /api/v1/chat/conversations/{id}/unarchive/:
+    patch:
+      operationId: api_v1_chat_conversations_unarchive_partial_update
+      description: |-
+        Backs the chat-history requirements: list conversations, load a
+        previous conversation's messages, rename, archive, and delete.
+
+        Scoped per-requester in get_queryset (not just via object permission)
+        so the list endpoint itself never returns another user's conversations
+        — object-level permission alone only protects retrieve/update/delete
+        of a specific id you already know, not enumeration via the list view.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedConversation'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedConversation'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedConversation'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+          description: ''
+  /api/v1/media/:
+    get:
+      operationId: api_v1_media_list
+      description: |-
+        API endpoint for media management.
+
+        PRD: Media attachments for articles (images, videos, PDFs).
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMediaList'
+          description: ''
+    post:
+      operationId: api_v1_media_create
+      description: |-
+        API endpoint for media management.
+
+        PRD: Media attachments for articles (images, videos, PDFs).
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Media'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Media'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Media'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Media'
+          description: ''
+  /api/v1/media/{id}/:
+    get:
+      operationId: api_v1_media_retrieve
+      description: |-
+        API endpoint for media management.
+
+        PRD: Media attachments for articles (images, videos, PDFs).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this media.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Media'
+          description: ''
+    put:
+      operationId: api_v1_media_update
+      description: |-
+        API endpoint for media management.
+
+        PRD: Media attachments for articles (images, videos, PDFs).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this media.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Media'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Media'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Media'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Media'
+          description: ''
+    patch:
+      operationId: api_v1_media_partial_update
+      description: |-
+        API endpoint for media management.
+
+        PRD: Media attachments for articles (images, videos, PDFs).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this media.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMedia'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMedia'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMedia'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Media'
+          description: ''
+    delete:
+      operationId: api_v1_media_destroy
+      description: |-
+        API endpoint for media management.
+
+        PRD: Media attachments for articles (images, videos, PDFs).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this media.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/media/{id}/delete_file/:
+    delete:
+      operationId: api_v1_media_delete_file_destroy
+      description: Delete a media file from Cloudinary and the database.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this media.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/media/article_media/:
+    get:
+      operationId: api_v1_media_article_media_retrieve
+      description: Get all media for a specific article.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Media'
+          description: ''
+  /api/v1/media/upload/:
+    post:
+      operationId: api_v1_media_upload_create
+      description: Upload a file to Cloudinary and associate with an article.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Media'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Media'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Media'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Media'
+          description: ''
+  /api/v1/products/:
+    get:
+      operationId: api_v1_products_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProductList'
+          description: ''
+    post:
+      operationId: api_v1_products_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Product'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Product'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+  /api/v1/products/{slug}/:
+    get:
+      operationId: api_v1_products_retrieve
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    put:
+      operationId: api_v1_products_update
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Product'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Product'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    patch:
+      operationId: api_v1_products_partial_update
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProduct'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProduct'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProduct'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    delete:
+      operationId: api_v1_products_destroy
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/products/{slug}/articles/:
+    get:
+      operationId: api_v1_products_articles_retrieve
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+  /api/v1/stats/:
+    get:
+      operationId: api_v1_stats_retrieve
+      description: |-
+        Public endpoint for landing page stats.
+        No authentication required.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/tags/:
+    get:
+      operationId: api_v1_tags_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTagListList'
+          description: ''
+    post:
+      operationId: api_v1_tags_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Tag'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Tag'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Tag'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+          description: ''
+  /api/v1/tags/{id}/:
+    get:
+      operationId: api_v1_tags_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this tag.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagDetail'
+          description: ''
+    put:
+      operationId: api_v1_tags_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this tag.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Tag'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Tag'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Tag'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+          description: ''
+    patch:
+      operationId: api_v1_tags_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this tag.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTag'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTag'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTag'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+          description: ''
+    delete:
+      operationId: api_v1_tags_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this tag.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/tags/{id}/articles/:
+    get:
+      operationId: api_v1_tags_articles_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this tag.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+          description: ''
+  /api/v1/tags/popular/:
+    get:
+      operationId: api_v1_tags_popular_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+          description: ''
+  /api/v1/tags/search/:
+    get:
+      operationId: api_v1_tags_search_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+          description: ''
+  /api/v1/u/auth/request-password-reset/:
+    post:
+      operationId: api_v1_u_auth_request_password_reset_create
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/u/auth/reset-password/:
+    post:
+      operationId: api_v1_u_auth_reset_password_create
+      description: POST /api/v1/u/auth/reset-password/
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/u/auth/verify-otp/:
+    post:
+      operationId: api_v1_u_auth_verify_otp_create
+      description: |-
+        POST /api/v1/u/auth/verify-otp/
+        Verify the OTP sent to the user's email.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/u/users/:
+    get:
+      operationId: api_v1_u_users_list
+      description: API endpoint that allows users to be viewed or edited
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUserList'
+          description: ''
+    post:
+      operationId: api_v1_u_users_create
+      description: API endpoint that allows users to be viewed or edited
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/v1/u/users/{id}/:
+    get:
+      operationId: api_v1_u_users_retrieve
+      description: API endpoint that allows users to be viewed or edited
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    put:
+      operationId: api_v1_u_users_update
+      description: API endpoint that allows users to be viewed or edited
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    patch:
+      operationId: api_v1_u_users_partial_update
+      description: API endpoint that allows users to be viewed or edited
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    delete:
+      operationId: api_v1_u_users_destroy
+      description: API endpoint that allows users to be viewed or edited
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/u/users/{id}/change_role/:
+    post:
+      operationId: api_v1_u_users_change_role_create
+      description: PATCH /api/v1/users/{id}/change_role/  Change user role
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    patch:
+      operationId: api_v1_u_users_change_role_partial_update
+      description: PATCH /api/v1/users/{id}/change_role/  Change user role
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/v1/u/users/{id}/set_password/:
+    post:
+      operationId: api_v1_u_users_set_password_create
+      description: |-
+        POST /api/v1/u/users/{id}/set-password/
+        Change password for a logged-in user.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/v1/u/users/{id}/update_avatar/:
+    patch:
+      operationId: api_v1_u_users_update_avatar_partial_update
+      description: API endpoint that allows users to be viewed or edited
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/v1/u/users/admin_dashboard/:
+    get:
+      operationId: api_v1_u_users_admin_dashboard_retrieve
+      description: GET /api/v1/users/admin_dashboard/  Admin stats
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/v1/u/users/admin_users/:
+    get:
+      operationId: api_v1_u_users_admin_users_retrieve
+      description: List all users (admin only)
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/v1/u/users/dashboard/:
+    get:
+      operationId: api_v1_u_users_dashboard_retrieve
+      description: GET /api/v1/users/dashboard/  Dashboard stats for the current user.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/v1/u/users/me/:
+    get:
+      operationId: api_v1_u_users_me_retrieve
+      description: GET /api/v1/u/users/me/  Current user's profile
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /health/:
+    get:
+      operationId: health_retrieve
+      tags:
+      - health
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+components:
+  schemas:
+    ActionEnum:
+      enum:
+      - create
+      - update
+      - delete
+      - publish
+      - reject
+      - submit
+      - login
+      - logout
+      - role_change
+      - view
+      - export
+      type: string
+      description: |-
+        * `create` - Created
+        * `update` - Updated
+        * `delete` - Deleted
+        * `publish` - Article Published
+        * `reject` - Article Rejected
+        * `submit` - Article Submitted
+        * `login` - Login
+        * `logout` - Logout
+        * `role_change` - Role Changed
+        * `view` - Viewed
+        * `export` - Exported
+    Article:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        content:
+          type: string
+        category:
+          type: string
+          description: URL-friendly version (e.g., 'patient-management')
+          nullable: true
+        author:
+          type: integer
+          readOnly: true
+        author_username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          readOnly: true
+        author_full_name:
+          type: string
+          readOnly: true
+        author_avatar:
+          type: string
+          readOnly: true
+        published_by:
+          type: integer
+          readOnly: true
+          nullable: true
+        publisher_username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        views:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        article_type:
+          type: string
+          maxLength: 50
+        media:
+          type: string
+          readOnly: true
+        product_version:
+          type: string
+          maxLength: 20
+        module:
+          type: string
+          maxLength: 100
+        product:
+          type: string
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
+          writeOnly: true
+        tag_names:
+          type: string
+          readOnly: true
+      required:
+      - author
+      - author_avatar
+      - author_full_name
+      - author_username
+      - content
+      - created_at
+      - id
+      - media
+      - published_at
+      - published_by
+      - publisher_username
+      - slug
+      - tag_names
+      - title
+      - updated_at
+      - views
+    ArticleTag:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        article:
+          type: integer
+        article_title:
+          type: string
+          readOnly: true
+        tag:
+          type: integer
+        tag_name:
+          type: string
+          description: Tag name (e.g., 'Emergency', 'SOP', 'FAQ')
+          readOnly: true
+        added_by:
+          type: integer
+          readOnly: true
+          nullable: true
+        added_by_username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          readOnly: true
+        added_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - added_at
+      - added_by
+      - added_by_username
+      - article
+      - article_title
+      - id
+      - tag
+      - tag_name
+    AuditLog:
+      type: object
+      description: 'PRD FR-3.6: Serializer for audit logs.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+          nullable: true
+          description: User who performed the action
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          readOnly: true
+        user_email:
+          type: string
+          format: email
+          title: Email address
+          readOnly: true
+        user_role:
+          allOf:
+          - $ref: '#/components/schemas/UserRoleEnum'
+          readOnly: true
+        user_ip:
+          type: string
+          nullable: true
+          description: IP address of the user
+        user_agent:
+          type: string
+          description: Browser device information
+        action:
+          allOf:
+          - $ref: '#/components/schemas/ActionEnum'
+          description: |-
+            Type of action performed
+
+            * `create` - Created
+            * `update` - Updated
+            * `delete` - Deleted
+            * `publish` - Article Published
+            * `reject` - Article Rejected
+            * `submit` - Article Submitted
+            * `login` - Login
+            * `logout` - Logout
+            * `role_change` - Role Changed
+            * `view` - Viewed
+            * `export` - Exported
+        content_type:
+          type: string
+          description: Model name (e.g., 'Article', 'User', 'Category')
+          maxLength: 100
+        object_id:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: ID of the object affected
+        object_repr:
+          type: string
+          description: String representation of the object
+          maxLength: 200
+        changes:
+          description: 'Dictionary of changes made (field: old_value -> new_value)'
+        reason:
+          type: string
+          description: Optional reason for the action (e.g., rejection reason)
+        timestamp:
+          type: string
+          format: date-time
+          readOnly: true
+          description: When the action was performed
+      required:
+      - action
+      - content_type
+      - id
+      - object_id
+      - timestamp
+      - user_email
+      - user_role
+      - username
+    AuditLogDetail:
+      type: object
+      description: Detailed serializer for single log entry.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+          nullable: true
+          description: User who performed the action
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          readOnly: true
+        user_email:
+          type: string
+          format: email
+          title: Email address
+          readOnly: true
+        user_role:
+          allOf:
+          - $ref: '#/components/schemas/UserRoleEnum'
+          readOnly: true
+        user_ip:
+          type: string
+          nullable: true
+          description: IP address of the user
+        user_agent:
+          type: string
+          description: Browser device information
+        action:
+          allOf:
+          - $ref: '#/components/schemas/ActionEnum'
+          description: |-
+            Type of action performed
+
+            * `create` - Created
+            * `update` - Updated
+            * `delete` - Deleted
+            * `publish` - Article Published
+            * `reject` - Article Rejected
+            * `submit` - Article Submitted
+            * `login` - Login
+            * `logout` - Logout
+            * `role_change` - Role Changed
+            * `view` - Viewed
+            * `export` - Exported
+        content_type:
+          type: string
+          description: Model name (e.g., 'Article', 'User', 'Category')
+          maxLength: 100
+        object_id:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: ID of the object affected
+        object_repr:
+          type: string
+          description: String representation of the object
+          maxLength: 200
+        changes:
+          description: 'Dictionary of changes made (field: old_value -> new_value)'
+        reason:
+          type: string
+          description: Optional reason for the action (e.g., rejection reason)
+        timestamp:
+          type: string
+          format: date-time
+          readOnly: true
+          description: When the action was performed
+      required:
+      - action
+      - content_type
+      - id
+      - object_id
+      - timestamp
+      - user_email
+      - user_role
+      - username
+    AuditLogList:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+          nullable: true
+          description: User who performed the action
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          readOnly: true
+        user_email:
+          type: string
+          format: email
+          title: Email address
+          readOnly: true
+        full_name:
+          type: string
+          readOnly: true
+        display_action:
+          type: string
+          readOnly: true
+        object_label:
+          type: string
+          description: String representation of the object
+          readOnly: true
+        object_type:
+          type: string
+          description: Model name (e.g., 'Article', 'User', 'Category')
+          readOnly: true
+        ip_address:
+          type: string
+          nullable: true
+          description: IP address of the user
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          description: When the action was performed
+        detail:
+          type: string
+          readOnly: true
+      required:
+      - created_at
+      - detail
+      - display_action
+      - full_name
+      - id
+      - ip_address
+      - object_label
+      - object_type
+      - user_email
+      - username
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          description: Category name (e.g., 'Patient Management')
+          maxLength: 100
+        slug:
+          type: string
+          description: URL-friendly version (e.g., 'patient-management')
+          maxLength: 120
+          pattern: ^[-a-zA-Z0-9_]+$
+        description:
+          type: string
+          description: Optional description of the category
+        parent:
+          type: integer
+          nullable: true
+          description: Parent category for nested categories
+        parent_name:
+          type: string
+          description: Category name (e.g., 'Patient Management')
+          readOnly: true
+        icon:
+          type: string
+          description: Icon name or emoji, 'fa-user')
+          maxLength: 50
+        sort_order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: Order for display (lower numbers first)
+        article_count:
+          type: string
+          readOnly: true
+        children:
+          type: string
+          readOnly: true
+        full_path:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - article_count
+      - children
+      - created_at
+      - full_path
+      - id
+      - name
+      - parent_name
+      - slug
+      - updated_at
+    CategoryList:
+      type: object
+      description: Simplified serializer for list views.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          description: Category name (e.g., 'Patient Management')
+          maxLength: 100
+        slug:
+          type: string
+          description: URL-friendly version (e.g., 'patient-management')
+          maxLength: 120
+          pattern: ^[-a-zA-Z0-9_]+$
+        icon:
+          type: string
+          description: Icon name or emoji, 'fa-user')
+          maxLength: 50
+        article_count:
+          type: string
+          readOnly: true
+      required:
+      - article_count
+      - id
+      - name
+      - slug
+    ChatLog:
+      type: object
+      description: 'PRD FR-5.8: Serializer for chat logs.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+          nullable: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          readOnly: true
+        conversation_uuid:
+          type: string
+          nullable: true
+          maxLength: 255
+        question:
+          type: string
+        answer:
+          type: string
+        article_ref:
+          type: integer
+          nullable: true
+        article_title:
+          type: string
+          readOnly: true
+        was_helpful:
+          type: boolean
+          nullable: true
+        response_time:
+          type: number
+          format: double
+          nullable: true
+        confidence_score:
+          type: number
+          format: double
+          nullable: true
+        has_feedback:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        escalate_suggested:
+          type: boolean
+      required:
+      - answer
+      - article_title
+      - created_at
+      - has_feedback
+      - id
+      - question
+      - username
+    ChatLogDetail:
+      type: object
+      description: Detailed serializer for single chat log.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+          nullable: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          readOnly: true
+        user_email:
+          type: string
+          format: email
+          title: Email address
+          readOnly: true
+        conversation_uuid:
+          type: string
+          nullable: true
+          maxLength: 255
+        question:
+          type: string
+        answer:
+          type: string
+        article_ref:
+          type: integer
+          nullable: true
+        article_title:
+          type: string
+          readOnly: true
+        was_helpful:
+          type: boolean
+          nullable: true
+        response_time:
+          type: number
+          format: double
+          nullable: true
+        confidence_score:
+          type: number
+          format: double
+          nullable: true
+        feedback:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - answer
+      - article_title
+      - created_at
+      - feedback
+      - id
+      - question
+      - user_email
+      - username
+    ChatLogList:
+      type: object
+      description: Simplified serializer for list views.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          readOnly: true
+        conversation_uuid:
+          type: string
+          nullable: true
+          maxLength: 255
+        question:
+          type: string
+        article_title:
+          type: string
+          readOnly: true
+        was_helpful:
+          type: boolean
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - article_title
+      - created_at
+      - id
+      - question
+      - username
+    ContentTypeEnum:
+      enum:
+      - article
+      - chat
+      type: string
+      description: |-
+        * `article` - Article
+        * `chat` - Chat
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        is_archived:
+          type: boolean
+        message_count:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - message_count
+      - updated_at
+    Feedback:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+          readOnly: true
+        user_email:
+          type: string
+          readOnly: true
+        content_type:
+          $ref: '#/components/schemas/ContentTypeEnum'
+        object_id:
+          type: string
+          maxLength: 255
+        rating:
+          type: integer
+          maximum: 32767
+          minimum: 0
+          nullable: true
+        helpful:
+          type: boolean
+          nullable: true
+        comment:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - content_type
+      - created_at
+      - id
+      - object_id
+      - user
+      - user_email
+    Media:
+      type: object
+      description: 'PRD: Serializer for media files.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        article:
+          type: integer
+        article_title:
+          type: string
+          readOnly: true
+        filename:
+          type: string
+          description: Original filename
+          maxLength: 255
+        url:
+          type: string
+          format: uri
+          description: Cloudinary URL
+          maxLength: 500
+        type:
+          allOf:
+          - $ref: '#/components/schemas/TypeEnum'
+          description: |-
+            Media type (image, video, pdf)
+
+            * `image` - Image
+            * `video` - Video
+            * `pdf` - PDF Document
+            * `other` - Other
+        uploaded_by:
+          type: integer
+          nullable: true
+        uploaded_by_username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          readOnly: true
+        public_id:
+          type: string
+          readOnly: true
+          description: Cloudinary public ID for deletion
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - article
+      - article_title
+      - created_at
+      - filename
+      - id
+      - public_id
+      - type
+      - updated_at
+      - uploaded_by_username
+      - url
+    Notification:
+      type: object
+      description: Serializer for notifications.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        recipient:
+          type: integer
+        recipient_username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          readOnly: true
+        sender:
+          type: integer
+          nullable: true
+        sender_username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          readOnly: true
+        sender_email:
+          type: string
+          format: email
+          title: Email address
+          readOnly: true
+        notification_type:
+          $ref: '#/components/schemas/NotificationTypeEnum'
+        title:
+          type: string
+          maxLength: 200
+        message:
+          type: string
+        link:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 500
+          - type: string
+            maxLength: 0
+        read:
+          type: boolean
+        read_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - message
+      - notification_type
+      - read_at
+      - recipient
+      - recipient_username
+      - sender_email
+      - sender_username
+      - title
+    NotificationList:
+      type: object
+      description: Simplified serializer for list views.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        sender_username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          readOnly: true
+        notification_type:
+          $ref: '#/components/schemas/NotificationTypeEnum'
+        title:
+          type: string
+          maxLength: 200
+        message:
+          type: string
+        link:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 500
+          - type: string
+            maxLength: 0
+        read:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - message
+      - notification_type
+      - sender_username
+      - title
+    NotificationTypeEnum:
+      enum:
+      - article_submitted
+      - article_published
+      - article_rejected
+      - comment_added
+      - role_changed
+      type: string
+      description: |-
+        * `article_submitted` - Article Submitted for Review
+        * `article_published` - Article Published
+        * `article_rejected` - Article Rejected
+        * `comment_added` - Comment Added
+        * `role_changed` - Role Changed
+    PaginatedArticleList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Article'
+    PaginatedArticleTagList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArticleTag'
+    PaginatedAuditLogListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditLogList'
+    PaginatedCategoryListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryList'
+    PaginatedChatLogListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatLogList'
+    PaginatedConversationList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Conversation'
+    PaginatedFeedbackList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Feedback'
+    PaginatedMediaList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Media'
+    PaginatedNotificationListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationList'
+    PaginatedProductList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+    PaginatedSearchLogListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchLogList'
+    PaginatedTagListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/TagList'
+    PaginatedUserList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+    PatchedArticle:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        content:
+          type: string
+        category:
+          type: string
+          description: URL-friendly version (e.g., 'patient-management')
+          nullable: true
+        author:
+          type: integer
+          readOnly: true
+        author_username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          readOnly: true
+        author_full_name:
+          type: string
+          readOnly: true
+        author_avatar:
+          type: string
+          readOnly: true
+        published_by:
+          type: integer
+          readOnly: true
+          nullable: true
+        publisher_username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        views:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        article_type:
+          type: string
+          maxLength: 50
+        media:
+          type: string
+          readOnly: true
+        product_version:
+          type: string
+          maxLength: 20
+        module:
+          type: string
+          maxLength: 100
+        product:
+          type: string
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
+          writeOnly: true
+        tag_names:
+          type: string
+          readOnly: true
+    PatchedArticleTag:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        article:
+          type: integer
+        article_title:
+          type: string
+          readOnly: true
+        tag:
+          type: integer
+        tag_name:
+          type: string
+          description: Tag name (e.g., 'Emergency', 'SOP', 'FAQ')
+          readOnly: true
+        added_by:
+          type: integer
+          readOnly: true
+          nullable: true
+        added_by_username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          readOnly: true
+        added_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedCategory:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          description: Category name (e.g., 'Patient Management')
+          maxLength: 100
+        slug:
+          type: string
+          description: URL-friendly version (e.g., 'patient-management')
+          maxLength: 120
+          pattern: ^[-a-zA-Z0-9_]+$
+        description:
+          type: string
+          description: Optional description of the category
+        parent:
+          type: integer
+          nullable: true
+          description: Parent category for nested categories
+        parent_name:
+          type: string
+          description: Category name (e.g., 'Patient Management')
+          readOnly: true
+        icon:
+          type: string
+          description: Icon name or emoji, 'fa-user')
+          maxLength: 50
+        sort_order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: Order for display (lower numbers first)
+        article_count:
+          type: string
+          readOnly: true
+        children:
+          type: string
+          readOnly: true
+        full_path:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedConversation:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        is_archived:
+          type: boolean
+        message_count:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedFeedback:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+          readOnly: true
+        user_email:
+          type: string
+          readOnly: true
+        content_type:
+          $ref: '#/components/schemas/ContentTypeEnum'
+        object_id:
+          type: string
+          maxLength: 255
+        rating:
+          type: integer
+          maximum: 32767
+          minimum: 0
+          nullable: true
+        helpful:
+          type: boolean
+          nullable: true
+        comment:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedMedia:
+      type: object
+      description: 'PRD: Serializer for media files.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        article:
+          type: integer
+        article_title:
+          type: string
+          readOnly: true
+        filename:
+          type: string
+          description: Original filename
+          maxLength: 255
+        url:
+          type: string
+          format: uri
+          description: Cloudinary URL
+          maxLength: 500
+        type:
+          allOf:
+          - $ref: '#/components/schemas/TypeEnum'
+          description: |-
+            Media type (image, video, pdf)
+
+            * `image` - Image
+            * `video` - Video
+            * `pdf` - PDF Document
+            * `other` - Other
+        uploaded_by:
+          type: integer
+          nullable: true
+        uploaded_by_username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          readOnly: true
+        public_id:
+          type: string
+          readOnly: true
+          description: Cloudinary public ID for deletion
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedNotification:
+      type: object
+      description: Serializer for notifications.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        recipient:
+          type: integer
+        recipient_username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          readOnly: true
+        sender:
+          type: integer
+          nullable: true
+        sender_username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          readOnly: true
+        sender_email:
+          type: string
+          format: email
+          title: Email address
+          readOnly: true
+        notification_type:
+          $ref: '#/components/schemas/NotificationTypeEnum'
+        title:
+          type: string
+          maxLength: 200
+        message:
+          type: string
+        link:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 500
+          - type: string
+            maxLength: 0
+        read:
+          type: boolean
+        read_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedProduct:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        description:
+          type: string
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedSearchLog:
+      type: object
+      description: 'PRD FR-2.6: Serializer for search logs.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+          readOnly: true
+          nullable: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          readOnly: true
+        user_email:
+          type: string
+          format: email
+          title: Email address
+          readOnly: true
+        query:
+          type: string
+          maxLength: 500
+        result_count:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedTag:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          description: Tag name (e.g., 'Emergency', 'SOP', 'FAQ')
+          maxLength: 50
+        slug:
+          type: string
+          description: URL-friendly version (e.g., 'emergency')
+          maxLength: 60
+          pattern: ^[-a-zA-Z0-9_]+$
+        description:
+          type: string
+          description: Optional description of the tag
+        article_count:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedUser:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        password:
+          type: string
+          writeOnly: true
+          maxLength: 128
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          title: Email address
+          oneOf:
+          - type: string
+            format: email
+            maxLength: 254
+          - type: string
+            maxLength: 0
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        department:
+          type: string
+          maxLength: 100
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        avatar:
+          description: Cloudinary url
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        full_name:
+          type: string
+          readOnly: true
+        facility:
+          type: string
+        is_active:
+          type: boolean
+        article_count:
+          type: integer
+          readOnly: true
+          default: 0
+    Product:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        description:
+          type: string
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - name
+      - slug
+      - updated_at
+    RoleEnum:
+      enum:
+      - admin
+      - viewer
+      - editor
+      type: string
+      description: |-
+        * `admin` - Admin
+        * `viewer` - Viewer
+        * `editor` - Editor
+    SearchLog:
+      type: object
+      description: 'PRD FR-2.6: Serializer for search logs.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+          readOnly: true
+          nullable: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          readOnly: true
+        user_email:
+          type: string
+          format: email
+          title: Email address
+          readOnly: true
+        query:
+          type: string
+          maxLength: 500
+        result_count:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - query
+      - user
+      - user_email
+      - username
+    SearchLogList:
+      type: object
+      description: Simplified serializer for list views.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          readOnly: true
+        query:
+          type: string
+          maxLength: 500
+        result_count:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - query
+      - username
+    StatusEnum:
+      enum:
+      - draft
+      - pending_review
+      - published
+      - archived
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `pending_review` - Pending Review
+        * `published` - Published
+        * `archived` - Archived
+    Tag:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          description: Tag name (e.g., 'Emergency', 'SOP', 'FAQ')
+          maxLength: 50
+        slug:
+          type: string
+          description: URL-friendly version (e.g., 'emergency')
+          maxLength: 60
+          pattern: ^[-a-zA-Z0-9_]+$
+        description:
+          type: string
+          description: Optional description of the tag
+        article_count:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - article_count
+      - created_at
+      - id
+      - name
+      - slug
+      - updated_at
+    TagDetail:
+      type: object
+      description: Detailed serializer with article count.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          description: Tag name (e.g., 'Emergency', 'SOP', 'FAQ')
+          maxLength: 50
+        slug:
+          type: string
+          description: URL-friendly version (e.g., 'emergency')
+          maxLength: 60
+          pattern: ^[-a-zA-Z0-9_]+$
+        description:
+          type: string
+          description: Optional description of the tag
+        article_count:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - article_count
+      - created_at
+      - id
+      - name
+      - slug
+      - updated_at
+    TagList:
+      type: object
+      description: Simplified serializer for list views.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          description: Tag name (e.g., 'Emergency', 'SOP', 'FAQ')
+          maxLength: 50
+        slug:
+          type: string
+          description: URL-friendly version (e.g., 'emergency')
+          maxLength: 60
+          pattern: ^[-a-zA-Z0-9_]+$
+      required:
+      - id
+      - name
+      - slug
+    TokenObtainPair:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - password
+      - refresh
+      - username
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          writeOnly: true
+      required:
+      - access
+      - refresh
+    TokenVerify:
+      type: object
+      properties:
+        token:
+          type: string
+          writeOnly: true
+      required:
+      - token
+    TypeEnum:
+      enum:
+      - image
+      - video
+      - pdf
+      - other
+      type: string
+      description: |-
+        * `image` - Image
+        * `video` - Video
+        * `pdf` - PDF Document
+        * `other` - Other
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        password:
+          type: string
+          writeOnly: true
+          maxLength: 128
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          title: Email address
+          oneOf:
+          - type: string
+            format: email
+            maxLength: 254
+          - type: string
+            maxLength: 0
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        department:
+          type: string
+          maxLength: 100
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        avatar:
+          description: Cloudinary url
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        full_name:
+          type: string
+          readOnly: true
+        facility:
+          type: string
+        is_active:
+          type: boolean
+        article_count:
+          type: integer
+          readOnly: true
+          default: 0
+      required:
+      - article_count
+      - date_joined
+      - full_name
+      - id
+      - password
+      - updated_at
+      - username
+    UserRoleEnum:
+      enum:
+      - admin
+      - viewer
+      - editor
+      type: string
+      description: |-
+        * `admin` - Admin
+        * `viewer` - Viewer
+        * `editor` - Editor
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

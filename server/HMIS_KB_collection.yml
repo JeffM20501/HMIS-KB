@@ -13,19 +13,148 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: Enter your JWT token. Required for all routes except Login/Register.
+      description: Enter your JWT token. Required for all routes except public endpoints.
+  schemas:
+    User:
+      type: object
+      properties:
+        id: { type: integer }
+        username: { type: string }
+        email: { type: string }
+        first_name: { type: string }
+        last_name: { type: string }
+        full_name: { type: string }
+        role: { type: string, enum: [admin, editor, viewer] }
+        department: { type: string }
+        is_active: { type: boolean }
+        avatar: { type: string, format: uri }
+        date_joined: { type: string, format: date-time }
+        last_login: { type: string, format: date-time }
+    Article:
+      type: object
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        slug: { type: string }
+        content: { type: string }
+        category: { type: object }
+        product: { type: object }
+        status: { type: string, enum: [draft, pending_review, published, archived] }
+        views: { type: integer }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        published_at: { type: string, format: date-time, nullable: true }
+        article_type: { type: string, enum: [how_to, sop, faq, troubleshooting, feature_ref, release_notes, article] }
+        module: { type: string }
+        product_version: { type: string }
+        tags: { type: array, items: { type: string } }
+        tag_names: { type: array, items: { type: string } }
+        author_username: { type: string }
+        author_full_name: { type: string }
+        author_avatar: { type: string, format: uri }
+        media: { type: array, items: { type: object } }
+    Category:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        slug: { type: string }
+        description: { type: string }
+        icon: { type: string }
+        parent: { type: object, nullable: true }
+        article_count: { type: integer }
+        children: { type: array, items: { type: object } }
+    Tag:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        slug: { type: string }
+    Product:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        slug: { type: string }
+        description: { type: string }
+        is_active: { type: boolean }
+    Feedback:
+      type: object
+      properties:
+        id: { type: integer }
+        user: { type: object }
+        content_type: { type: string, enum: [article, chat] }
+        object_id: { type: string }
+        rating: { type: integer, minimum: 1, maximum: 5, nullable: true }
+        helpful: { type: boolean, nullable: true }
+        comment: { type: string }
+        created_at: { type: string, format: date-time }
+    Notification:
+      type: object
+      properties:
+        id: { type: integer }
+        recipient: { type: object }
+        sender: { type: object }
+        notification_type: { type: string }
+        title: { type: string }
+        message: { type: string }
+        link: { type: string }
+        read: { type: boolean }
+        read_at: { type: string, format: date-time, nullable: true }
+        created_at: { type: string, format: date-time }
+    SearchLog:
+      type: object
+      properties:
+        id: { type: integer }
+        user: { type: object, nullable: true }
+        query: { type: string }
+        result_count: { type: integer }
+        created_at: { type: string, format: date-time }
+    ChatLog:
+      type: object
+      properties:
+        id: { type: integer }
+        user: { type: object, nullable: true }
+        conversation: { type: object, nullable: true }
+        conversation_uuid: { type: string }
+        question: { type: string }
+        answer: { type: string }
+        article_ref: { type: object, nullable: true }
+        was_helpful: { type: boolean, nullable: true }
+        escalate_suggested: { type: boolean }
+        response_time: { type: number, nullable: true }
+        confidence_score: { type: number, nullable: true }
+        created_at: { type: string, format: date-time }
+    Conversation:
+      type: object
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        is_archived: { type: boolean }
+        message_count: { type: integer }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    AuditLog:
+      type: object
+      properties:
+        id: { type: integer }
+        user: { type: object, nullable: true }
+        action: { type: string }
+        content_type: { type: string }
+        object_id: { type: integer }
+        object_repr: { type: string }
+        changes: { type: object }
+        reason: { type: string }
+        timestamp: { type: string, format: date-time }
 
 security:
   - BearerAuth: []
 
 paths:
-  
-  # authentication 
-  
-  /auth/login:
+  # Auth
+  /auth/token/:
     post:
       summary: Login and receive JWT token
-      description: Public endpoint to authenticate users and fetch their RBAC roles.
       security: []
       requestBody:
         required: true
@@ -33,814 +162,755 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - email
-                - password
+              required: [username, password]
               properties:
-                email:
-                  type: string
-                  format: email
-                  example: user@hmis.com
-                password:
-                  type: string
-                  format: password
-                  example: "********"
+                username: { type: string }
+                password: { type: string }
       responses:
-        '200':
-          description: Login successful
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  token:
-                    type: string
-                    example: "jwt.payload.signature"
-                  user:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                        example: 1
-                      username:
-                        type: string
-                        example: "jdoe"
-                      role:
-                        type: string
-                        enum: [viewer, editor, admin]
-                        example: admin
-
-  #register
-
-  /auth/register:
+        '200': { description: Success }
+  /auth/token/refresh/:
     post:
-      summary: Create a new user account
-      description: Admin-only endpoint to register new users.
+      summary: Refresh JWT token
+      security: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required:
-                - username
-                - email
-                - password
-                - role
+              required: [refresh]
               properties:
-                username:
-                  type: string
-                  example: "jdoe"
-                email:
-                  type: string
-                  format: email
-                  example: "jdoe@hmis.com"
-                password:
-                  type: string
-                  format: password
-                  example: "********"
-                role:
-                  type: string
-                  enum: [viewer, editor, admin]
-                  example: "viewer"
+                refresh: { type: string }
       responses:
-        '201':
-          description: User created successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "User created successfully"
-                  user:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                        example: 2
-                      username:
-                        type: string
-                      email:
-                        type: string
-                      role:
-                        type: string
+        '200': { description: Success }
 
-  #profile
-
-  /auth/profile:
+  # Users
+  /u/users/:
     get:
-      summary: Fetch the currently authenticated user
-      description: Returns the profile of the logged-in user.
-      responses:
-        '200':
-          description: User profile retrieved
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: integer
-                  username:
-                    type: string
-                  email:
-                    type: string
-                  role:
-                    type: string
-                  department:
-                    type: string
-
-  /admin/users:
+      summary: List users (admin only)
+      parameters:
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: role
+          in: query
+          schema: { type: string, enum: [admin, editor, viewer] }
+        - name: status
+          in: query
+          schema: { type: string, enum: [active, suspended] }
+        - name: page
+          in: query
+          schema: { type: integer }
+      responses: { '200': { description: List of users } }
+    post:
+      summary: Create a new user (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, email, password, role]
+              properties:
+                username: { type: string }
+                email: { type: string }
+                password: { type: string }
+                role: { type: string, enum: [admin, editor, viewer] }
+                department: { type: string }
+      responses: { '201': { description: User created } }
+  /u/users/me/:
     get:
-      summary: List all registered users
-      description: Admin panel view to manage all users.
-      responses:
-        '200':
-          description: List of users
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  users:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: integer
-                        username:
-                          type: string
-                        email:
-                          type: string
-                        role:
-                          type: string
-
-  
-
-  /admin/users/{id}/role:
-    put:
-      summary: Update a user's role
-      description: Change the role of a specific user.
+      summary: Get current user profile
+      responses: { '200': { description: Current user } }
+  /u/users/{id}/:
+    get:
+      summary: Get user by ID
       parameters:
         - name: id
           in: path
           required: true
-          schema:
-            type: integer
-          description: The user ID
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - role
-              properties:
-                role:
-                  type: string
-                  enum: [viewer, editor, admin]
-                  example: "editor"
-      responses:
-        '200':
-          description: Role updated successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "User role updated successfully"
-
-  
-  # articles
-  
-  /articles:
-    get:
-      summary: List all published articles
-      description: Viewer+ access to paginated articles with filters.
+          schema: { type: integer }
+      responses: { '200': { description: User details } }
+    patch:
+      summary: Update user (admin or self)
       parameters:
-        - name: page
-          in: query
-          required: false
-          schema:
-            type: integer
-            default: 1
-        - name: limit
-          in: query
-          required: false
-          schema:
-            type: integer
-            default: 20
-        - name: category
-          in: query
-          required: false
-          schema:
-            type: integer
-          description: Filter by category ID
-        - name: tag
-          in: query
-          required: false
-          schema:
-            type: string
-          description: Filter by tag name
-      responses:
-        '200':
-          description: A list of articles
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  articles:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: integer
-                        title:
-                          type: string
-                        slug:
-                          type: string
-                        category:
-                          type: object
-                        views:
-                          type: integer
-                  total:
-                    type: integer
-                    example: 50
-                  page:
-                    type: integer
-                    example: 1
-
-    post:
-      summary: Create a new draft article
-      description: Editor+ access to create a draft.
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name: { type: string }
+                last_name: { type: string }
+                department: { type: string }
+                is_active: { type: boolean }
+      responses: { '200': { description: Updated user } }
+    delete:
+      summary: Delete user (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses: { '204': { description: Deleted } }
+  /u/users/{id}/change_role/:
+    patch:
+      summary: Change user role (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required:
-                - title
-                - content
-                - category_id
+              required: [role]
               properties:
-                title:
-                  type: string
-                  example: "How to Reset Password"
-                content:
-                  type: string
-                  example: "Step-by-step guide..."
-                category_id:
-                  type: integer
-                  example: 2
-                tag_ids:
-                  type: array
-                  items:
-                    type: integer
-                  example: [1, 3]
-      responses:
-        '201':
-          description: Draft saved successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Draft saved successfully"
-                  article:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                      status:
-                        type: string
-                        example: "draft"
-
-  /articles/{slug}:
+                role: { type: string, enum: [admin, editor, viewer] }
+      responses: { '200': { description: Role updated } }
+  /u/users/dashboard/:
     get:
-      summary: Fetch a single article by its SEO slug
-      description: Viewer+ access to read a full article.
+      summary: Get editor dashboard stats
+      responses: { '200': { description: Dashboard data } }
+  /u/users/admin_dashboard/:
+    get:
+      summary: Get admin dashboard stats
+      responses: { '200': { description: Admin dashboard } }
+
+  # Categories
+  /categories/:
+    get:
+      summary: List categories
+      security: []
+      responses: { '200': { description: List of categories } }
+    post:
+      summary: Create category (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                slug: { type: string }
+                description: { type: string }
+                icon: { type: string }
+                parent_id: { type: integer, nullable: true }
+      responses: { '201': { description: Category created } }
+  /categories/root_categories/:
+    get:
+      summary: Get root categories
+      security: []
+      responses: { '200': { description: Root categories } }
+  /categories/{slug}/:
+    get:
+      summary: Get category by slug
       parameters:
         - name: slug
           in: path
           required: true
-          schema:
-            type: string
-          description: The SEO-friendly URL slug (e.g., "how-to-reset-password")
-      responses:
-        '200':
-          description: Article retrieved
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  article:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                      title:
-                        type: string
-                      content:
-                        type: string
-                      views:
-                        type: integer
-                      category_id:
-                        type: integer
-                      created_at:
-                        type: string
-                        format: date-time
-                      updated_at:
-                        type: string
-                        format: date-time
-
-  /articles/{id}:
-    put:
-      summary: Update an existing article
-      description: Editor+ (only their own drafts) or Admin (all articles).
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                title:
-                  type: string
-                content:
-                  type: string
-                category_id:
-                  type: integer
-      responses:
-        '200':
-          description: Article updated
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Article updated"
-                  article:
-                    type: object
-
-  /articles/{id}/publish:
+          schema: { type: string }
+      responses: { '200': { description: Category details } }
     patch:
-      summary: Submit for review or publish immediately
-      description: Admin-only endpoint to publish articles.
+      summary: Update category (admin only)
       parameters:
-        - name: id
+        - name: slug
           in: path
           required: true
-          schema:
-            type: integer
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+                icon: { type: string }
+      responses: { '200': { description: Updated category } }
+    delete:
+      summary: Delete category (admin only)
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses: { '204': { description: Deleted } }
+
+  # Tags
+  /tags/:
+    get:
+      summary: List tags
+      security: []
+      responses: { '200': { description: Tags } }
+    post:
+      summary: Create tag (admin only)
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required:
-                - status
+              required: [name]
               properties:
-                status:
-                  type: string
-                  enum: [pending_review, published, archived]
-                  example: "published"
-      responses:
-        '200':
-          description: Article published
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Article published"
-                  published_at:
-                    type: string
-                    format: date-time
-
-    delete:
-      summary: Soft-delete (archive) an article
-      description: Admin-only endpoint to archive articles.
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Article archived
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Article archived successfully"
-
-  
-  #search
-  
-  /search:
+                name: { type: string }
+      responses: { '201': { description: Tag created } }
+  /tags/popular/:
     get:
-      summary: Full-text search across titles, content, and tags
-      description: Viewer+ access to ranked search results.
+      summary: Get popular tags
+      security: []
+      responses: { '200': { description: Popular tags } }
+  /tags/search/:
+    get:
+      summary: Search tags
       parameters:
         - name: q
           in: query
           required: true
-          schema:
-            type: string
-          description: The search query (e.g., "patient registration")
-        - name: category
-          in: query
-          required: false
-          schema:
-            type: integer
-          description: Filter by category ID
-        - name: sort
-          in: query
-          required: false
-          schema:
-            type: string
-            enum: [relevance, date, views]
-            default: relevance
-      responses:
-        '200':
-          description: Search results
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  results:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: integer
-                        title:
-                          type: string
-                        snippet:
-                          type: string
-                        category:
-                          type: string
-                        slug:
-                          type: string
-                  total:
-                    type: integer
-                    example: 12
-                  query:
-                    type: string
-                    example: "patient registration"
-
-  
-  #categories
-  
-  /categories:
-    get:
-      summary: List all categories with nested structure
-      description: Viewer+ access to the category taxonomy.
-      responses:
-        '200':
-          description: List of categories
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  categories:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: integer
-                        name:
-                          type: string
-                        slug:
-                          type: string
-                        children:
-                          type: array
-                          items:
-                            type: object
-    post:
-      summary: Create a new category
-      description: Admin-only endpoint.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - name
-              properties:
-                name:
-                  type: string
-                  example: "Radiology"
-                parent_id:
-                  type: integer
-                  nullable: true
-                  example: null
-                icon:
-                  type: string
-                description:
-                  type: string
-      responses:
-        '201':
-          description: Category created
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Category created"
-                  category:
-                    type: object
-
-  #tags
-
-  /tags:
-    get:
-      summary: Fetch all available tags
-      description: Viewer+ access to the tag list.
-      responses:
-        '200':
-          description: List of tags
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  tags:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: integer
-                        name:
-                          type: string
-                        slug:
-                          type: string
-
-  
-  # chatbot
-  
-  /chat:
-    post:
-      summary: Send a natural language question to the bot
-      description: Accessible cross-origin (CORS) from the HMIS mockup widget.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - question
-                - conversation_id
-              properties:
-                question:
-                  type: string
-                  example: "How do I reverse a discharge?"
-                conversation_id:
-                  type: string
-                  format: uuid
-                  example: "uuid-123-456"
-      responses:
-        '200':
-          description: Successful bot response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  answer:
-                    type: string
-                    example: "To reverse a discharge, go to the patient dashboard..."
-                  article_ref:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                        example: 45
-                      title:
-                        type: string
-                        example: "Discharge Reversal SOP"
-                      slug:
-                        type: string
-                        example: "discharge-reversal-sop"
-                  was_grounded:
-                    type: boolean
-                    example: true
-
-  
-  #feedback
-  
-  /feedback:
-    post:
-      summary: Submit a rating or comment on an article
-      description: Viewer+ access to provide feedback.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - article_id
-                - rating
-              properties:
-                article_id:
-                  type: integer
-                  example: 5
-                rating:
-                  type: integer
-                  minimum: 1
-                  maximum: 5
-                  example: 4
-                comment:
-                  type: string
-                  example: "Very clear guide."
-      responses:
-        '201':
-          description: Feedback submitted
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Thank you for your feedback!"
-
-  /chat/{log_id}/feedback:
-    post:
-      summary: Mark chatbot answer as helpful or unhelpful
-      description: Viewer+ access to provide feedback on chat responses.
+          schema: { type: string }
+      responses: { '200': { description: Tag search results } }
+  /tags/{id}/:
+    delete:
+      summary: Delete tag (admin only)
       parameters:
-        - name: log_id
+        - name: id
           in: path
           required: true
-          schema:
-            type: integer
-          description: The chat log ID
+          schema: { type: integer }
+      responses: { '204': { description: Deleted } }
+
+  # Products
+  /products/:
+    get:
+      summary: List products
+      security: []
+      responses: { '200': { description: Products } }
+    post:
+      summary: Create product (admin only)
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required:
-                - was_helpful
+              required: [name]
               properties:
-                was_helpful:
-                  type: boolean
-                  example: true
-      responses:
-        '200':
-          description: Feedback recorded
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Feedback recorded"
-
-  
-  # admin dashboard
-  
-  /admin/dashboard/stats:
+                name: { type: string }
+                description: { type: string }
+                is_active: { type: boolean }
+      responses: { '201': { description: Product created } }
+  /products/{slug}/:
     get:
-      summary: Retrieve system KPIs for Admin dashboard
-      description: Admin-only access to system metrics.
-      responses:
-        '200':
-          description: System statistics
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  total_articles:
-                    type: integer
-                    example: 50
-                  avg_rating:
-                    type: number
-                    format: float
-                    example: 4.2
-                  top_searches:
-                    type: array
-                    items:
-                      type: string
-                    example: ["password reset", "billing"]
-                  total_users:
-                    type: integer
-                    example: 15
-                  total_views:
-                    type: integer
-                    example: 1250
-
-  /admin/chat-logs:
+      summary: Get product by slug
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses: { '200': { description: Product details } }
+    patch:
+      summary: Update product (admin only)
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+                is_active: { type: boolean }
+      responses: { '200': { description: Updated product } }
+    delete:
+      summary: Delete product (admin only)
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses: { '204': { description: Deleted } }
+  /products/{slug}/articles/:
     get:
-      summary: Fetch unanswered questions to identify content gaps
-      description: Admin-only access to review low-confidence/unanswered queries (FR-5.9).
-      responses:
-        '200':
-          description: List of unanswered queries
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  unanswered_queries:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: integer
-                        question:
-                          type: string
-                          example: "How to fix lab error 404?"
-                        asked_by:
-                          type: string
-                        created_at:
-                          type: string
-                          format: date-time
-                  total:
-                    type: integer
-                    example: 3
+      summary: List articles for a product
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses: { '200': { description: Articles } }
 
-  
-  # media
-  
-  /media/upload:
+  # Articles
+  /articles/:
+    get:
+      summary: List articles (public)
+      security: []
+      parameters:
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: category
+          in: query
+          schema: { type: string }
+        - name: content_type
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: sort
+          in: query
+          schema: { type: string, enum: [relevance, recent, views] }
+        - name: page
+          in: query
+          schema: { type: integer }
+        - name: page_size
+          in: query
+          schema: { type: integer }
+      responses: { '200': { description: Article list } }
     post:
-      summary: Upload an image/PDF for an article
-      description: Editor+ access to upload media files.
+      summary: Create a new article (editor+)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, content]
+              properties:
+                title: { type: string }
+                content: { type: string }
+                article_type: { type: string, enum: [how_to, sop, faq, troubleshooting, feature_ref, release_notes, article] }
+                category: { type: string }
+                product: { type: string }
+                module: { type: string }
+                product_version: { type: string }
+                tags: { type: array, items: { type: string } }
+      responses: { '201': { description: Article created } }
+  /articles/my_articles/:
+    get:
+      summary: Get current user's articles
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: search
+          in: query
+          schema: { type: string }
+      responses: { '200': { description: User's articles } }
+  /articles/pending_review/:
+    get:
+      summary: Get pending review articles (admin only)
+      responses: { '200': { description: Pending articles } }
+  /articles/creation_trend/:
+    get:
+      summary: Get article creation trend (admin only)
+      responses: { '200': { description: Trend data } }
+  /articles/{slug}/:
+    get:
+      summary: Get article by slug (public)
+      security: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses: { '200': { description: Article details } }
+    patch:
+      summary: Update article (editor+)
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                content: { type: string }
+                category: { type: string }
+                product: { type: string }
+                module: { type: string }
+                product_version: { type: string }
+                tags: { type: array, items: { type: string } }
+      responses: { '200': { description: Updated article } }
+    delete:
+      summary: Archive/delete article (editor or admin)
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses: { '204': { description: Deleted } }
+  /articles/{slug}/submit_for_review/:
+    post:
+      summary: Submit article for review (editor+)
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses: { '200': { description: Submitted } }
+  /articles/{slug}/publish/:
+    post:
+      summary: Publish article (admin only)
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses: { '200': { description: Published } }
+  /articles/{slug}/reject/:
+    post:
+      summary: Reject article (admin only)
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses: { '200': { description: Rejected } }
+  /articles/{slug}/media/:
+    get:
+      summary: Get media for article
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses: { '200': { description: Media list } }
+  /stats/:
+    get:
+      summary: Public stats (articles, categories, etc.)
+      security: []
+      responses: { '200': { description: Stats } }
+
+  # Media
+  /media/:
+    get:
+      summary: List media (admin/editor)
+      responses: { '200': { description: Media list } }
+  /media/article_media/:
+    get:
+      summary: Get media by article ID
+      parameters:
+        - name: article
+          in: query
+          required: true
+          schema: { type: integer }
+      responses: { '200': { description: Article media } }
+  /media/upload/:
+    post:
+      summary: Upload a file (editor+)
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
               type: object
-              required:
-                - file
-                - article_id
+              required: [file]
               properties:
-                file:
-                  type: string
-                  format: binary
-                  description: The file to upload (image, PDF, etc.)
-                article_id:
-                  type: integer
-                  example: 5
-                  description: The article this media belongs to
+                file: { type: string, format: binary }
+                article_id: { type: integer }
+      responses: { '201': { description: File uploaded } }
+  /media/{id}/delete_file/:
+    delete:
+      summary: Delete media file (admin/editor)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses: { '204': { description: Deleted } }
+
+  # Article-Tag relations
+  /article-tag/bulk-add/:
+    post:
+      summary: Bulk add tags to an article (editor+)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [article_id, tag_ids]
+              properties:
+                article_id: { type: integer }
+                tag_ids: { type: array, items: { type: integer } }
+      responses: { '200': { description: Tags added } }
+  /article-tag/bulk-remove/:
+    post:
+      summary: Bulk remove tags from an article (editor+)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [article_id, tag_ids]
+              properties:
+                article_id: { type: integer }
+                tag_ids: { type: array, items: { type: integer } }
+      responses: { '200': { description: Tags removed } }
+
+  # Analytics
+  /analytics/chat-logs/:
+    get:
+      summary: List chat logs (admin)
+      responses: { '200': { description: Chat logs } }
+  /analytics/chat-logs/stats/:
+    get:
+      summary: Chat stats (admin)
+      parameters:
+        - name: range
+          in: query
+          schema: { type: string, default: '28d' }
+      responses: { '200': { description: Chat stats } }
+  /analytics/chat-logs/unanswered/:
+    get:
+      summary: Unanswered chat logs (admin)
+      responses: { '200': { description: Unanswered logs } }
+  /analytics/chat-logs/conversation/:
+    get:
+      summary: Get conversation by UUID
+      parameters:
+        - name: conversation_uuid
+          in: query
+          required: true
+          schema: { type: string }
+      responses: { '200': { description: Conversation logs } }
+  /analytics/feedbacks/:
+    get:
+      summary: List feedback (admin)
+      responses: { '200': { description: Feedback list } }
+    post:
+      summary: Submit feedback (public)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content_type, object_id]
+              properties:
+                content_type: { type: string, enum: [article, chat] }
+                object_id: { type: string }
+                rating: { type: integer, minimum: 1, maximum: 5 }
+                helpful: { type: boolean }
+                comment: { type: string }
+      responses: { '201': { description: Feedback submitted } }
+  /analytics/feedbacks/stats/:
+    get:
+      summary: Feedback stats (admin)
+      responses: { '200': { description: Feedback stats } }
+  /analytics/feedbacks/for_object/:
+    get:
+      summary: Get feedback for an object
+      parameters:
+        - name: content_type
+          in: query
+          required: true
+          schema: { type: string }
+        - name: object_id
+          in: query
+          required: true
+          schema: { type: string }
+      responses: { '200': { description: Object feedback } }
+  /analytics/search-logs/:
+    get:
+      summary: List search logs (admin)
+      responses: { '200': { description: Search logs } }
+  /analytics/search-logs/stats/:
+    get:
+      summary: Search stats (admin)
+      parameters:
+        - name: range
+          in: query
+          schema: { type: string, default: '30d' }
+      responses: { '200': { description: Search stats } }
+  /analytics/search-logs/my_searches/:
+    get:
+      summary: Get current user's search history
+      responses: { '200': { description: User searches } }
+  /analytics/audit-logs/:
+    get:
+      summary: List audit logs (admin)
+      parameters:
+        - name: action
+          in: query
+          schema: { type: string }
+        - name: user_id
+          in: query
+          schema: { type: integer }
+        - name: search
+          in: query
+          schema: { type: string }
+      responses: { '200': { description: Audit logs } }
+  /analytics/audit-logs/stats/:
+    get:
+      summary: Audit stats (admin)
+      responses: { '200': { description: Audit stats } }
+  /analytics/notification/:
+    get:
+      summary: List notifications
+      responses: { '200': { description: Notifications } }
+  /analytics/notification/{id}/mark_read/:
+    post:
+      summary: Mark notification as read
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses: { '200': { description: Marked read } }
+  /analytics/notification/mark_all_read/:
+    post:
+      summary: Mark all notifications as read
+      responses: { '200': { description: All marked read } }
+  /analytics/notification/unread_count/:
+    get:
+      summary: Get unread notification count
+      responses: { '200': { description: Unread count } }
+  /analytics/time-series/:
+    get:
+      summary: Get views & searches time series (admin)
+      parameters:
+        - name: range
+          in: query
+          schema: { type: string, default: '7d' }
+      responses: { '200': { description: Time series data } }
+  /analytics/category-views/:
+    get:
+      summary: Get category view stats (admin)
+      responses: { '200': { description: Category views } }
+
+  # Chatbot
+  /chat/:
+    post:
+      summary: Send a question to the chatbot (public)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message: { type: string }
+                conversation_id: { type: string, nullable: true }
       responses:
         '200':
-          description: File uploaded successfully
+          description: Chat response
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  url:
-                    type: string
-                    example: "https://cdn.kb.com/media/screenshot.png"
-                  filename:
-                    type: string
-                    example: "screenshot.png"
-                  message:
-                    type: string
-                    example: "File uploaded successfully"
+                  answer: { type: string }
+                  conversation_id: { type: string }
+                  chat_log_id: { type: integer }
+                  sources: { type: array, items: { type: object } }
+                  escalate_suggested: { type: boolean }
+  /chat/conversations/:
+    get:
+      summary: List conversations
+      parameters:
+        - name: include_archived
+          in: query
+          schema: { type: boolean }
+      responses: { '200': { description: Conversations } }
+    patch:
+      summary: Update conversation (rename/archive)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                is_archived: { type: boolean }
+      responses: { '200': { description: Updated conversation } }
+  /chat/conversations/{id}/messages/:
+    get:
+      summary: Get messages in a conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses: { '200': { description: Messages } }
+  /chat/conversations/{id}/rename/:
+    patch:
+      summary: Rename a conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string }
+      responses: { '200': { description: Renamed } }
+  /chat/conversations/{id}/archive/:
+    patch:
+      summary: Archive a conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses: { '200': { description: Archived } }
+  /chat/conversations/{id}/unarchive/:
+    patch:
+      summary: Unarchive a conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses: { '200': { description: Unarchived } }
+  /chat/conversations/{id}/:
+    delete:
+      summary: Delete conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses: { '204': { description: Deleted } }
+
+  # Health check
+  /health/:
+    get:
+      summary: Health check endpoint
+      security: []
+      responses: { '200': { description: OK } }
