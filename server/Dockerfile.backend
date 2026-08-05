@@ -1,5 +1,5 @@
 # python runtime image
-FROM python:3.12-slim AS builder
+FROM python:3.14-slim AS builder
 
 # Install required system dependencies:
 # - libpq-dev: needed for psycopg2 (PostgreSQL support)
@@ -23,7 +23,7 @@ COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
 # prod stage
-FROM python:3.12-slim
+FROM python:3.14-slim
 
 # Install runtime libraries for both PostgreSQL and MySQL
 # - libpq5: runtime for psycopg2 (PostgreSQL)
