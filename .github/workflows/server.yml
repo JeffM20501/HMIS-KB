@@ -53,6 +53,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           cd server
+          pip install django djangorestframework_simplejwt djangorestframework
           pip install -r requirements-dev.txt
 
       - name: Run DB migrations
