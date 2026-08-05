@@ -4,10 +4,12 @@ anyio==4.14.1
 asgiref==3.11.1
 attrs==26.1.0
 bcrypt==5.0.0
+build==1.5.0
 certifi==2026.6.17
 charset-normalizer==3.4.9
 click==8.4.2
 cloudinary==1.45.0
+coverage==7.15.0
 distro==1.9.0
 dj-database-url==3.1.2
 Django==6.0.7
@@ -28,6 +30,7 @@ httpx-sse==0.4.3
 huggingface_hub==1.23.0
 idna==3.18
 inflection==0.5.1
+iniconfig==2.3.0
 Jinja2==3.1.6
 joblib==1.5.3
 jsonschema==4.26.0
@@ -43,6 +46,7 @@ numpy==2.5.1
 packaging==26.2
 pgvector==0.3.6
 pillow==12.3.0
+pluggy==1.6.0
 psycopg==3.3.4
 psycopg-binary==3.3.4
 pydantic==2.13.4
@@ -51,6 +55,9 @@ Pygments==2.20.0
 PyJWT==2.13.0
 PyMySQL==1.2.0
 pyproject_hooks==1.2.0
+pytest==9.1.1
+pytest-cov==7.1.0
+pytest-django==4.12.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.2
 python-magic==0.4.27
@@ -80,4 +87,3 @@ typing-inspection==0.4.2
 typing_extensions==4.16.0
 uritemplate==4.2.0
 urllib3==2.7.0
-drf-spectacular==0.30.0
