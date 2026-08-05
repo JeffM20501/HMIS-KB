@@ -3,7 +3,6 @@ import { Routes, Route } from 'react-router-dom';
 import PageLoader from './components/common/PageLoader.jsx';
 
 import PublicLayout from './layouts/PublicLayout.jsx';
-import AuthLayout from './layouts/AuthLayout.jsx';
 import AuthBrandPanel from './components/auth/AuthBrandPanel.jsx';
 import AdminLayout from './layouts/AdminLayout.jsx';
 import EditorLayout from './layouts/EditorLayout.jsx';
