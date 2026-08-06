@@ -149,3 +149,28 @@ body {
 .dropdown-menu {
   z-index: 9999;
 }
+
+.chat-prose p {
+  @apply text-gray-100 mb-2 leading-6;
+}
+.chat-prose strong {
+  @apply text-white font-semibold;
+}
+.chat-prose ul {
+  @apply list-disc pl-5 mb-2 space-y-1 text-gray-100;
+}
+.chat-prose ol {
+  @apply list-decimal pl-5 mb-2 space-y-1 text-gray-100;
+}
+.chat-prose code {
+  @apply bg-[#232328] text-gray-100 text-xs px-1.5 py-0.5 rounded;
+}
+.chat-prose pre {
+  @apply bg-[#0B0B0D] text-gray-100 rounded-lg p-3 overflow-x-auto mb-2 text-xs;
+}
+.chat-prose a {
+  @apply text-primary underline underline-offset-2;
+}
+.chat-prose blockquote {
+  @apply border-l-2 border-primary/40 pl-3 text-gray-300 mb-2;
+}
