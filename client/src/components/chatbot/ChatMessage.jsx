@@ -37,14 +37,14 @@ export default function ChatMessage({ message, chatLogId, onEscalate }) {
 
   return (
     <div className="flex flex-col gap-2 max-w-[92%]">
-      <div className="bg-white border border-border rounded-2xl rounded-tl-sm px-3.5 py-3 text-sm text-text-primary shadow-sm">
-        <div className="kb-prose text-sm [&_p]:mb-2 [&_p]:leading-6">
+      <div className="bg-gray-900 border border-gray-800 rounded-2xl rounded-tl-sm px-3.5 py-3 text-sm text-gray-100 shadow-sm">
+        <div className="chat-prose text-sm [&_p]:mb-2 [&_p]:leading-6">
           <ReactMarkdown>{message.content}</ReactMarkdown>
         </div>
 
         {!!message.sources?.length && (
           <div className="mt-3 space-y-2">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-text-secondary">Sources</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Sources</p>
             {message.sources.map((s, i) => (
               <SourceCitationCard key={i} source={s} />
             ))}
@@ -65,16 +65,16 @@ export default function ChatMessage({ message, chatLogId, onEscalate }) {
         <div className="flex items-center gap-2 px-1">
           {!feedback ? (
             <>
-              <span className="text-[11px] text-text-secondary">Was this helpful?</span>
+              <span className="text-[11px] text-gray-500">Was this helpful?</span>
               <button
                 onClick={() => giveFeedback('up')}
-                className="p-1 rounded hover:bg-gray-100 transition-colors"
+                className="p-1 rounded hover:bg-gray-800 text-gray-400 hover:text-gray-200 transition-colors"
               >
                 <ThumbsUp className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => giveFeedback('down')}
-                className="p-1 rounded hover:bg-gray-100 transition-colors"
+                className="p-1 rounded hover:bg-gray-800 text-gray-400 hover:text-gray-200 transition-colors"
               >
                 <ThumbsDown className="w-3.5 h-3.5" />
               </button>
