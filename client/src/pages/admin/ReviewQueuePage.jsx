@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MarkdownRenderer from '../../components/article/MarkdownRenderer.jsx';
-import { Check, X, MessageSquare } from 'lucide-react';
+import { Check, X, MessageSquare, File, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as articlesApi from '../../api/articles.api';
 import PageHeader from '../../components/common/PageHeader.jsx';
@@ -33,6 +33,14 @@ export default function ReviewQueuePage() {
   const items = queueQuery.data?.results || queueQuery.data || [];
   const activeSlug = selectedSlug || items[0]?.slug;
   const active = items.find((a) => a.slug === activeSlug);
+
+  // Fetch media for the active article
+  const mediaQuery = useQuery({
+    queryKey: ['article', activeSlug, 'media'],
+    queryFn: () => articlesApi.getArticleMedia(activeSlug),
+    enabled: !!activeSlug,
+  });
+  const mediaItems = mediaQuery.data || [];
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['articles', 'pending-review'] });
@@ -106,14 +114,14 @@ export default function ReviewQueuePage() {
 
           {/* Detail panel */}
           {active && (
-            <div className="bg-white border border-border rounded-card p-6">
+            <div className="bg-white border border-border rounded-card p-6 space-y-4">
               <div className="flex items-center gap-2 mb-3">
                 {active.category && <Badge tone="blue">{active.category.name || active.category}</Badge>}
                 <Badge tone={PRIORITY_TONE[active.priority] || 'blue'}>{active.priority || 'normal'} priority</Badge>
               </div>
               <h2 className="text-xl font-bold text-text-primary mb-2">{active.title}</h2>
               <div className="flex items-center gap-2 text-sm text-text-secondary mb-6">
-                <Avatar name={active.author_full_name} size="sm" src={active.author_avatar	} />
+                <Avatar name={active.author_full_name} size="sm" src={active.author_avatar} />
                 <span>by {active.author_full_name}</span>
                 <span>·</span>
                 <span>Submitted {formatDate(active.created_at)}</span>
@@ -125,6 +133,45 @@ export default function ReviewQueuePage() {
                   <MarkdownRenderer content={active.content || active.summary || 'No preview available.'} />
                 </div>
               </div>
+
+              {/* Display attached media */}
+              {mediaItems.length > 0 && (
+                <div className="mb-6">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary mb-2">Attached Media</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {mediaItems.map((m) => (
+                      <div key={m.id} className="border border-border rounded-lg overflow-hidden bg-white">
+                        {m.type === 'image' ? (
+                          <img src={m.url} alt={m.filename} className="w-full h-24 object-cover" />
+                        ) : m.type === 'video' ? (
+                          <video src={m.url} className="w-full h-24 object-cover" controls muted />
+                        ) : m.type === 'pdf' ? (
+                          <div className="flex items-center justify-center h-24 bg-gray-50">
+                            <FileText className="w-8 h-8 text-red-500" />
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center h-24 bg-gray-50">
+                            <File className="w-8 h-8 text-text-secondary" />
+                          </div>
+                        )}
+                        <div className="p-1.5">
+                          <p className="text-xs truncate text-text-secondary">{m.filename || m.name}</p>
+                          {m.url && (
+                            <a
+                              href={m.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-primary hover:underline"
+                            >
+                              View
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-center gap-2 mb-6">
                 <Button onClick={() => publishMutation.mutate(active.slug)} isLoading={publishMutation.isPending}>

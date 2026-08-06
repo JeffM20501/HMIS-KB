@@ -41,3 +41,7 @@ export const getArticleMedia = (slug) =>
 
 export const deleteMedia = (mediaId) =>
     api.delete(`/articles/media/${mediaId}/`).then((r) => r.data);
+
+export const archiveArticle=(slug)=>api.post(`/articles/${slug}/archive/`).then((r)=>r.data)
+
+export const restoreArticle=(slug)=>api.post(`/articles/${slug}/restore/`).then((r) => r.data);

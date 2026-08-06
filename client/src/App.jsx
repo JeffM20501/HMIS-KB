@@ -38,6 +38,7 @@ const AdminProductsPage = lazy(() => import('./pages/admin/AdminProductsPage.jsx
 const AdminAnalyticsPage = lazy(() => import('./pages/admin/AdminAnalyticsPage.jsx'));
 const AuditLogsPage = lazy(() => import('./pages/admin/AuditLogsPage.jsx'));
 const AdminSettingsPage = lazy(() => import('./pages/admin/AdminSettingsPage.jsx'));
+const AdminArticleViewPage = lazy(()=>import('./pages/admin/AdminArticleViewPage.jsx'))
 
 // --- Editor ---
 const EditorDashboardPage = lazy(() => import('./pages/editor/EditorDashboardPage.jsx'));
@@ -79,6 +80,7 @@ export default function App() {
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboardPage />} />
               <Route path="review-queue" element={<ReviewQueuePage />} />
+              <Route path='articles/:slug' element={<AdminArticleViewPage/>}/>
               <Route path="published" element={<PublishedArticlesPage />} />
               <Route path="archived" element={<ArchivedArticlesPage />} />
               <Route path="users" element={<UserManagementPage />} />
