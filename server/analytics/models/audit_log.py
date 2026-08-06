@@ -24,6 +24,8 @@ class AuditLog(models.Model):
     ACTION_ROLE_CHANGE = 'role_change'
     ACTION_VIEW = 'view'
     ACTION_EXPORT = 'export'
+    ACTION_ARCHIVE = 'archive'
+    ACTION_RESTORE = 'restore'
     
     ACTION_CHOICES = [
         (ACTION_CREATE, 'Created'),
@@ -37,6 +39,8 @@ class AuditLog(models.Model):
         (ACTION_ROLE_CHANGE, 'Role Changed'),
         (ACTION_VIEW, 'Viewed'),
         (ACTION_EXPORT, 'Exported'),
+        (ACTION_ARCHIVE, 'Archived'),
+        (ACTION_RESTORE, 'Restored'),
     ]
     
     # Who performed the action

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Edit2, Archive, Star, Eye } from 'lucide-react';
+import { Edit2, Archive, Trash2, Star, Eye } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as articlesApi from '../../api/articles.api';
 import * as categoriesApi from '../../api/categories.api';
@@ -11,6 +11,8 @@ import Select from '../../components/ui/Select.jsx';
 import DataTable from '../../components/ui/DataTable.jsx';
 import Pagination from '../../components/ui/Pagination.jsx';
 import Badge from '../../components/ui/Badge.jsx';
+import Modal from '../../components/ui/Modal.jsx';
+import Button from '../../components/ui/Button.jsx';
 import { useDebounce } from '../../hooks/useDebounce';
 import { extractErrorMessage } from '../../api/axios';
 import { formatDate, formatNumber } from '../../utils/formatters';
@@ -21,6 +23,8 @@ export default function PublishedArticlesPage() {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [page, setPage] = useState(1);
+  const [archiveTargetSlug, setArchiveTargetSlug] = useState(null);
+  const [deleteTargetSlug, setDeleteTargetSlug] = useState(null);
   const debouncedSearch = useDebounce(search, 350);
 
   const categoriesQuery = useQuery({ queryKey: ['categories', 'root'], queryFn: categoriesApi.getRootCategories });
@@ -37,10 +41,21 @@ export default function PublishedArticlesPage() {
   });
 
   const archiveMutation = useMutation({
-    mutationFn: articlesApi.deleteArticle,
+    mutationFn: articlesApi.archiveArticle,
     onSuccess: () => {
       toast.success('Article archived.');
       queryClient.invalidateQueries({ queryKey: ['articles', 'published'] });
+      setArchiveTargetSlug(null);
+    },
+    onError: (err) => toast.error(extractErrorMessage(err)),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: articlesApi.deleteArticle,
+    onSuccess: () => {
+      toast.success('Article permanently deleted.');
+      queryClient.invalidateQueries({ queryKey: ['articles', 'published'] });
+      setDeleteTargetSlug(null);
     },
     onError: (err) => toast.error(extractErrorMessage(err)),
   });
@@ -49,6 +64,16 @@ export default function PublishedArticlesPage() {
   const count = articlesQuery.data?.count ?? articles.length;
   const totalPages = Math.max(1, Math.ceil(count / 20));
   const categories = categoriesQuery.data?.results || categoriesQuery.data || [];
+
+  const handleArchive = (slug) => {
+    setArchiveTargetSlug(slug);
+  };
+
+  const handleDelete = (slug) => {
+    setDeleteTargetSlug(slug);
+  };
+
+  const targetArticle = articles.find(a => a.slug === archiveTargetSlug || a.slug === deleteTargetSlug);
 
   const columns = [
     {
@@ -64,7 +89,7 @@ export default function PublishedArticlesPage() {
     },
     { key: 'category', header: 'Category', render: (row) => <Badge tone="blue">{row.category?.name || row.category}</Badge> },
     { key: 'author', header: 'Author', render: (row) => row.author?.full_name || '—' },
-    { key: 'product_version', header: 'Version', render: (row) => `v${row.product_version || '1.0'}` },
+    { key: 'product_version', header: 'Version', render: (row) => `${row.product_version || '1.0'}` },
     {
       key: 'views',
       header: 'Views',
@@ -98,11 +123,18 @@ export default function PublishedArticlesPage() {
             <Edit2 className="w-4 h-4" />
           </button>
           <button
-            onClick={() => archiveMutation.mutate(row.slug)}
-            className="p-1.5 text-text-secondary hover:text-danger hover:bg-danger-bg rounded"
-            title="Archive"
+            onClick={() => handleArchive(row.slug)}
+            className="p-1.5 text-text-secondary hover:text-amber-600 hover:bg-amber-50 rounded"
+            title="Archive (soft-delete)"
           >
             <Archive className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => handleDelete(row.slug)}
+            className="p-1.5 text-text-secondary hover:text-danger hover:bg-danger-bg rounded"
+            title="Permanently Delete"
+          >
+            <Trash2 className="w-4 h-4" />
           </button>
         </div>
       ),
@@ -130,7 +162,7 @@ export default function PublishedArticlesPage() {
         data={articles}
         isLoading={articlesQuery.isLoading}
         keyField="slug"
-        onRowClick={(row) => navigate(`/articles/${row.slug}`)}
+        onRowClick={(row) => navigate(`/admin/articles/${row.slug}`)}
         emptyTitle="No published articles"
         emptyDescription="Articles will appear here once approved from the review queue."
       />
@@ -138,6 +170,50 @@ export default function PublishedArticlesPage() {
       <div className="mt-4">
         <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </div>
+
+      {/* Archive Confirmation Modal */}
+      <Modal
+        isOpen={!!archiveTargetSlug}
+        onClose={() => setArchiveTargetSlug(null)}
+        title="Archive Article"
+        description={`Are you sure you want to archive "${targetArticle?.title}"? It will be hidden from viewers but can be restored later.`}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setArchiveTargetSlug(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              isLoading={archiveMutation.isPending}
+              onClick={() => archiveTargetSlug && archiveMutation.mutate(archiveTargetSlug)}
+            >
+              Archive Article
+            </Button>
+          </>
+        }
+      />
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={!!deleteTargetSlug}
+        onClose={() => setDeleteTargetSlug(null)}
+        title="Delete Permanently"
+        description={`Are you sure you want to permanently delete "${targetArticle?.title}"? This action cannot be undone.`}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setDeleteTargetSlug(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              isLoading={deleteMutation.isPending}
+              onClick={() => deleteTargetSlug && deleteMutation.mutate(deleteTargetSlug)}
+            >
+              Delete Permanently
+            </Button>
+          </>
+        }
+      />
     </div>
   );
 }

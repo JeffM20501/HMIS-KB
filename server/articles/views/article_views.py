@@ -315,3 +315,80 @@ class ArticleViewSet(viewsets.ModelViewSet):
         media = Media.objects.filter(article=article)
         serializer = MediaSerializer(media, many=True, context={'request': request})
         return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def archive(self, request, slug=None):
+        """_summary_
+
+        Args:
+            request (_type_): _description_
+            slug (_type_, optional): _description_. Defaults to None.
+            Soft del article to 'archived' only admin can archive
+        """
+        article=self.get_object()
+        
+        #permission only admin or author can archive
+        if request.user.role!='admin' and request.user!=article.author:
+            raise PermissionDenied('Permission Denied. You do not have permissions to do this action')
+        
+        if article.status=='archived':
+            return Response(
+                {'error': 'Article is already archived'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        article.status='archived'
+        article.save()
+        
+        AuditLog.log_action(
+            user=request.user,
+            action=AuditLog.ACTION_ARCHIVE,
+            obj=article,
+            user_ip=_get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', '')
+        )
+        
+        return Response(
+            {'message':'Article achived successfully'},
+            status=status.HTTP_200_OK
+        )
+        
+    
+    @action(detail=True, methods=['post'])
+    def restore(self, request, slug=None):
+        """_summary_
+
+        Args:
+            request (_type_): _description_
+            slug (_type_, optional): _description_. Defaults to None.
+            restore archived articles - sets status back to draft
+            Only admin and the article's author can restore
+            
+        """
+        
+        article=self.get_object()
+        
+        if request.user.role!='admin' and request.user!=article.author:
+            raise PermissionDenied('Permission Denied. You do not have permissions to do this action')
+        
+        if article.status != 'archived':
+            return Response(
+                {'error': 'Article is not archived.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        article.status='draft'
+        article.save()
+        
+        AuditLog.log_action(
+            user=request.user,
+            action=AuditLog.ACTION_RESTORE,
+            obj=article,
+            user_ip=_get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', '')
+        )
+        
+        return Response(
+            {'message': 'Article restored successfully'},
+            status=status.HTTP_200_OK
+        )

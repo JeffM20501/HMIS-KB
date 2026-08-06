@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronRight, Clock, Calendar, Tag as TagIcon, Eye, Star, ArrowBigRight } from 'lucide-react';
+import { ChevronRight, Clock, Calendar, Tag as TagIcon, Eye, Star, File, FileText, ArrowBigRight } from 'lucide-react';
 import * as articlesApi from '../../api/articles.api';
 import * as analyticsApi from '../../api/analytics.api';
 import ArticleCard from '../../components/article/ArticleCard.jsx';
@@ -33,6 +33,14 @@ export default function ArticlePage() {
   });
 
   const article = articleQuery.data;
+
+  // Fetch media for this article
+  const mediaQuery = useQuery({
+    queryKey: ['article', slug, 'media'],
+    queryFn: () => articlesApi.getArticleMedia(slug),
+    enabled: !!slug,
+  });
+  const mediaItems = mediaQuery.data || [];
 
   useEffect(() => {
     if (article?.id) {
@@ -139,6 +147,45 @@ export default function ArticlePage() {
 
           {/* Full content */}
           <MarkdownRenderer content={article.content || ''} className="max-w-article" />
+
+          {/* Display attached media */}
+          {mediaItems.length > 0 && (
+            <div className="mt-8 pt-6 border-t border-border">
+              <h3 className="text-lg font-semibold text-text-primary mb-4">Attached Media</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {mediaItems.map((m) => (
+                  <div key={m.id} className="border border-border rounded-lg overflow-hidden bg-white">
+                    {m.type === 'image' ? (
+                      <img src={m.url} alt={m.filename} className="w-full h-32 object-cover" />
+                    ) : m.type === 'video' ? (
+                      <video src={m.url} className="w-full h-32 object-cover" controls muted />
+                    ) : m.type === 'pdf' ? (
+                      <div className="flex items-center justify-center h-32 bg-gray-50">
+                        <FileText className="w-12 h-12 text-red-500" />
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-32 bg-gray-50">
+                        <File className="w-12 h-12 text-text-secondary" />
+                      </div>
+                    )}
+                    <div className="p-2">
+                      <p className="text-xs truncate text-text-secondary">{m.filename || m.name}</p>
+                      {m.url && (
+                        <a
+                          href={m.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline"
+                        >
+                          View
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Tags */}
           {!!(article.tags?.length || article.tag_names?.length) && (

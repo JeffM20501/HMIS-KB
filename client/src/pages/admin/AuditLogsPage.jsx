@@ -23,6 +23,8 @@ const ACTION_TONE = {
   'Logout': 'gray',
   'Viewed': 'gray',
   'Exported': 'purple',
+  'Archived':'purple',
+  'Restored': 'green'
 };
 
 const ACTIONS = Object.keys(ACTION_TONE);
