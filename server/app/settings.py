@@ -143,6 +143,7 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS=[
     'https://hmis-kb.pages.dev',
     'http://localhost:5173',
+    'https://taifacarehelpcenter.pages.dev',
     
 ]
 
