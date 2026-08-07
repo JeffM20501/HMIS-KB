@@ -43,7 +43,6 @@ export default function ChatWidget({ context = {} }) {
   const [messages, setMessages] = useState(persisted?.messages?.length ? persisted.messages : [WELCOME]);
   const queryClient = useQueryClient();
 
-  // Save session whenever conversationId or messages change
   useEffect(() => {
     saveSession({ conversationId, messages });
   }, [conversationId, messages]);
@@ -113,13 +112,10 @@ export default function ChatWidget({ context = {} }) {
 
   return (
     <>
-      {/* Floating action button — stays on-brand primary blue even though
-          the panel that opens is dark, matching how real Intercom's
-          launcher behaves regardless of the widget's own theme. */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-primary text-white shadow-popover flex items-center justify-center hover:bg-primary-hover transition-transform hover:scale-105 focus-ring"
+          className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-primary text-white shadow-lg flex items-center justify-center hover:bg-primary/90 transition-transform hover:scale-105 focus-ring"
           aria-label="Open Knowledge Assistant"
         >
           <MessageCircle className="w-6 h-6" />
@@ -128,35 +124,35 @@ export default function ChatWidget({ context = {} }) {
 
       {isOpen && (
         <div
-          className={`fixed z-50 bg-[#131316] border border-[#2A2A30] shadow-popover flex flex-col transition-all
+          className={`fixed z-50 bg-white border border-gray-200 shadow-xl flex flex-col transition-all
           ${
             isExpanded
-              ? 'inset-4 sm:inset-8 rounded-card'
-              : 'bottom-6 right-6 w-[min(400px,calc(100vw-2rem))] h-[min(640px,calc(100vh-3rem))] rounded-card'
+              ? 'inset-4 sm:inset-8 rounded-lg'
+              : 'bottom-6 right-6 w-[min(400px,calc(100vw-2rem))] h-[min(640px,calc(100vh-3rem))] rounded-lg'
           }`}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3.5 border-b border-[#2A2A30] bg-[#1C1C21] rounded-t-card shrink-0">
+          <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-200 bg-white rounded-t-lg shrink-0">
             <div className="flex items-center gap-2.5">
               <span className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
                 <Sparkles className="w-4 h-4 text-white" />
               </span>
               <div>
-                <p className="text-sm font-semibold leading-tight text-white">{headerCopy.title}</p>
+                <p className="text-sm font-semibold leading-tight text-gray-900">{headerCopy.title}</p>
                 <p className="text-[11px] text-gray-500">{headerCopy.subtitle}</p>
               </div>
             </div>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setIsExpanded((v) => !v)}
-                className="p-1.5 rounded hover:bg-white/5 text-gray-400 hidden sm:block"
+                className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hidden sm:block"
                 aria-label="Resize"
               >
                 <Minus className="w-4 h-4 rotate-45" />
               </button>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1.5 rounded hover:bg-white/5 text-gray-400"
+                className="p-1.5 rounded hover:bg-gray-100 text-gray-400"
                 aria-label="Close"
               >
                 <X className="w-4 h-4" />
