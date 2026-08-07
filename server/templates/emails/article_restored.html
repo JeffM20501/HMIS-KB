@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Article Restored</title>
+</head>
+<body style="margin:0; padding:0; background-color:#F8FAFC; font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <div style="display:none; max-height:0px; overflow:hidden; mso-hide:all; font-size:1px; line-height:1px; color:#F8FAFC;">
+        Your article “{{ article_title }}” has been restored by {{ admin_username }}.&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+    </div>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F8FAFC;">
+        <tr>
+            <td align="center" style="padding:40px 16px;">
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px; width:100%; background-color:#FFFFFF; border-radius:12px; overflow:hidden; border:1px solid #E5E7EB;">
+
+                    <!-- Header -->
+                    <tr>
+                        <td style="background-color:#FFFFFF; border-bottom:1px solid #E5E7EB; padding:24px 40px;">
+                            <table role="presentation" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td bgcolor="#2563EB" style="background-color:#2563EB; width:36px; height:36px; border-radius:8px; text-align:center; vertical-align:middle; font-size:14px; font-weight:700; color:#FFFFFF; font-family:'Inter',Arial,sans-serif;">
+                                        TC
+                                    </td>
+                                    <td style="padding-left:12px;">
+                                        <span style="display:block; color:#111827; font-size:16px; font-weight:700; font-family:'Inter',Arial,sans-serif; line-height:1.2;">TaifaCare</span>
+                                        <span style="display:block; color:#6B7280; font-size:11px; font-family:'Inter',Arial,sans-serif; line-height:1.2;">Knowledge Base</span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding:40px;">
+                            <span style="display:inline-block; background-color:#D1FAE5; color:#059669; font-size:11px; font-weight:600; letter-spacing:0.4px; padding:4px 10px; border-radius:20px; margin-bottom:16px; font-family:'Inter',Arial,sans-serif;">
+                                RESTORED
+                            </span>
+                            <h2 style="margin:12px 0 16px 0; color:#111827; font-size:22px; font-weight:700; font-family:'Inter',Arial,sans-serif;">
+                                Your article has been restored
+                            </h2>
+                            <p style="margin:0 0 20px 0; color:#455A77; font-size:15px; line-height:1.6;">
+                                Dear <strong style="color:#111827;">{{ editor_username }}</strong>,
+                            </p>
+                            <p style="margin:0 0 20px 0; color:#455A77; font-size:15px; line-height:1.6;">
+                                Your article <strong style="color:#111827;">“{{ article_title }}”</strong> has been restored by <strong style="color:#111827;">{{ admin_username }}</strong>.
+                            </p>
+
+                            {% if reason %}
+                            <p style="margin:0 0 20px 0; color:#455A77; font-size:15px; line-height:1.6;">
+                                <strong>Reason given:</strong> {{ reason }}
+                            </p>
+                            {% endif %}
+
+                            <p style="margin:0 0 24px 0; color:#455A77; font-size:15px; line-height:1.6;">
+                                The article is now back to draft status. You can review it and resubmit for publication.
+                            </p>
+
+                            <table role="presentation" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td bgcolor="#2563EB" style="background-color:#2563EB; border-radius:8px;">
+                                        <a href="{{ edit_url }}" target="_blank" style="display:inline-block; padding:12px 28px; color:#FFFFFF; font-size:14px; font-weight:600; text-decoration:none; font-family:'Inter',Arial,sans-serif;">
+                                            Edit Article
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="margin:28px 0 0 0; color:#9CA3AF; font-size:13px; line-height:1.6;">
+                                Restored at: {{ restored_at }}
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td bgcolor="#F9FAFB" style="background-color:#F9FAFB; border-top:1px solid #E5E7EB; padding:20px 40px;">
+                            <p style="margin:0; color:#9CA3AF; font-size:12px; line-height:1.5; font-family:'Inter',Arial,sans-serif;">
+                                TaifaCare Knowledge Base &middot; This is an automated message, please do not reply.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

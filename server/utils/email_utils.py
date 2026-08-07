@@ -90,3 +90,34 @@ def send_article_rejected_email(editor, article, admin, reason):
         'edit_url': f"{settings.FRONTEND_URL}/articles/{article.slug}/edit/",
     }
     send_email(editor.email, subject, template_name, context)
+    
+def send_article_archived_email(editor, article, admin, reason=None):
+    subject = f"Article Archived: {article.title}"
+    template_name = "emails/article_archived.html"
+    context = {
+        'editor_username': editor.get_full_name() or editor.username,
+        'article_title': article.title,
+        'article_slug': article.slug,
+        'admin_username': admin.get_full_name() or admin.username,
+        'reason': reason or "No specific reason provided.",
+        'archived_at': timezone.now().strftime("%B %d, %Y at %I:%M %p"),
+        'article_url': f"{settings.FRONTEND_URL}/articles/{article.slug}/",
+        'dashboard_url': f"{settings.FRONTEND_URL}/editor/my-articles",
+    }
+    send_email(editor.email, subject, template_name, context)
+
+
+def send_article_restored_email(editor, article, admin, reason=None):
+    subject = f"Article Restored: {article.title}"
+    template_name = "emails/article_restored.html"
+    context = {
+        'editor_username': editor.get_full_name() or editor.username,
+        'article_title': article.title,
+        'article_slug': article.slug,
+        'admin_username': admin.get_full_name() or admin.username,
+        'reason': reason or "No specific reason provided.",
+        'restored_at': timezone.now().strftime("%B %d, %Y at %I:%M %p"),
+        'article_url': f"{settings.FRONTEND_URL}/articles/{article.slug}/",
+        'edit_url': f"{settings.FRONTEND_URL}/editor/articles/{article.slug}/edit",
+    }
+    send_email(editor.email, subject, template_name, context)
