@@ -340,6 +340,8 @@ class ArticleViewSet(viewsets.ModelViewSet):
         article.status='archived'
         article.save()
         
+        Notification.create_article_archived_notification(article, request.user, reason=None)
+        
         AuditLog.log_action(
             user=request.user,
             action=AuditLog.ACTION_ARCHIVE,
@@ -379,6 +381,8 @@ class ArticleViewSet(viewsets.ModelViewSet):
         
         article.status='draft'
         article.save()
+        
+        Notification.create_article_restored_notification(article, request.user, reason=None)
         
         AuditLog.log_action(
             user=request.user,

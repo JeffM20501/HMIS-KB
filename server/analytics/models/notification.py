@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.utils import timezone
-from utils.email_utils import send_article_published_email,send_article_rejected_email,send_article_submitted_email
+from utils.email_utils import send_article_published_email,send_article_rejected_email,send_article_submitted_email,send_article_restored_email,send_article_archived_email
 
 User = get_user_model()
 
@@ -19,6 +19,8 @@ class Notification(models.Model):
     TYPE_ARTICLE_REJECTED = 'article_rejected'
     TYPE_COMMENT_ADDED = 'comment_added'
     TYPE_ROLE_CHANGED = 'role_changed'
+    TYPE_ARTICLE_ARCHIVED = 'article_archived'
+    TYPE_ARTICLE_RESTORED = 'article_restored'
     
     NOTIFICATION_TYPES = [
         (TYPE_ARTICLE_SUBMITTED, 'Article Submitted for Review'),
@@ -26,6 +28,8 @@ class Notification(models.Model):
         (TYPE_ARTICLE_REJECTED, 'Article Rejected'),
         (TYPE_COMMENT_ADDED, 'Comment Added'),
         (TYPE_ROLE_CHANGED, 'Role Changed'),
+        (TYPE_ARTICLE_ARCHIVED, 'Article Archived'),
+        (TYPE_ARTICLE_RESTORED, 'Article Restored'),
     ]
     
     # Who receives the notification
@@ -154,4 +158,42 @@ class Notification(models.Model):
         )
         
         send_article_rejected_email(article.author, article, admin, reason)
+        return notification
+    
+    @classmethod
+    def create_article_archived_notification(cls, article, admin, reason=None):
+        """Create notification for editor when their article is archived."""
+        notification = cls.objects.create(
+            recipient=article.author,
+            sender=admin,
+            notification_type=cls.TYPE_ARTICLE_ARCHIVED,
+            content_object=article,
+            title="Article Archived",
+            message=f"Your article '{article.title}' has been archived by {admin.username}.",
+            link=f"/articles/{article.id}/"
+        )
+        try:
+            send_article_archived_email(article.author, article, admin, reason)
+        except Exception as e:
+            # log but continue
+            pass
+        return notification
+
+    @classmethod
+    def create_article_restored_notification(cls, article, admin, reason=None):
+        """Create notification for editor when their article is restored."""
+        notification = cls.objects.create(
+            recipient=article.author,
+            sender=admin,
+            notification_type=cls.TYPE_ARTICLE_RESTORED,
+            content_object=article,
+            title="Article Restored",
+            message=f"Your article '{article.title}' has been restored by {admin.username}.",
+            link=f"/articles/{article.id}/"
+        )
+        try:
+            send_article_restored_email(article.author, article, admin, reason)
+        except Exception as e:
+            # log but continue
+            pass
         return notification
