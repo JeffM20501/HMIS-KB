@@ -12,7 +12,7 @@ export default function SuggestedQuestions({ onSelect, suggestions = DEFAULT_SUG
         <button
           key={q}
           onClick={() => onSelect(q)}
-          className="text-xs px-3 py-1.5 rounded-full border border-gray-700 bg-gray-900 text-gray-300 hover:border-primary hover:text-primary transition-colors"
+          className="text-xs px-3 py-1.5 rounded-full border border-gray-300 bg-white text-gray-700 hover:border-primary hover:text-primary hover:bg-primary/5 transition-colors"
         >
           {q}
         </button>

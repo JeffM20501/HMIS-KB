@@ -8,14 +8,14 @@ export default function SourceCitationCard({ source }) {
     <Link
       to={`/articles/${source.article_slug || source.slug}`}
       target="_blank"
-      className="flex items-start gap-2.5 border border-gray-800 rounded-lg px-3 py-2 hover:border-primary hover:bg-primary/10 transition-colors group"
+      className="flex items-start gap-2.5 border border-gray-200 rounded-lg px-3 py-2 hover:border-primary hover:bg-primary/5 transition-colors group"
     >
       <FileText className="w-4 h-4 text-primary mt-0.5 shrink-0" />
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-medium text-gray-200 truncate">{source.title}</p>
+        <p className="text-xs font-medium text-gray-700 truncate">{source.title}</p>
         {confidencePct !== null && <p className="text-[11px] text-gray-500">{confidencePct}% confidence</p>}
       </div>
-      <ArrowUpRight className="w-3.5 h-3.5 text-gray-500 group-hover:text-primary shrink-0 mt-0.5" />
+      <ArrowUpRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-primary shrink-0 mt-0.5" />
     </Link>
   );
 }

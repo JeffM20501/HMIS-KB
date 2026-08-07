@@ -37,7 +37,7 @@ export default function ChatMessage({ message, chatLogId, onEscalate }) {
 
   return (
     <div className="flex flex-col gap-2 max-w-[92%]">
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl rounded-tl-sm px-3.5 py-3 text-sm text-gray-100 shadow-sm">
+      <div className="bg-gray-50 border border-gray-200 rounded-2xl rounded-tl-sm px-3.5 py-3 text-sm text-gray-900 shadow-sm">
         <div className="chat-prose text-sm [&_p]:mb-2 [&_p]:leading-6">
           <ReactMarkdown>{message.content}</ReactMarkdown>
         </div>
@@ -68,19 +68,19 @@ export default function ChatMessage({ message, chatLogId, onEscalate }) {
               <span className="text-[11px] text-gray-500">Was this helpful?</span>
               <button
                 onClick={() => giveFeedback('up')}
-                className="p-1 rounded hover:bg-gray-800 text-gray-400 hover:text-gray-200 transition-colors"
+                className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
               >
                 <ThumbsUp className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => giveFeedback('down')}
-                className="p-1 rounded hover:bg-gray-800 text-gray-400 hover:text-gray-200 transition-colors"
+                className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
               >
                 <ThumbsDown className="w-3.5 h-3.5" />
               </button>
             </>
           ) : (
-            <div className="flex items-center gap-2 text-xs text-success">
+            <div className="flex items-center gap-2 text-xs text-green-600">
               <Check className="w-4 h-4" />
               <span>Thank you for your feedback!</span>
             </div>
