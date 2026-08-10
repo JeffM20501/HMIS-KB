@@ -14,9 +14,11 @@ from chatbot.security.validation import sanitize_message, validate_message
 from chatbot.security.injection_detection import check_injection, log_security_event
 from chatbot.serializers.chat_serializers import ChatRequestSerializer, ChatResponseSerializer
 from chatbot.services.llm_client import LLMUnavailableError, generate_answer, stream_to_text_chunks
-from chatbot.services.rag_pipeline import BLOCKED_RESPONSE, run_pipeline
+from chatbot.services.rag_pipeline import BLOCKED_RESPONSE, run_pipeline, RAGResult
 from chatbot.services.retrieval import rank_and_dedupe_by_article, retrieve_relevant_chunks
 from chatbot.prompts.system_prompt import build_messages
+import time
+
 
 logger = logging.getLogger('chatbot')
 
@@ -48,6 +50,38 @@ class ChatbotView(APIView):
         message = serializer.validated_data['message']
         context = serializer.validated_data.get('context', {})
         conversation = self._resolve_conversation(request, serializer.validated_data.get('conversation_id'))
+        
+        escalation_phrases = [
+            "please escalate this to support",
+            "escalate this",
+            "please escalate",
+            "escalate to support",
+            "i need to speak to a human",
+        ]
+        normalized_message = message.lower().strip()
+        normalized_message = normalized_message.rstrip('.!?')#remove punctuation
+        
+        if any(phrase in normalized_message for phrase in escalation_phrases):
+            start_time=time.monotonic()
+            result = RAGResult(
+                answer="Your request has been escalated to support. A team member will reach out shortly.",
+                sources=[],
+                escalate_suggested=True,
+                blocked=False,
+                latency_seconds=time.monotonic()-start_time
+            )
+            chat_log = self._persist(request, conversation, message, result)
+            payload = {
+                'conversation_id': str(conversation.id) if conversation else str(chat_log.id),
+                'chat_log_id': chat_log.id,
+                'answer': result.answer,
+                'sources': [],
+                'escalate_suggested': True,
+            }
+            response_serializer = ChatResponseSerializer(data=payload)
+            response_serializer.is_valid(raise_exception=True)
+            return Response(response_serializer.data, status=status.HTTP_200_OK)
+            
 
         if request.query_params.get('stream', '').lower() == 'true':
             return self._handle_streaming(request, message, conversation)
@@ -102,7 +136,7 @@ class ChatbotView(APIView):
         chat_log = ChatLog.objects.create(
             user=request.user if request.user.is_authenticated else None,
             conversation=conversation,
-            conversation_id=str(conversation.id) if conversation else '',
+            conversation_uuid=str(conversation.id) if conversation else '',
             question=message,
             answer=result.answer,
             article_ref=result.sources[0]['article'] if result.sources else None,
