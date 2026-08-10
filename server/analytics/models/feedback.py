@@ -56,13 +56,6 @@ class Feedback(models.Model):
         if self.content_type == 'chat' and self.helpful is None:
             raise ValidationError("Helpful flag is required for chat feedback.")
     
-    def __str__(self):
-        obj_type = self.get_content_type_display()
-        if self.content_type == 'article':
-            return f"{self.user.username} rated {obj_type} #{self.object_id}: {self.rating}★"
-        else:
-            return f"{self.user.username} said chat #{self.object_id} was {'helpful' if self.helpful else 'not helpful'}"
-    
     def get_object(self):
         """Get the actual object (article or chat log) this feedback refers to."""
         if self.content_type == 'article':
@@ -78,3 +71,11 @@ class Feedback(models.Model):
             except ChatLog.DoesNotExist:
                 return None
         return None
+    
+    def __str__(self):
+        obj_type = self.get_content_type_display()
+        user_str = self.user.username if self.user else 'Anonymous'
+        if self.content_type == 'article':
+            return f"{user_str} rated {obj_type} #{self.object_id}: {self.rating}★"
+        else:
+            return f"{user_str} said chat #{self.object_id} was {'helpful' if self.helpful else 'not helpful'}"

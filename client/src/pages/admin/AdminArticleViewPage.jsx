@@ -221,9 +221,9 @@ export default function AdminArticleViewPage() {
         <article>
             {/* Badges */}
             <div className="flex items-center gap-2 mb-3 flex-wrap">
-            {article.category && <Badge tone="blue">{article.category.name}</Badge>}
-            {article.product?.name && <Badge tone="purple">{article.product.name}</Badge>}
-            {article.product_version && (
+            {article?.category && <Badge tone="blue">{article.category.name}</Badge>}
+            {article?.product?.name && <Badge tone="purple">{article.product.name}</Badge>}
+            {article?.product_version && (
                 <span className="text-xs text-text-secondary">{article.product_version}</span>
             )}
             <Badge tone={isPublished ? 'green' : isPending ? 'amber' : isArchived ? 'gray' : 'gray'}>
@@ -318,8 +318,6 @@ export default function AdminArticleViewPage() {
 
         <TableOfContents headings={headings} />
         </div>
-
-        {/* ========== MODALS ========== */}
 
         {/* Publish Confirmation */}
         <Modal

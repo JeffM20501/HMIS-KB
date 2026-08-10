@@ -1,78 +1,96 @@
-import { useState } from 'react';
-import { ThumbsUp, ThumbsDown } from 'lucide-react';
-import { useMutation } from '@tanstack/react-query';
-import * as analyticsApi from '../../api/analytics.api';
-import Button from '../ui/Button.jsx';
-import Textarea from '../ui/Textarea.jsx';
+import { useState, useEffect } from 'react';
+import { Star, ThumbsUp, MessageSquare } from 'lucide-react';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import * as analyticsApi from '../../api/analytics.api';
+import { extractErrorMessage } from '../../api/axios';
 
 export default function FeedbackWidget({ articleId }) {
-  const [choice, setChoice] = useState(null);
-  const [comment, setComment] = useState('');
+  const [rating, setRating] = useState(null);
+  const [hovered, setHovered] = useState(null);
   const [submitted, setSubmitted] = useState(false);
+  const [existingFeedback, setExistingFeedback] = useState(null);
 
-  const mutation = useMutation({
-    mutationFn: (payload) => analyticsApi.submitFeedback(payload),
-    onSuccess: () => {
-      setSubmitted(true);
-      toast.success('Thanks for your feedback!');
-    },
-    onError: () => toast.error('Could not submit feedback. Please try again.'),
+  // Check if user already submitted feedback for this article
+  const feedbackQuery = useQuery({
+    queryKey: ['feedback', 'article', articleId],
+    queryFn: () => analyticsApi.getFeedbackForObject({ content_type: 'article', object_id: articleId }),
+    enabled: !!articleId,
+    retry: false,
   });
 
-  const pick = (val) => setChoice(val);
+  useEffect(() => {
+    if (feedbackQuery.data && feedbackQuery.data.length > 0) {
+      const fb = feedbackQuery.data[0];
+      setExistingFeedback(fb);
+      setSubmitted(true);
+      if (fb.rating) {
+        setRating(fb.rating);
+      }
+    }
+  }, [feedbackQuery.data]);
 
-  const submit = () => {
-    mutation.mutate({
-      content_type:'article',
-      object_id: articleId,
-      rating: choice === 'up' ? 5 : 1,
-      comment: comment || undefined,
-      helpful:true,
-    });
+  const submitRating = useMutation({
+    mutationFn: (ratingValue) =>
+      analyticsApi.submitFeedback({
+        content_type: 'article',
+        object_id: articleId,
+        rating: ratingValue,
+        comment: '',
+      }),
+    onSuccess: (data) => {
+      setSubmitted(true);
+      setExistingFeedback(data);
+      toast.success('Thank you for your rating!');
+    },
+    onError: (err) => {
+      toast.error(extractErrorMessage(err));
+    },
+  });
+
+  const handleRating = (value) => {
+    if (submitted || existingFeedback || submitRating.isPending) return;
+    setRating(value);
+    submitRating.mutate(value);
   };
 
-  if (submitted) {
+  // If feedback already exists, show the rating
+  if (submitted || existingFeedback) {
+    const displayRating = existingFeedback?.rating || rating;
     return (
-      <div className="bg-success-bg text-success rounded-card p-4 text-sm font-medium text-center">
-        Thanks — your feedback helps keep this documentation accurate.
+      <div className="flex items-center gap-2 text-sm text-text-secondary">
+        <span className="flex items-center gap-1">
+          <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+          {displayRating}
+        </span>
+        <span>· You rated this article</span>
       </div>
     );
   }
 
   return (
-    <div className="bg-white border border-border rounded-card p-5">
-      <p className="text-sm font-semibold text-text-primary mb-3">Was this article helpful?</p>
-      <div className="flex items-center gap-2 mb-3">
+    <div className="flex items-center gap-2">
+      <span className="text-sm text-text-secondary">Rate this article:</span>
+      {[1, 2, 3, 4, 5].map((v) => (
         <button
-          onClick={() => pick('up')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded border text-sm ${
-            choice === 'up' ? 'border-success bg-success-bg text-success' : 'border-border text-text-secondary hover:bg-gray-50'
-          }`}
+          key={v}
+          onMouseEnter={() => setHovered(v)}
+          onMouseLeave={() => setHovered(null)}
+          onClick={() => handleRating(v)}
+          disabled={submitRating.isPending}
+          className="text-2xl transition-colors hover:scale-110 disabled:opacity-50"
         >
-          <ThumbsUp className="w-4 h-4" /> Yes
-        </button>
-        <button
-          onClick={() => pick('down')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded border text-sm ${
-            choice === 'down' ? 'border-danger bg-danger-bg text-danger' : 'border-border text-text-secondary hover:bg-gray-50'
-          }`}
-        >
-          <ThumbsDown className="w-4 h-4" /> No
-        </button>
-      </div>
-      {choice && (
-        <div className="space-y-3">
-          <Textarea
-            rows={3}
-            placeholder="Anything we should improve? (optional)"
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
+          <Star
+            className={`w-5 h-5 ${
+              (hovered !== null && v <= hovered) || (rating !== null && v <= rating)
+                ? 'fill-yellow-400 text-yellow-400'
+                : 'fill-gray-200 text-gray-200'
+            }`}
           />
-          <Button size="sm" onClick={submit} isLoading={mutation.isPending}>
-            Submit feedback
-          </Button>
-        </div>
+        </button>
+      ))}
+      {submitRating.isPending && (
+        <span className="text-sm text-text-secondary animate-pulse">Submitting...</span>
       )}
     </div>
   );
