@@ -2,9 +2,12 @@ from rest_framework.views import APIView
 from users.serializers.password_reset_serializer import PasswordResetRequestSerializer
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.throttling import ScopedRateThrottle
 
 class RequestPasswordResetView(APIView):
     permission_classes = []
+    throttle_classes=[ScopedRateThrottle]
+    throttle_scope='request_pwd_reset'
 
     def post(self, request):
         serializer = PasswordResetRequestSerializer(data=request.data)

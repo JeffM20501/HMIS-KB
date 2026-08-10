@@ -3,6 +3,7 @@ from rest_framework.views import APIView
 from rest_framework import status
 from django.contrib.auth import get_user_model
 from users.models.password_reset_otp import PasswordResetOTP
+from rest_framework.throttling import ScopedRateThrottle
 
 User=get_user_model()
 
@@ -13,6 +14,9 @@ class VerifyOtpView(APIView):
     Verify the OTP sent to the user's email.
     """
     permission_classes = []
+    throttle_classes=[ScopedRateThrottle]
+    throttle_scope='verify_otp'
+    
 
     def post(self, request):
         email = request.data.get('email')

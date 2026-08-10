@@ -58,6 +58,10 @@ REST_FRAMEWORK={
     ),
     "DEFAULT_PAGINATION_CLASS":"rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE":100,
+    "DEFAULT_THROTTLE_CLASSES":[
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
     # Named rate scopes. Not added to DEFAULT_THROTTLE_CLASSES on purpose —
     # that would throttle every DRF view project-wide, which is a much
     # bigger change than this task's scope. Only views that explicitly set
@@ -66,6 +70,11 @@ REST_FRAMEWORK={
     "DEFAULT_THROTTLE_RATES": {
         "chat_anon": "15/min",
         "chat_user": "60/min",
+        "anon":'50/min',
+        "user":'100/min',
+        "request_pwd_reset":"10/min",
+        "verify_otp":"10/min",
+        "reset_pwd":"10/min"
     },
     "DEFAULT_SCHEMA_CLASS":'drf_spectacular.openapi.AutoSchema',
 }

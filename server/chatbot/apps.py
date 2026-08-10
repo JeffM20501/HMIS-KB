@@ -11,3 +11,10 @@ class ChatbotConfig(AppConfig):
         # (previously not done at all; the embedding pipeline had no
         # automatic trigger anywhere).
         import chatbot.signals  # noqa: F401
+        
+        try:
+            from chatbot.services import embedding_service
+            embedding_service._get_model()
+            print("Sentence transformers loaded at startup")
+        except Exception as e:
+            print(f"Failed to load embedding model at startup: {e}")
