@@ -3,10 +3,17 @@ from .models import Feedback,ChatLog,SearchLog,Notification,ArticleViewLog,ChatL
 
 @admin.register(Feedback)
 class FeedbackAdmin(admin.ModelAdmin):
-    list_display = ['id', 'user', 'content_type', 'object_id', 'rating', 'helpful', 'created_at']
+    list_display = ['id', 'display_user', 'content_type', 'object_id', 'rating', 'helpful', 'created_at']
     list_filter = ['content_type', 'rating', 'helpful', 'created_at']
     search_fields = ['user__username', 'comment']
     readonly_fields = ['created_at']
+    
+    def display_user(self,obj):
+        if obj.user:
+            return obj.user.username
+        return 'Anon'
+    display_user.short_description='User'
+    display_user.admin_order_field='user__username'
     
     fieldsets = (
         ('User', {'fields': ('user',)}),

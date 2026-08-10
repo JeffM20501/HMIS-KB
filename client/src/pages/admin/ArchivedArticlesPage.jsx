@@ -104,20 +104,6 @@ export default function ArchivedArticlesPage() {
         isOpen={!!restoreTarget}
         onClose={() => setRestoreTarget(null)}
         title="Restore Article"
-        description={
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-amber-600">
-              <AlertTriangle className="w-5 h-5" />
-              <span className="font-medium">You are about to restore this article</span>
-            </div>
-            <p>
-              Article: <strong className="text-text-primary">“{restoreTarget?.title}”</strong>
-            </p>
-            <p className="text-text-secondary">
-              This article will become a <strong>draft</strong> and will need to be submitted for review again before it can be published.
-            </p>
-          </div>
-        }
         footer={
           <>
             <Button variant="secondary" onClick={() => setRestoreTarget(null)}>
@@ -132,30 +118,26 @@ export default function ArchivedArticlesPage() {
             </Button>
           </>
         }
-      />
+      >
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-amber-600">
+            <AlertTriangle className="w-5 h-5" />
+            <span className="font-medium">You are about to restore this article</span>
+          </div>
+          <p>
+            Article: <strong className="text-text-primary">“{restoreTarget?.title}”</strong>
+          </p>
+          <p className="text-text-secondary">
+            This article will become a <strong>draft</strong> and will need to be submitted for review again before it can be published.
+          </p>
+        </div>
+      </Modal>
 
       {/* Delete Confirmation Modal */}
       <Modal
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         title="Delete Permanently"
-        description={
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-danger">
-              <AlertTriangle className="w-5 h-5" />
-              <span className="font-medium">This action cannot be undone</span>
-            </div>
-            <p>
-              Article: <strong className="text-text-primary">“{deleteTarget?.title}”</strong>
-            </p>
-            <p className="text-text-secondary">
-              The article and all its associated data (media, feedback, etc.) will be permanently removed from the database.
-            </p>
-            <div className="bg-danger-bg border border-danger/20 rounded-lg p-3 text-sm text-danger">
-              <strong>Warning:</strong> This is irreversible. Only proceed if you are certain.
-            </div>
-          </div>
-        }
         footer={
           <>
             <Button variant="secondary" onClick={() => setDeleteTarget(null)}>
@@ -170,7 +152,23 @@ export default function ArchivedArticlesPage() {
             </Button>
           </>
         }
-      />
+      >
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-danger">
+            <AlertTriangle className="w-5 h-5" />
+            <span className="font-medium">This action cannot be undone</span>
+          </div>
+          <p>
+            Article: <strong className="text-text-primary">“{deleteTarget?.title}”</strong>
+          </p>
+          <p className="text-text-secondary">
+            The article and all its associated data (media, feedback, etc.) will be permanently removed from the database.
+          </p>
+          <div className="bg-danger-bg border border-danger/20 rounded-lg p-3 text-sm text-danger">
+            <strong>Warning:</strong> This is irreversible. Only proceed if you are certain.
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

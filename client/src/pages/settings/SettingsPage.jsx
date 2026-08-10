@@ -252,7 +252,7 @@ function AppearanceTab() {
           </button>
         ))}
       </div>
-      <p className="text-xs text-text-secondary mt-3">Dark mode is a v2 consideration — this preference is saved for when it ships.</p>
+      <p className="text-xs text-text-secondary mt-3">Dark mode is a future consideration  this preference is saved for when it ships.</p>
     </Card>
   );
 }
@@ -263,7 +263,7 @@ function SessionsTab() {
       <Card>
         <h3 className="font-semibold text-text-primary mb-1">Session management</h3>
         <p className="text-sm text-text-secondary mb-4">
-          Sessions automatically expire after 8 hours of inactivity, per platform policy (FR-3.5).
+          Sessions automatically expire after 8 hours of inactivity.
         </p>
         <div className="flex items-center justify-between border border-border rounded-lg p-4">
           <div>

@@ -87,7 +87,7 @@ def run_pipeline(raw_message, request, history_queryset=None):
     callers (views/chatbot_views.py) own the query, this function only
     reads it.
     """
-    start = time.monotonic()
+    start = time.monotonic() #time it start
 
     # Steps 2 + 5: validate, then sanitize/normalize.
     is_valid, error = validate_message(raw_message)

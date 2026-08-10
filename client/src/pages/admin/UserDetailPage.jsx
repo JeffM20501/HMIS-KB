@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Shield, Ban, Trash2, Mail } from 'lucide-react';
+import { ArrowLeft, Shield, Ban, Trash2, Mail, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as usersApi from '../../api/users.api.js';
 import PageHeader from '../../components/common/PageHeader.jsx';
@@ -26,6 +26,8 @@ export default function UserDetailPage() {
     const queryClient = useQueryClient();
     const [showRoleModal, setShowRoleModal] = useState(false);
     const [newRole, setNewRole] = useState('');
+    const [showSuspendModal, setShowSuspendModal] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     const userQuery = useQuery({
     queryKey: ['user', id],
@@ -54,9 +56,10 @@ export default function UserDetailPage() {
     const statusMutation = useMutation({
     mutationFn: ({ id, is_active }) => usersApi.patchUser(id, { is_active }),
     onSuccess: () => {
-        toast.success('User status updated.');
+        toast.success(`User ${is_active ? 'activated' : 'suspended'} successfully.`);
         queryClient.invalidateQueries({ queryKey: ['user', id] });
         queryClient.invalidateQueries({ queryKey: ['users'] });
+        setShowSuspendModal(false);
     },
     onError: (err) => toast.error(extractErrorMessage(err)),
     });
@@ -64,7 +67,7 @@ export default function UserDetailPage() {
     const deleteMutation = useMutation({
     mutationFn: () => usersApi.deleteUser(id),
     onSuccess: () => {
-        toast.success('User removed.');
+        toast.success('User removed permanently.');
         navigate('/admin/users');
     },
     onError: (err) => toast.error(extractErrorMessage(err)),
@@ -101,15 +104,12 @@ export default function UserDetailPage() {
     }
     };
 
-    // ✅ Toggle is_active boolean
     const handleToggleStatus = () => {
     statusMutation.mutate({ id: user.id, is_active: !isActive });
     };
 
     const handleDelete = () => {
-    if (window.confirm(`Are you sure you want to remove ${user.full_name || user.email}?`)) {
-        deleteMutation.mutate();
-    }
+    deleteMutation.mutate();
     };
 
     return (
@@ -140,13 +140,13 @@ export default function UserDetailPage() {
             <Button variant="secondary" onClick={() => setShowRoleModal(true)}>
             <Shield className="w-4 h-4" /> Change Role
             </Button>
-            <Button variant="secondary" onClick={handleToggleStatus} isLoading={statusMutation.isPending}>
+            <Button variant="secondary" onClick={() => setShowSuspendModal(true)} isLoading={statusMutation.isPending}>
             <Ban className="w-4 h-4" /> {isActive ? 'Suspend' : 'Reactivate'}
             </Button>
             <Button variant="secondary" onClick={() => toast.info('Email functionality coming soon')}>
             <Mail className="w-4 h-4" /> Email
             </Button>
-            <Button variant="danger" onClick={handleDelete} isLoading={deleteMutation.isPending}>
+            <Button variant="danger" onClick={() => setShowDeleteModal(true)}>
             <Trash2 className="w-4 h-4" /> Remove
             </Button>
         </div>
@@ -193,6 +193,7 @@ export default function UserDetailPage() {
         </dl>
         </Card>
 
+        {/* Change Role Modal */}
         <Modal isOpen={showRoleModal} onClose={() => setShowRoleModal(false)} title="Change Role">
         <div className="space-y-4">
             <div>
@@ -210,6 +211,98 @@ export default function UserDetailPage() {
             <Button onClick={handleRoleChange} isLoading={roleMutation.isPending}>
                 Update Role
             </Button>
+            </div>
+        </div>
+        </Modal>
+
+        {/* Suspend/Reactivate Confirmation Modal */}
+        <Modal
+        isOpen={showSuspendModal}
+        onClose={() => setShowSuspendModal(false)}
+        title={isActive ? 'Suspend User' : 'Reactivate User'}
+        footer={
+            <>
+            <Button variant="secondary" onClick={() => setShowSuspendModal(false)}>
+                Cancel
+            </Button>
+            <Button
+                variant={isActive ? 'danger' : 'primary'}
+                isLoading={statusMutation.isPending}
+                onClick={handleToggleStatus}
+            >
+                {isActive ? <Ban className="w-4 h-4" /> : <Ban className="w-4 h-4" />}
+                {isActive ? 'Suspend User' : 'Reactivate User'}
+            </Button>
+            </>
+        }
+        >
+        {isActive ? (
+            <div className="space-y-3">
+            <div className="flex items-center gap-2 text-danger">
+                <AlertTriangle className="w-5 h-5" />
+                <span className="font-medium">You are about to suspend this user</span>
+            </div>
+            <p>
+                User: <strong className="text-text-primary">“{user.full_name || user.email}”</strong>
+            </p>
+            <p className="text-text-secondary">
+                Suspending this user will immediately revoke their access to the system.
+                They will not be able to log in until reactivated.
+            </p>
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-700">
+                <strong>Note:</strong> Any active sessions will be terminated immediately.
+            </div>
+            </div>
+        ) : (
+            <div className="space-y-3">
+            <div className="flex items-center gap-2 text-success">
+                <AlertTriangle className="w-5 h-5" />
+                <span className="font-medium">You are about to reactivate this user</span>
+            </div>
+            <p>
+                User: <strong className="text-text-primary">“{user.full_name || user.email}”</strong>
+            </p>
+            <p className="text-text-secondary">
+                Reactivating this user will restore their access to the system.
+                They will be able to log in with their existing credentials.
+            </p>
+            </div>
+        )}
+        </Modal>
+
+        {/* Delete User Confirmation Modal */}
+        <Modal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Delete User Permanently"
+        footer={
+            <>
+            <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+                Cancel
+            </Button>
+            <Button
+                variant="danger"
+                isLoading={deleteMutation.isPending}
+                onClick={handleDelete}
+            >
+                <Trash2 className="w-4 h-4" /> Delete Permanently
+            </Button>
+            </>
+        }
+        >
+        <div className="space-y-3">
+            <div className="flex items-center gap-2 text-danger">
+            <AlertTriangle className="w-5 h-5" />
+            <span className="font-medium">This action cannot be undone</span>
+            </div>
+            <p>
+            User: <strong className="text-text-primary">“{user.full_name || user.email}”</strong>
+            </p>
+            <p className="text-text-secondary">
+            All data associated with this user will be permanently removed from the database.
+            </p>
+            <div className="bg-danger-bg border border-danger/20 rounded-lg p-3 text-sm text-danger">
+            <strong>Warning:</strong> This is irreversible. Only proceed if you are certain.
             </div>
         </div>
         </Modal>

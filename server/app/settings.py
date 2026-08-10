@@ -21,6 +21,7 @@ from datetime import timedelta
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -181,7 +182,16 @@ WSGI_APPLICATION = 'app.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-if os.getenv('DB_HOST'):
+if os.getenv('DATABASE_URL'):
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.getenv('DATABASE_URL'),
+            conn_max_age=600,
+            conn_health_checks=True
+        )
+    }
+elif os.getenv('DB_HOST'):
+    # MySQL/MariaDB fallback (used for the DevOps project)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
@@ -196,14 +206,21 @@ if os.getenv('DB_HOST'):
             }
         }
     }
-else:
+elif not os.getenv('DATABASE_URL'):  #for dev
     DATABASES = {
-        'default': dj_database_url.config(
-            conn_max_age=600,
-            conn_health_checks=True
-        )
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DB_NAME', 'hmis_kb_db'),
+            'USER': os.getenv('DB_USER', 'postgres'),
+            'PASSWORD': os.getenv('DB_PASSWORD', 'postgres'),
+            'HOST': os.getenv('DB_HOST', 'localhost'),
+            'PORT': os.getenv('DB_PORT', '5432'),
+        }
     }
-
+else:
+    raise ImproperlyConfigured(
+        "No DATABASE_URL or DB_HOST environment variable set."
+    )
 if os.getenv('DATABASE_URL'):
     DATABASE_URL = os.getenv('DATABASE_URL')
 elif os.getenv('DB_HOST'):
