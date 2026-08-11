@@ -51,8 +51,26 @@ COPY --chown=appuser:appuser . .
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
+# Cap BLAS/OpenMP thread pools used by torch (and tokenizers' own parallelism)
+# so the embedding model doesn't spin up more worker threads/stacks than a
+# memory-constrained (~512MB) container can comfortably afford. Safe no-ops
+# on hosts with more headroom; on Render's free tier they matter.
+ENV OMP_NUM_THREADS=1
+ENV MKL_NUM_THREADS=1
+ENV TOKENIZERS_PARALLELISM=false
+
 USER appuser
 
 EXPOSE 8080
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "2", "--timeout", "120", "app.wsgi:application"]
+# Single worker, multiple threads: the sentence-transformers/torch model is
+# a module-level singleton loaded once at process startup (see
+# chatbot/apps.py + chatbot/services/embedding_service.py). With more than
+# one Gunicorn *worker* (separate processes, no --preload), each worker
+# independently imports torch and loads its own full copy of the model,
+# which is what was pushing memory past the ~512MB deployment limit and
+# causing the OOM/SIGKILL worker timeouts. One worker means the model is
+# only ever resident once; --threads lets that single process still serve
+# concurrent requests (DB/network-bound work releases the GIL) without
+# duplicating the model in memory.
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--threads", "4", "--worker-class", "gthread", "--timeout", "120", "app.wsgi:application"]

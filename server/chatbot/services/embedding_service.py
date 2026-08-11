@@ -40,6 +40,16 @@ def _get_model():
             # keeps this module importable in environments — like CI steps
             # that don't touch the chatbot — without the ~500MB of torch).
             from sentence_transformers import SentenceTransformer
+            import torch
+            
+            # Belt-and-suspenders alongside the OMP_NUM_THREADS/MKL_NUM_THREADS
+            # env vars set in Dockerfile.backend: cap torch's own intra-op
+            # thread pool directly, since env vars aren't always honored
+            # depending on how torch's backend was already initialized by
+            # the time this runs. On a memory-constrained (~512MB) container,
+            # a single-threaded CPU embedder is plenty fast for one query at
+            # a time and avoids extra per-thread stack/buffer overhead.
+            torch.set_num_threads(1)
 
             logger.info('embedding_model_load', extra={'model': EMBEDDING_MODEL_NAME})
             _model = SentenceTransformer(EMBEDDING_MODEL_NAME)
