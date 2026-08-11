@@ -86,7 +86,6 @@ SIMPLE_JWT={
     'SIGNING_KEY':os.environ.get('SIGNING_KEY')
 }
 
-#api docs
 SPECTACULAR_SETTINGS={
     'TITLE':'HMIS Knowledge Base API(Taifa Care Help Center)',
     'DESCRIPTION': 'Complete API for the KB platform and Chatbot widget',

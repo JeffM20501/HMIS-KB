@@ -29,7 +29,19 @@ services:
         condition: service_healthy
     volumes:
       - .:/app
+      # Named volume mounted at the same path the model was pre-baked
+      # into at build time (see Dockerfile.backend). Docker populates a
+      # new named volume from the image's content at that path on first
+      # creation, so this preserves the baked-in model instead of it
+      # being silently shadowed (and re-downloaded at runtime) by the
+      # `.:/app` bind mount above, which only has your local source tree.
+      - fastembed_cache:/app/.fastembed_cache
     restart: unless-stopped
+    # Matches the ~512MB Render free-tier constraint being tested.
+    # Remove/raise this for normal local development.
+    mem_limit: 512m
+    memswap_limit: 512m
 
 volumes:
   postgres_data:
+  fastembed_cache:
