@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { Search } from 'lucide-react';
+import { Search, Menu } from 'lucide-react';
 import NotificationBell from './NotificationBell.jsx';
 import Avatar from '../ui/Avatar.jsx';
 import Dropdown from '../ui/Dropdown.jsx';
@@ -8,7 +8,7 @@ import { ChevronDown, User, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { ROUTES } from '../../constants/routes';
 
-export default function Topbar({ notificationsRoute }) {
+export default function Topbar({ notificationsRoute, onMenuClick }) {
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
   const { user, isAdmin, logout } = useAuth();
@@ -19,7 +19,16 @@ export default function Topbar({ notificationsRoute }) {
   };
 
   return (
-    <header className="h-16 sticky top-0 z-30 bg-white border-b border-border flex items-center gap-4 px-6">
+    <header className="h-16 sticky top-0 z-30 bg-white border-b border-border flex items-center gap-4 px-4 lg:px-6">
+      {/* Hamburger menu (mobile only) */}
+      <button
+        onClick={onMenuClick}
+        className="lg:hidden p-2 -ml-2 text-text-secondary hover:text-text-primary rounded hover:bg-gray-100"
+        aria-label="Toggle navigation"
+      >
+        <Menu className="w-5 h-5" />
+      </button>
+
       <form onSubmit={submitSearch} className="flex-1 max-w-xl">
         <div className="relative">
           <Search className="w-4 h-4 text-text-secondary absolute left-3 top-1/2 -translate-y-1/2" />
