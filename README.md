@@ -26,8 +26,8 @@ To deploy or maintain this project, you need:
 - [AWS CLI](https://aws.amazon.com/cli/) v2 configured with the `capstone` profile.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/) installed.
 - [Docker](https://docs.docker.com/get-docker/) installed.
-- Access to the ECR repositories: `<account-id>.dkr.ecr.eu-west-1.amazonaws.com/jeff-muna/frontend` and `.../backend`.
-- Access to the EKS cluster (`innovation-lab`).
+- Access to the ECR repositories: `<account-id>.dkr.ecr.eu-west-1.amazonaws.com/<your-namespace>/frontend` and `.../backend`.
+- Access to the EKS cluster (`<your-clustername>`).
 - GitHub repository with the following secrets configured:
 
 | Secret Name | Description |
