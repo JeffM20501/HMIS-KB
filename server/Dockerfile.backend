@@ -22,6 +22,18 @@ RUN pip install --upgrade pip
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Pre-download the embedding model at BUILD time (network is available
+# here, unlike the runtime container on Render/locally-constrained runs)
+# and bake it into the image. This is what stops the container from
+# hitting HF Hub over the network on every cold start, which was
+# stalling the entire app at startup (chatbot/apps.py loads the model
+# synchronously in ready(), so a slow/throttled download blocked every
+# route, not just chat). Must match FASTEMBED_CACHE_DIR set below and
+# in the final stage, and the model name in
+# chatbot/services/embedding_service.py.
+ENV FASTEMBED_CACHE_DIR=/app/.fastembed_cache
+RUN python -c "from fastembed import TextEmbedding; TextEmbedding(model_name='BAAI/bge-small-en-v1.5', cache_dir='/app/.fastembed_cache')"
+
 # prod stage
 FROM python:3.14-slim
 
@@ -48,11 +60,40 @@ COPY --from=builder /usr/local/bin/ /usr/local/bin/
 WORKDIR /app
 COPY --chown=appuser:appuser . .
 
+# Model files pre-downloaded in the builder stage (see the RUN step
+# above) — copied in so the container never needs network access for
+# the embedding model at runtime.
+COPY --from=builder --chown=appuser:appuser /app/.fastembed_cache /app/.fastembed_cache
+
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV FASTEMBED_CACHE_DIR=/app/.fastembed_cache
+
+# Cap intra-op/OpenMP thread pools (onnxruntime + tokenizers) so the
+# embedding model doesn't spin up more worker threads/stacks than a
+# memory-constrained (~512MB) container can comfortably afford. Safe
+# no-ops on hosts with more headroom; on Render's free tier they matter.
+# MKL_NUM_THREADS is kept as a harmless no-op in case any transitive
+# dependency still checks it.
+ENV OMP_NUM_THREADS=1
+ENV MKL_NUM_THREADS=1
+ENV TOKENIZERS_PARALLELISM=false
 
 USER appuser
 
 EXPOSE 8080
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "2", "--timeout", "120", "app.wsgi:application"]
+# Single worker, multiple threads: the embedding model (fastembed/
+# onnxruntime, see chatbot/services/embedding_service.py) is a
+# module-level singleton loaded once at process startup via
+# chatbot/apps.py. With more than one Gunicorn *worker* (separate
+# processes, no --preload), each worker independently imports its own
+# copy of the embedding runtime, which is what was pushing memory past
+# the ~512MB deployment limit and causing the OOM/SIGKILL worker
+# timeouts (this was true with the original torch-based embedder, and
+# would still be true with fastembed even though its per-process
+# footprint is much smaller). One worker means the model is only ever
+# resident once; --threads lets that single process still serve
+# concurrent requests (DB/network-bound work releases the GIL) without
+# duplicating the model in memory.
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--threads", "4", "--worker-class", "gthread", "--timeout", "120", "app.wsgi:application"]
