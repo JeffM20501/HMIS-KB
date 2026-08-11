@@ -22,6 +22,18 @@ RUN pip install --upgrade pip
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Pre-download the embedding model at BUILD time (network is available
+# here, unlike the runtime container on Render/locally-constrained runs)
+# and bake it into the image. This is what stops the container from
+# hitting HF Hub over the network on every cold start, which was
+# stalling the entire app at startup (chatbot/apps.py loads the model
+# synchronously in ready(), so a slow/throttled download blocked every
+# route, not just chat). Must match FASTEMBED_CACHE_DIR set below and
+# in the final stage, and the model name in
+# chatbot/services/embedding_service.py.
+ENV FASTEMBED_CACHE_DIR=/app/.fastembed_cache
+RUN python -c "from fastembed import TextEmbedding; TextEmbedding(model_name='BAAI/bge-small-en-v1.5', cache_dir='/app/.fastembed_cache')"
+
 # prod stage
 FROM python:3.14-slim
 
@@ -48,8 +60,14 @@ COPY --from=builder /usr/local/bin/ /usr/local/bin/
 WORKDIR /app
 COPY --chown=appuser:appuser . .
 
+# Model files pre-downloaded in the builder stage (see the RUN step
+# above) — copied in so the container never needs network access for
+# the embedding model at runtime.
+COPY --from=builder --chown=appuser:appuser /app/.fastembed_cache /app/.fastembed_cache
+
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV FASTEMBED_CACHE_DIR=/app/.fastembed_cache
 
 # Cap intra-op/OpenMP thread pools (onnxruntime + tokenizers) so the
 # embedding model doesn't spin up more worker threads/stacks than a

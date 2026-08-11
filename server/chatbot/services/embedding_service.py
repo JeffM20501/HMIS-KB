@@ -24,11 +24,23 @@ chunks will compare poorly against new query embeddings computed with
 this module.
 """
 import logging
+import os
 import threading
 
 logger = logging.getLogger('chatbot')
 
 EMBEDDING_MODEL_NAME = 'BAAI/bge-small-en-v1.5'
+
+# Set by Dockerfile.backend to a directory the model was pre-downloaded
+# into at *build* time (see the builder-stage RUN step there). This is
+# what lets the container start with zero network dependency for the
+# embedding model — without it, TextEmbedding() hits HF Hub over the
+# network on every cold start, which can stall the entire app (see
+# chatbot/apps.py: model load happens synchronously in ready(), so a
+# slow/throttled download blocks every route, not just chat, until it
+# finishes). Falls back to fastembed's own default cache location
+# (~/.cache/fastembed) when unset, e.g. for local dev outside Docker.
+FASTEMBED_CACHE_DIR = os.environ.get('FASTEMBED_CACHE_DIR')
 
 # bge models are trained with an instruction prefix for queries (not for
 # the documents/chunks being indexed) — using it measurably improves
@@ -56,7 +68,7 @@ def _get_model():
             from fastembed import TextEmbedding
 
             logger.info('embedding_model_load', extra={'model': EMBEDDING_MODEL_NAME})
-            _model = TextEmbedding(model_name=EMBEDDING_MODEL_NAME)
+            _model = TextEmbedding(model_name=EMBEDDING_MODEL_NAME, cache_dir=FASTEMBED_CACHE_DIR)
     return _model
 
 
