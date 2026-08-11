@@ -1,16 +1,27 @@
 """
-Local embedding generation via sentence-transformers (BAAI/bge-small-en-v1.5).
+Local embedding generation via fastembed (BAAI/bge-small-en-v1.5, onnxruntime).
 
-Deliberately NOT calling out to an external API (the old code used
-`HuggingFaceEndpointEmbeddings`, a network call per embed). This model is
-~130MB and runs comfortably on CPU — running it in-process removes an
-external dependency and a network round-trip from the hot path of every
-chat message (the user's query has to be embedded before every retrieval).
+Previously ran on sentence-transformers/torch. Root-caused via the Render
+512MB OOM/SIGKILL investigation: `import torch` (pulled in by
+sentence-transformers) alone consumed ~357MB RSS before a single model
+weight was loaded, leaving no headroom in a ~512MB container for the
+model itself, the HF download, Django, the DB connection, or gunicorn.
+Reducing to 1 Gunicorn worker and capping BLAS/OMP thread pools (see
+Dockerfile.backend) were both correct fixes for what they targeted, but
+neither could fix a single process already using 86% of budget on the
+torch import alone.
 
-The model is loaded once per process (module-level singleton) rather than
-per-request — the old `RAGPipeline.__init__` rebuilt its embedding client
-on every single request, which is the kind of thing this file exists to
-stop happening again.
+fastembed runs on onnxruntime instead of torch, ships a quantized ONNX
+build of this exact model, and produces the same 384-dimensional vectors
+this schema (chatbot/models/article_chunk.py: EMBEDDING_DIM = 384)
+already expects — no schema/migration change needed.
+
+IMPORTANT: quantized ONNX weights are numerically slightly different from
+the full-precision torch weights that produced any embeddings stored
+before this change. Existing ArticleChunk.embedding values must be
+regenerated (`manage.py index_articles`) after deploying this, or old
+chunks will compare poorly against new query embeddings computed with
+this module.
 """
 import logging
 import threading
@@ -21,7 +32,10 @@ EMBEDDING_MODEL_NAME = 'BAAI/bge-small-en-v1.5'
 
 # bge models are trained with an instruction prefix for queries (not for
 # the documents/chunks being indexed) — using it measurably improves
-# retrieval quality for this model family specifically.
+# retrieval quality for this model family specifically. Applied manually
+# here (rather than relying on fastembed's own query_embed() convenience
+# method) so the exact prefix text stays identical to what was used
+# before this change, rather than trusting a library default to match it.
 _QUERY_INSTRUCTION = 'Represent this sentence for searching relevant passages: '
 
 _model_lock = threading.Lock()
@@ -35,24 +49,14 @@ def _get_model():
     with _model_lock:
         if _model is None:
             # Imported lazily so importing this module doesn't require
-            # sentence-transformers/torch to be installed unless embeddings
-            # are actually used (keeps e.g. `manage.py shell` fast, and
-            # keeps this module importable in environments — like CI steps
-            # that don't touch the chatbot — without the ~500MB of torch).
-            from sentence_transformers import SentenceTransformer
-            import torch
-            
-            # Belt-and-suspenders alongside the OMP_NUM_THREADS/MKL_NUM_THREADS
-            # env vars set in Dockerfile.backend: cap torch's own intra-op
-            # thread pool directly, since env vars aren't always honored
-            # depending on how torch's backend was already initialized by
-            # the time this runs. On a memory-constrained (~512MB) container,
-            # a single-threaded CPU embedder is plenty fast for one query at
-            # a time and avoids extra per-thread stack/buffer overhead.
-            torch.set_num_threads(1)
+            # fastembed/onnxruntime to be installed unless embeddings are
+            # actually used (keeps e.g. `manage.py shell` fast, and keeps
+            # this module importable in environments — like CI steps that
+            # don't touch the chatbot — without pulling in onnxruntime).
+            from fastembed import TextEmbedding
 
             logger.info('embedding_model_load', extra={'model': EMBEDDING_MODEL_NAME})
-            _model = SentenceTransformer(EMBEDDING_MODEL_NAME)
+            _model = TextEmbedding(model_name=EMBEDDING_MODEL_NAME)
     return _model
 
 
@@ -61,12 +65,12 @@ def embed_documents(texts):
     if not texts:
         return []
     model = _get_model()
-    vectors = model.encode(list(texts), normalize_embeddings=True, show_progress_bar=False)
+    vectors = list(model.embed(list(texts)))
     return [v.tolist() for v in vectors]
 
 
 def embed_query(text):
     """Embed a single user query for similarity search against stored chunks."""
     model = _get_model()
-    vector = model.encode(_QUERY_INSTRUCTION + text, normalize_embeddings=True, show_progress_bar=False)
+    vector = next(model.embed([_QUERY_INSTRUCTION + text]))
     return vector.tolist()

@@ -15,6 +15,6 @@ class ChatbotConfig(AppConfig):
         try:
             from chatbot.services import embedding_service
             embedding_service._get_model()
-            print("Sentence transformers loaded at startup")
-        except Exception as e:
-            print(f"Failed to load embedding model at startup: {e}")
+        except Exception:
+            import logging
+            logging.getLogger('chatbot').exception('embedding_model_startup_load_failed')
