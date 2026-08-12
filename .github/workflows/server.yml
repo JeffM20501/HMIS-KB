@@ -114,7 +114,7 @@ jobs:
           docker build -f Dockerfile.backend \
             -t ${{ env.ECR_REGISTRY_BE }}:v1.0.0 \
             -t ${{ env.ECR_REGISTRY_BE }}:${{ github.sha }} \
-            -t ${{ env.IMAGE_NAME }}:v2.0.0 \
+            -t ${{ env.IMAGE_NAME }}:v2.1.0 \
             -t ${{ env.IMAGE_NAME }}:${{ github.sha }} .
           docker push --all-tags ${{ env.ECR_REGISTRY_BE }}
           docker push --all-tags ${{ env.IMAGE_NAME }}
