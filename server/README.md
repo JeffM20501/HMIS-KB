@@ -335,7 +335,7 @@ In `settings.py`:
 1. Run the container
 
 ```bash
-    docker run -p **8080**:**8080** --env-file .env hmis-backend ### On Render Push your code to a GitHub repository.
+    docker run -p **8080**:**8080** --env-file .env hmis-backend # make sure you set your database strictly url to "postgresql://postgres:postgres@host.docker.internal:5432/hmis_kb_db" to avoid errors the reason is explained below
     #or run this is you get errors
     docker run -p 8080:8080 \
         -e DATABASE_URL=postgresql://postgres:postgres@host.docker.internal:5432/hmis_kb_db \
