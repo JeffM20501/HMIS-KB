@@ -13,6 +13,9 @@ env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
   DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_USERNAME }}
   IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/hmis-kb-backend
+  RENDER_API_KEY: ${{secrets.RENDER_API_KEY}}
+  RENDER_SERVICE_ID: "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}"
+  RENDER_DEPLOY_HOOK_URL: ${{secrets.RENDER_DEPLOY_HOOK_URL}}
 
 jobs:
   test:
@@ -118,6 +121,14 @@ jobs:
             -t ${{ env.IMAGE_NAME }}:${{ github.sha }} .
           docker push --all-tags ${{ env.ECR_REGISTRY_BE }}
           docker push --all-tags ${{ env.IMAGE_NAME }}
+
+      - name: Upate Render Service + redeploy
+        run: |
+          curl -f -X PATCH ${{env.RENDER_SERVICE_ID}} \
+          -H "Authorization: Bearer ${{env.RENDER_API_KEY}}" \
+          -H "Content-Type: application/json" \
+          -d '{"imageUrl": "docker.io/${{env.IMAGE_NAME}}:${{github.sha}}"}'
+
 
       - name: Deploy backend to EKS
         env:
