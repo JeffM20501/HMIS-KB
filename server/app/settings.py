@@ -82,8 +82,9 @@ REST_FRAMEWORK={
 
 import sys
 
-if 'test' in sys.argv:
-    REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES']=[]
+if 'test' in sys.argv or 'pytest' in sys.argv[0]:
+    REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES'] = []
+    # REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {}
 
 SIMPLE_JWT={
     'ACCESS_TOKEN_LIFETIME':timedelta(minutes=60),
