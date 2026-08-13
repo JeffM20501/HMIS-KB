@@ -80,6 +80,11 @@ REST_FRAMEWORK={
     "DEFAULT_SCHEMA_CLASS":'drf_spectacular.openapi.AutoSchema',
 }
 
+import sys
+
+if 'test' in sys.argv:
+    REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES']=[]
+
 SIMPLE_JWT={
     'ACCESS_TOKEN_LIFETIME':timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME':timedelta(days=1),
