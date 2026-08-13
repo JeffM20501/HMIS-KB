@@ -76,11 +76,24 @@ export default function SecurityStep({ register, errors, watch, onBack, isSubmit
       <FieldError>{errors.agree_terms?.message}</FieldError>
 
       <div className="flex gap-3 pt-1">
-        <Button type="button" variant="secondary" className="flex-1" size="lg" onClick={onBack}>
+        <Button
+          type="button"
+          variant="secondary"
+          className="flex-1"
+          size="lg"
+          onClick={onBack}
+          disabled={isSubmitting}
+        >
           Back
         </Button>
-        <Button type="submit" className="flex-1" size="lg" isLoading={isSubmitting}>
-          Create Account
+        <Button
+          type="submit"
+          className="flex-1"
+          size="lg"
+          isLoading={isSubmitting}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? 'Creating…' : 'Create Account'}
         </Button>
       </div>
     </div>

@@ -24,17 +24,6 @@ const FEATURES = [
   'Role-based access for your team',
 ];
 
-/**
- * There's no dedicated public self-registration endpoint in the current
- * Django route list — this reuses POST /api/v1/u/users/ (the same endpoint
- * UserManagementPage.jsx's "Invite User" already calls as an authenticated
- * admin action). That endpoint may currently be permission-gated to admins
- * only, in which case an unauthenticated visitor submitting this form will
- * get a 403 until the backend either opens that endpoint for unauthenticated
- * self-registration with a pending status, or a dedicated /register/
- * endpoint is added. Flagging this here rather than silently assuming it
- * already works end-to-end.
- */
 export default function SignUpPage() {
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
@@ -46,7 +35,7 @@ export default function SignUpPage() {
     trigger,
     watch,
     setValue,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm();
 
   const submitMutation = useMutation({
@@ -56,7 +45,7 @@ export default function SignUpPage() {
         last_name: values.last_name,
         email: values.email,
         department: values.department,
-        username:values.username,
+        username: values.username,
         facility: values.facility,
         password: values.password,
         // status: 'pending',
@@ -150,7 +139,13 @@ export default function SignUpPage() {
                 <WorkplaceStep register={register} errors={errors} watch={watch} onBack={goBack} onNext={goNext} />
               )}
               {step === 3 && (
-                <SecurityStep register={register} errors={errors} watch={watch} onBack={goBack} isSubmitting={isSubmitting} />
+                <SecurityStep
+                  register={register}
+                  errors={errors}
+                  watch={watch}
+                  onBack={goBack}
+                  isSubmitting={submitMutation.isPending}
+                />
               )}
             </form>
           </div>
