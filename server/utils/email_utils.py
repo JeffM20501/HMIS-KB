@@ -12,15 +12,19 @@ def send_email(to_email, subject, template_name, context):
     """
     html_message = render_to_string(template_name, context)
     plain_message = strip_tags(html_message)
-
-    send_mail(
-        subject=subject,
-        message=plain_message,
-        from_email=settings.DEFAULT_FROM_EMAIL, #conf in settings
-        recipient_list=[to_email], #users email
-        html_message=html_message,
-        fail_silently=False,
-    )
+    try:
+        send_mail(
+            subject=subject,
+            message=plain_message,
+            from_email=settings.DEFAULT_FROM_EMAIL, #conf in settings
+            recipient_list=[to_email], #users email
+            html_message=html_message,
+            fail_silently=False,
+        )
+    except Exception as e:
+        import logging
+        logger=logging.getLogger(__name__)
+        logger.error(f"Failed to send email to {to_email}: {e}")
 
 
 def send_welcome_email(user):

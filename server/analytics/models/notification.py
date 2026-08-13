@@ -140,7 +140,10 @@ class Notification(models.Model):
             link=f"/articles/{article.id}/"
         )
         
-        send_article_published_email(article.author,article,admin)
+        try:
+            send_article_published_email(article.author,article,admin)
+        except Exception as e:
+            pass
         
         return notification
     
@@ -157,7 +160,10 @@ class Notification(models.Model):
             link=f"/articles/{article.id}/"
         )
         
-        send_article_rejected_email(article.author, article, admin, reason)
+        try: 
+            send_article_rejected_email(article.author, article, admin, reason)
+        except Exception as e:
+            pass
         return notification
     
     @classmethod
