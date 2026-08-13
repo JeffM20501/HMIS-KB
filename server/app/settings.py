@@ -73,12 +73,17 @@ REST_FRAMEWORK={
         "chat_user": "60/min",
         "anon":'50/min',
         "user":'100/min',
-        "request_pwd_reset":"10/min",
-        "verify_otp":"10/min",
-        "reset_pwd":"10/min"
+        "request_pwd_reset":"15/min",
+        "verify_otp":"15/min",
+        "reset_pwd":"15/min"
     },
     "DEFAULT_SCHEMA_CLASS":'drf_spectacular.openapi.AutoSchema',
 }
+
+import sys
+
+if 'test' in sys.argv:
+    REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES']=[]
 
 SIMPLE_JWT={
     'ACCESS_TOKEN_LIFETIME':timedelta(minutes=60),
