@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as authApi from '../../api/auth.api';
 import { extractErrorMessage } from '../../api/axios';
