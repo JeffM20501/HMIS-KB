@@ -19,6 +19,7 @@ export default function DashboardLayout({ navItems, badges, notificationsRoute, 
         <Topbar
           notificationsRoute={notificationsRoute}
           onMenuClick={() => setSidebarOpen(true)}
+          currentModule={currentModule}
         />
         <main className="flex-1 p-4 lg:p-6">
           <Outlet />

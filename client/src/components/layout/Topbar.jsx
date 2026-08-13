@@ -2,13 +2,14 @@ import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { Search, Menu } from 'lucide-react';
 import NotificationBell from './NotificationBell.jsx';
+import ViewModeSwitch from './ViewModeSwitch.jsx';
 import Avatar from '../ui/Avatar.jsx';
 import Dropdown from '../ui/Dropdown.jsx';
 import { ChevronDown, User, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { ROUTES } from '../../constants/routes';
 
-export default function Topbar({ notificationsRoute, onMenuClick }) {
+export default function Topbar({ notificationsRoute, onMenuClick, currentModule }) {
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
   const { user, isAdmin, logout } = useAuth();
@@ -42,6 +43,7 @@ export default function Topbar({ notificationsRoute, onMenuClick }) {
       </form>
 
       <div className="flex items-center gap-3">
+        {isAdmin && <ViewModeSwitch currentModule={currentModule} />}
         <NotificationBell route={notificationsRoute} />
         <Dropdown
           align="right"
