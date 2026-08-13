@@ -22,7 +22,7 @@ export default function EditorDashboardPage() {
   });
 
   const d = dashboardQuery.data || {};
-  const notifications = notificationsQuery.data?.results || notificationsQuery.data || [];
+  const notifications = (notificationsQuery.data?.results || notificationsQuery.data || []).slice(0,5);
   const recentArticles = d.recent_articles || [];
   const viewsByMonth = d.views_by_month || [];
 
