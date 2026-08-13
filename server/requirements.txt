@@ -74,3 +74,4 @@ urllib3==2.7.0
 # 'pip install fastembed && pip freeze' locally, since this environment has
 # no network access to resolve its real onnxruntime/huggingface_hub versions.
 fastembed
+sib-api-v3-sdk

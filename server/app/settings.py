@@ -133,14 +133,20 @@ cloudinary.config(
 # transformers and need no API key at all.
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-# Email Configuration -Brevo 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = os.getenv('EMAIL_HOST')
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.getenv('BREVO_SMTP_USER')      
-EMAIL_HOST_PASSWORD = os.getenv('BREVO_SMTP_PASSWORD') 
+# Email Configuration SMTP Brevo 
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = os.getenv('EMAIL_HOST')
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = os.getenv('BREVO_SMTP_USER')      
+# EMAIL_HOST_PASSWORD = os.getenv('BREVO_SMTP_PASSWORD') 
+
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@hmiskb254.com')
+
+# Email config BREVO API
+EMAIL_BACKEND='utils.email_backend.BrevoEmailBackend'
+BREVO_API_KEY=os.getenv('BREVO_API_KEY')
+EMAIL_SENDER_NAME=os.getenv('EMAIL_SENDER_NAME', 'TaifaCare Help Center')
 
 #frontend
 FRONTEND_URL=os.getenv('FRONTEND_URL', 'http://localhost:5173/')
