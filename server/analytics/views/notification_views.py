@@ -15,6 +15,8 @@ from analytics.permissions.notification_permissions import (
 
 from django.utils import timezone
 
+from utils.pagination import StandardResultsPagination
+
 
 class NotificationViewSet(viewsets.ModelViewSet):
     """
@@ -24,6 +26,8 @@ class NotificationViewSet(viewsets.ModelViewSet):
     queryset = Notification.objects.all()
     serializer_class = NotificationSerializer
     permission_classes = [permissions.IsAuthenticated, CanViewNotifications]
+    pagination_class=StandardResultsPagination
+    
     
     def get_serializer_class(self):
         if self.action == 'list':
@@ -32,7 +36,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         """Filter notifications for the current user."""
-        return Notification.objects.filter(recipient=self.request.user)
+        return Notification.objects.filter(recipient=self.request.user).order_by('-created_at')
     
     @action(detail=True, methods=['post'])
     def mark_read(self, request, pk=None):
