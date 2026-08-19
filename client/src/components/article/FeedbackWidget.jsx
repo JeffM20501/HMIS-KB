@@ -4,8 +4,10 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import * as analyticsApi from '../../api/analytics.api';
 import { extractErrorMessage } from '../../api/axios';
+import {useAuth } from '../../hooks/useAuth';
 
 export default function FeedbackWidget({ articleId }) {
+  const {user, isAuthenticated} = useAuth()
   const [rating, setRating] = useState(null);
   const [hovered, setHovered] = useState(null);
   const [submitted, setSubmitted] = useState(false);
@@ -15,7 +17,7 @@ export default function FeedbackWidget({ articleId }) {
   const feedbackQuery = useQuery({
     queryKey: ['feedback', 'article', articleId],
     queryFn: () => analyticsApi.getFeedbackForObject({ content_type: 'article', object_id: articleId }),
-    enabled: !!articleId,
+    enabled: !!articleId && isAuthenticated,
     retry: false,
   });
 

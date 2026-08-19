@@ -42,12 +42,6 @@ export default function ArticlePage() {
   });
   const mediaItems = mediaQuery.data || [];
 
-  useEffect(() => {
-    if (article?.id) {
-      analyticsApi.logArticleView(article.id).catch(() => {});
-    }
-  }, [article?.id]);
-
   const relatedQuery = useQuery({
     queryKey: ['articles', 'related', article?.category?.slug],
     queryFn: () =>
