@@ -9,6 +9,8 @@ class IsCategoryAdmin(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
         
+        return request.user.is_authenticated and request.user.role=='admin'
+        
         # Non-safe methods require admin role
         return request.user.is_authenticated and request.user.role == 'admin'
     

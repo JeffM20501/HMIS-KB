@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, FileText, User, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as categoriesApi from '../../api/categories.api';
+import * as articlesApi from '../../api/articles.api';
 import PageHeader from '../../components/common/PageHeader.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Modal from '../../components/ui/Modal.jsx';
@@ -15,6 +16,8 @@ import { Skeleton } from '../../components/common/Skeleton.jsx';
 import { useDisclosure } from '../../hooks/useDisclosure';
 import { extractErrorMessage } from '../../api/axios';
 import { getCategoryIcon } from '../../utils/categoryIcons';
+import { Link } from 'react-router-dom';
+import { formatDate, formatRelativeTime } from '../../utils/formatters';
 
 export default function AdminCategoriesPage() {
   const queryClient = useQueryClient();
@@ -26,6 +29,19 @@ export default function AdminCategoriesPage() {
   const categories = query.data?.results || query.data || [];
   const active = categories.find((c) => c.id === activeId) || categories[0];
 
+  // ✅ Fetch recent articles for the active category
+  const recentArticlesQuery = useQuery({
+    queryKey: ['categories', active?.id, 'articles'],
+    queryFn: () =>
+      articlesApi.listArticles({
+        category: active?.slug,
+        status: 'published',
+        ordering: '-updated_at',
+        page_size: 5,
+      }),
+    enabled: !!active?.id,
+  });
+
   const deleteMutation = useMutation({
     mutationFn: categoriesApi.deleteCategory,
     onSuccess: () => {
@@ -34,6 +50,8 @@ export default function AdminCategoriesPage() {
     },
     onError: (err) => toast.error(extractErrorMessage(err)),
   });
+
+  const recentArticles = recentArticlesQuery.data?.results || [];
 
   return (
     <div>
@@ -62,8 +80,8 @@ export default function AdminCategoriesPage() {
                   <button
                     key={cat.id}
                     onClick={() => setActiveId(cat.id)}
-                    className={`w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-gray-50 ${
-                      (active?.id === cat.id) ? 'bg-primary-50/60 border-l-2 border-primary' : ''
+                    className={`w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-gray-50 transition-colors ${
+                      active?.id === cat.id ? 'bg-primary-50/60 border-l-2 border-primary' : ''
                     }`}
                   >
                     <span
@@ -83,8 +101,9 @@ export default function AdminCategoriesPage() {
           </div>
 
           {active && (
-            <div className="bg-white border border-border rounded-card p-6">
-              <div className="flex items-start justify-between mb-6">
+            <div className="bg-white border border-border rounded-card p-6 space-y-6">
+              {/* Category details */}
+              <div className="flex items-start justify-between">
                 <div className="flex items-start gap-3.5">
                   <span
                     className="w-12 h-12 rounded-xl flex items-center justify-center"
@@ -110,9 +129,9 @@ export default function AdminCategoriesPage() {
                 </div>
               </div>
 
-              <p className="text-text-secondary mb-6">{active.description}</p>
+              <p className="text-text-secondary">{active.description}</p>
 
-              <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="bg-gray-50 rounded-lg p-4">
                   <p className="text-2xl font-bold text-primary">{active.article_count ?? 0}</p>
                   <p className="text-sm text-text-secondary">Published Articles</p>
@@ -124,11 +143,14 @@ export default function AdminCategoriesPage() {
               </div>
 
               {!!active.subcategories?.length && (
-                <div className="mb-6">
+                <div>
                   <p className="text-sm font-semibold text-text-primary mb-2">Subcategories</p>
                   <div className="flex flex-wrap gap-2">
                     {active.subcategories.map((sub) => (
-                      <span key={sub.id} className="text-sm px-3 py-1.5 rounded-full border border-primary/30 text-primary">
+                      <span
+                        key={sub.id}
+                        className="text-sm px-3 py-1.5 rounded-full border border-primary/30 text-primary"
+                      >
                         {sub.name}
                       </span>
                     ))}
@@ -136,12 +158,54 @@ export default function AdminCategoriesPage() {
                 </div>
               )}
 
-              <div>
-                <p className="text-sm font-semibold text-text-primary mb-2">Display Color</p>
-                <div className="flex items-center gap-2">
-                  <span className="w-8 h-8 rounded" style={{ backgroundColor: active.color || '#2563EB' }} />
-                  <span className="text-sm text-text-secondary">{active.color || '#2563EB'}</span>
+              {/* Recent Articles section */}
+              <div className="pt-4 border-t border-border">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-semibold text-text-primary">Recent Articles</p>
+                  {active.article_count > 0 && (
+                    <Link
+                      to={`/admin/published?category=${active.slug}`}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      View all →
+                    </Link>
+                  )}
                 </div>
+
+                {recentArticlesQuery.isLoading ? (
+                  <div className="space-y-2">
+                    {[1, 2, 3].map((i) => (
+                      <Skeleton key={i} className="h-12 rounded" />
+                    ))}
+                  </div>
+                ) : recentArticles.length === 0 ? (
+                  <p className="text-sm text-text-secondary">No published articles in this category yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {recentArticles.map((article) => (
+                      <Link
+                        key={article.id}
+                        to={`/admin/articles/${article.slug}`}
+                        className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors border border-border"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-text-primary truncate">{article.title}</p>
+                          <div className="flex items-center gap-3 text-xs text-text-secondary">
+                            <span className="flex items-center gap-1">
+                              <User className="w-3 h-3" />
+                              {article.author_full_name || article.author_username || 'Unknown'}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              {formatRelativeTime(article.updated_at)}
+                            </span>
+                          </div>
+                        </div>
+                        <FileText className="w-4 h-4 text-text-secondary shrink-0 ml-2" />
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
