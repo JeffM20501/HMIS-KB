@@ -15,7 +15,7 @@ export default function Pagination({ page, totalPages, onChange, className = '' 
   }
 
   return (
-    <div className={clsx('flex items-center justify-end gap-1', className)}>
+    <div className={clsx('flex items-center justify-start gap-1', className)}>
       <button
         onClick={() => onChange(page - 1)}
         disabled={page <= 1}

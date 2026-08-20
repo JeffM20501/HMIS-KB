@@ -10,6 +10,7 @@ from analytics.serializers.audit_log_serializer import (
     AuditLogDetailSerializer
 )
 from users.permissions import IsAdmin
+from rest_framework.pagination import PageNumberPagination
 
 
 class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
@@ -23,6 +24,7 @@ class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = AuditLog.objects.all()
     serializer_class = AuditLogSerializer
     permission_classes = [IsAdmin]
+    pagination_class=PageNumberPagination
     
     def get_serializer_class(self):
         if self.action == 'list':

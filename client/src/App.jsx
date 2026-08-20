@@ -91,6 +91,7 @@ export default function App() {
               <Route path="analytics" element={<AdminAnalyticsPage />} />
               <Route path="audit-logs" element={<AuditLogsPage />} />
               <Route path="settings" element={<AdminSettingsPage />} />
+              {/* <Route path="notifications" element={<EditorNotificationsPage />} /> */}
               <Route path="profile" element={<AdminSettingsPage />} />
             </Route>
           </Route>
