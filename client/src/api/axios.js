@@ -51,7 +51,10 @@ function isPublicUrl(url) {
 
 // --- request interceptor: attach token only if NOT public ----------
 api.interceptors.request.use((config) => {
-  if (!isPublicUrl(config.url)) {
+  const method = (config.method || 'get').toLowerCase();
+  const isSafe = ['get', 'head', 'options'].includes(method);
+
+  if (!isPublicUrl(config.url) || !isSafe) {
     const token = getAccessToken();
     if (token) config.headers.Authorization = `Bearer ${token}`;
   }

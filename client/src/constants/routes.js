@@ -26,6 +26,7 @@ export const ROUTES = {
   ADMIN_SETTINGS: '/admin/settings',
   ADMIN_PROFILE: '/admin/profile',
   ADMIN_PRODUCTS: '/admin/products',
+  ADMIN_NOTIFICATIONS: '/admin/notifications',
 
   // Editor
   EDITOR_DASHBOARD: '/editor',

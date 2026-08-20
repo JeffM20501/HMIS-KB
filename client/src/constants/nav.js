@@ -16,6 +16,7 @@ export const ADMIN_NAV = [
   { label: 'Products',  to: ROUTES.ADMIN_PRODUCTS, icon: Package },
   { label: 'Analytics', to: ROUTES.ADMIN_ANALYTICS, icon: BarChart3 },
   { label: 'Audit Logs', to: ROUTES.ADMIN_AUDIT_LOGS, icon: Activity },
+  { label: 'Notifications', to: ROUTES.ADMIN_NOTIFICATIONS, icon: Bell, badgeKey: 'notifications' },
   { label: 'Settings', to: ROUTES.ADMIN_SETTINGS, icon: Settings },
 ];
 
