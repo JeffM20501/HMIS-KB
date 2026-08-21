@@ -213,7 +213,7 @@ export default function AdminDashboardPage() {
           {mostViewed.map((a, i) => (
             <Link
               key={a.id || a.slug}
-              to={`/articles/${a.slug}`}
+              to={`/admin/articles/${a.slug}`}
               className="flex items-center gap-3 px-5 py-4 hover:bg-gray-50"
             >
               <span className="text-sm font-semibold text-text-secondary w-5">{i + 1}</span>
