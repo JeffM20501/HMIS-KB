@@ -23,8 +23,8 @@ from django.conf import settings
 
 logger = logging.getLogger('chatbot')
 
-PRIMARY_MODEL = 'llama-3.3-70b-versatile'
-FALLBACK_MODEL = 'llama-3.1-8b-instant'
+PRIMARY_MODEL = 'openai/gpt-oss-120b'
+FALLBACK_MODEL = 'openai/gpt-oss-20b'
 REQUEST_TIMEOUT = 20  # seconds — a chat request should fail fast, not hang
 
 
